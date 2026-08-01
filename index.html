@@ -763,35 +763,37 @@
 
   if (!track) return;
 
-  statusText.innerText = "Searching online audio & lyrics...";
+  statusText.innerText = "Downloading & buffering audio...";
 
-  // 1. Fetch Online Stream
+  const fullQuery = encodeURIComponent(track + ' ' + artist);
+
+  // 1. Get track info
   try {
-    const audioResp = await fetch(`/api/getAudio?q=${encodeURIComponent(track + ' ' + artist)}`);
-    const audioData = await audioResp.json();
+    const infoResp = await fetch(`/api/getAudio?q=${fullQuery}&mode=info`);
+    const infoData = await infoResp.json();
 
-    if (audioData && audioData.audioUrl) {
-      audioPlayer.pause();
-      audioPlayer.src = audioData.audioUrl;
-      audioPlayer.load();
-
-      const cleanTitle = audioData.title || track;
-      const cleanArtist = audioData.artist || artist;
-
-      document.getElementById('displayTitle').innerText = cleanTitle;
-      document.getElementById('displayArtist').innerText = cleanArtist;
-      document.getElementById('heroTitle').innerText = cleanTitle;
-      document.getElementById('heroArtist').innerText = cleanArtist;
-
-      audioPlayer.play().catch(err => {
-        console.log("Autoplay blocked by browser. Tap play button.");
-      });
+    if (infoData && infoData.title) {
+      document.getElementById('displayTitle').innerText = infoData.title;
+      document.getElementById('displayArtist').innerText = infoData.artist;
+      document.getElementById('heroTitle').innerText = infoData.title;
+      document.getElementById('heroArtist').innerText = infoData.artist;
     }
   } catch (e) {
-    console.log("Online stream unavailable, using existing audio source.");
+    document.getElementById('displayTitle').innerText = track;
+    document.getElementById('displayArtist').innerText = artist || 'Online Stream';
   }
 
-  // 2. Fetch Synced Lyrics
+  // 2. Set audio source directly to serverless proxy URL
+  const proxyAudioUrl = `/api/getAudio?q=${fullQuery}`;
+  audioPlayer.pause();
+  audioPlayer.src = proxyAudioUrl;
+  audioPlayer.load();
+
+  audioPlayer.play().catch(err => {
+    console.log("Tap play to start audio.");
+  });
+
+  // 3. Fetch synced lyrics from LRCLIB
   const queries = [
     `${track} ${artist}`,
     `${track} ${artist} Romanized`,
@@ -826,7 +828,7 @@
       parsedLyrics = parseLRC(match.syncedLyrics);
       renderLyrics();
       modalOverlay.classList.remove('open');
-      statusText.innerText = 'Online audio & lyrics loaded!';
+      statusText.innerText = 'Audio streaming & lyrics loaded!';
     } else {
       statusText.innerText = 'Audio playing, but no timed lyrics found.';
     }
@@ -835,6 +837,8 @@
     statusText.innerText = 'Error loading lyrics.';
   }
 }
+
+  
 
 
     audioPlayer.addEventListener('timeupdate', () => {
