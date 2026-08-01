@@ -1,60 +1,43 @@
-export default async function handler(req, res) {
-  const query = req.query.q;
-
-  // Enable CORS
+module.exports = async (req, res) => {
+  // CORS Headers
+  res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-  if (!query) {
-    return res.status(400).json({ error: "Missing query parameter" });
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
   }
 
-  // Public Invidious instances failover loop
-  const instances = [
-    "https://inv.projectsegfau.lt",
-    "https://invidious.drgns.space",
-    "https://invidious.nerdvpn.de",
-    "https://invidious.flokinet.to"
-  ];
+  const query = req.query.q;
+  if (!query) {
+    return res.status(400).json({ error: "Missing query" });
+  }
 
-  for (const instance of instances) {
-    try {
-      const searchUrl = `${instance}/api/v1/search?q=${encodeURIComponent(query + " audio")}&type=video`;
-      const response = await fetch(searchUrl);
+  try {
+    // Query JioSaavn primary public API for high-bitrate direct MP3 link
+    const searchUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}`;
+    const response = await fetch(searchUrl);
+    const data = await response.json();
 
-      if (!response.ok) continue;
+    if (data && data.success && data.data && data.data.results && data.data.results.length > 0) {
+      const track = data.data.results[0];
+      
+      // Get highest quality download URL (320kbps or 160kbps)
+      const downloadObj = track.downloadUrl ? (track.downloadUrl.find(d => d.quality === "320kbps") || track.downloadUrl[track.downloadUrl.length - 1]) : null;
 
-      const results = await response.json();
-      if (!Array.isArray(results) || results.length === 0) continue;
-
-      const videoId = results[0].videoId;
-      const title = results[0].title;
-      const author = results[0].author;
-
-      const videoUrl = `${instance}/api/v1/videos/${videoId}`;
-      const videoResp = await fetch(videoUrl);
-
-      if (!videoResp.ok) continue;
-
-      const videoData = await videoResp.json();
-      const adaptiveFormats = videoData.adaptiveFormats || [];
-
-      // Find the highest bitrate audio stream
-      const audioStream = adaptiveFormats
-        .filter(f => f.type && f.type.startsWith("audio/"))
-        .sort((a, b) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0))[0];
-
-      if (audioStream && audioStream.url) {
+      if (downloadObj && downloadObj.url) {
         return res.status(200).json({
-          title: title,
-          artist: author,
-          audioUrl: audioStream.url
+          title: track.name || query,
+          artist: track.primaryArtists || "Online Stream",
+          audioUrl: downloadObj.url
         });
       }
-    } catch (err) {
-      console.log(`Failed on instance ${instance}:`, err.message);
     }
+  } catch (err) {
+    console.error("Primary stream failed:", err);
   }
 
-  return res.status(502).json({ error: "All stream proxies are currently busy. Try local MP3!" });
-}
+  return res.status(502).json({ error: "Stream unavailable. Use local MP3!" });
+};
