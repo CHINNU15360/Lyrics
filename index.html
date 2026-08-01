@@ -765,6 +765,72 @@
 
   statusText.innerText = "Searching online audio & lyrics...";
 
+  // Call Vercel serverless function for online stream
+  try {
+    const audioResp = await fetch(`/api/getAudio?q=${encodeURIComponent(track + ' ' + artist)}`);
+    const audioData = await audioResp.json();
+
+    if (audioData && audioData.audioUrl) {
+      audioPlayer.pause();
+      audioPlayer.src = audioData.audioUrl;
+      audioPlayer.load();
+
+      document.getElementById('displayTitle').innerText = audioData.title || track;
+      document.getElementById('displayArtist').innerText = audioData.artist || artist;
+      document.getElementById('heroTitle').innerText = audioData.title || track;
+      document.getElementById('heroArtist').innerText = audioData.artist || artist;
+
+      audioPlayer.play();
+    }
+  } catch (e) {
+    console.log("Online stream unavailable, using existing track.");
+  }
+
+  // Fetch synced lyrics from LRCLIB
+  const queries = [
+    `${track} ${artist}`,
+    `${track} ${artist} Romanized`,
+    `${track}`
+  ];
+
+  try {
+    let match = null;
+
+    for (const query of queries) {
+      const url = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const exactMatch = data.find(item => 
+          item.syncedLyrics && 
+          item.syncedLyrics.length > 0 &&
+          item.trackName.toLowerCase().includes(track.toLowerCase())
+        );
+
+        if (exactMatch) {
+          match = exactMatch;
+          break;
+        } else if (!match && data[0].syncedLyrics) {
+          match = data[0];
+        }
+      }
+    }
+
+    if (match && match.syncedLyrics) {
+      parsedLyrics = parseLRC(match.syncedLyrics);
+      renderLyrics();
+      modalOverlay.classList.remove('open');
+      statusText.innerText = 'Online audio & lyrics loaded!';
+    } else {
+      statusText.innerText = 'Audio playing, but no timed lyrics found.';
+    }
+  } catch (err) {
+    console.error(err);
+    statusText.innerText = 'Error loading lyrics.';
+  }
+}
+
   // 1. Fetch Online Audio Stream from serverless proxy
   try {
     const audioResp = await fetch(`/.netlify/functions/getAudio?q=${encodeURIComponent(track + ' ' + artist)}`);
