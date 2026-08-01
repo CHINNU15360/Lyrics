@@ -12,25 +12,30 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const searchUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}`;
-    const searchResp = await fetch(searchUrl);
-    const searchData = await searchResp.json();
+    // Call Cobalt's open API processing endpoint
+    const response = await fetch("https://api.cobalt.tools/api/json", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
+        downloadMode: "audio",
+        audioFormat: "mp3"
+      })
+    });
 
-    if (searchData && searchData.success && searchData.data && searchData.data.results.length > 0) {
-      const track = searchData.data.results[0];
-      const downloadObj = track.downloadUrl ? (track.downloadUrl.find(d => d.quality === "320kbps") || track.downloadUrl[track.downloadUrl.length - 1]) : null;
+    const data = await response.json();
 
-      if (downloadObj && downloadObj.url) {
-        return res.status(200).json({
-          title: track.name || query,
-          artist: track.primaryArtists || "Online Stream",
-          audioUrl: downloadObj.url
-        });
-      }
+    if (data && data.url) {
+      return res.status(200).json({
+        audioUrl: data.url
+      });
     }
   } catch (err) {
-    console.error("Audio query error:", err);
+    console.error("Cobalt proxy error:", err);
   }
 
-  return res.status(502).json({ error: "Track not found online." });
+  return res.status(502).json({ error: "Failed to resolve stream link." });
 };
