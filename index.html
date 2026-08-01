@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro</title>
+  <!-- jsmediatags CDN for local MP3 ID3 extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -311,6 +313,8 @@
       font-size: 1.3rem;
       flex-shrink: 0;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background-size: cover;
+      background-position: center;
     }
 
     .track-text {
@@ -633,6 +637,7 @@
     const retrackBtn = document.getElementById('retrackBtn');
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const fsIcon = document.getElementById('fsIcon');
+    const playerArt = document.getElementById('playerArt');
     
     let parsedLyrics = [];
     let lyricOffset = 0.0;
@@ -646,7 +651,6 @@
     const expandSVG = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
     const compressSVG = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
 
-    // --- FULLSCREEN TOGGLE ---
     fullscreenBtn.addEventListener('click', () => {
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (document.documentElement.requestFullscreen) {
@@ -905,6 +909,7 @@
       reTrackToCurrentLine();
     });
 
+    // --- AUTOMATIC LOCAL ID3 METADATA EXTRACTION ---
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -916,22 +921,58 @@
         audioPlayer.src = fileUrl;
         audioPlayer.load();
 
-        const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
-        document.getElementById('displayTitle').innerText = cleanTitle;
-        document.getElementById('displayArtist').innerText = 'Local MP3';
-        document.getElementById('heroTitle').innerText = cleanTitle;
-        document.getElementById('heroArtist').innerText = 'Local MP3';
+        // Default fallback to filename
+        let title = file.name.replace(/\.[^/.]+$/, "");
+        let artist = "Local MP3";
 
-        trackInput.value = cleanTitle;
+        // Read hidden ID3 metadata directly from the file
+        window.jsmediatags.read(file, {
+          onSuccess: function(tag) {
+            const tags = tag.tags;
+            if (tags.title) title = tags.title;
+            if (tags.artist) artist = tags.artist;
 
-        audioPlayer.onloadedmetadata = () => {
-          durTimeText.innerText = formatTime(audioPlayer.duration);
-          seekSlider.value = 0;
-          currTimeText.innerText = '0:00';
-          statusText.innerText = `Loaded local file! Tap Fetch Lyrics.`;
-        };
+            if (tags.picture) {
+              const { data, format } = tags.picture;
+              let base64String = "";
+              for (let i = 0; i < data.length; i++) {
+                base64String += String.fromCharCode(data[i]);
+              }
+              const imageUrl = `data:${format};base64,${window.btoa(base64String)}`;
+              playerArt.style.backgroundImage = `url('${imageUrl}')`;
+              playerArt.innerText = "";
+            } else {
+              playerArt.style.backgroundImage = "none";
+              playerArt.innerText = "🎵";
+            }
+
+            applyTrackMeta(title, artist);
+          },
+          onError: function(error) {
+            console.log("ID3 Error: ", error);
+            applyTrackMeta(title, artist);
+          }
+        });
       }
     });
+
+    function applyTrackMeta(title, artist) {
+      document.getElementById('displayTitle').innerText = title;
+      document.getElementById('displayArtist').innerText = artist;
+      document.getElementById('heroTitle').innerText = title;
+      document.getElementById('heroArtist').innerText = artist;
+
+      trackInput.value = title;
+      artistInput.value = artist !== "Local MP3" ? artist : "";
+
+      audioPlayer.onloadedmetadata = () => {
+        durTimeText.innerText = formatTime(audioPlayer.duration);
+        seekSlider.value = 0;
+        currTimeText.innerText = '0:00';
+        statusText.innerText = `Auto-detected "${title}". Fetching lyrics...`;
+        fetchLyrics();
+      };
+    }
 
     // --- LIVE SYNC BUTTON LOGIC ---
     function adjustOffset(val) {
