@@ -448,12 +448,12 @@
 
       <div class="input-group">
         <label>Song Title</label>
-        <input type="text" class="input-control" id="trackInput" placeholder="e.g. Husn" value="Husn" />
+        <input type="text" class="input-control" id="trackInput" placeholder="e.g. Husn" value="" />
       </div>
 
       <div class="input-group">
-        <label>Artist Name</label>
-        <input type="text" class="input-control" id="artistInput" placeholder="e.g. Anuv Jain" value="Anuv Jain" />
+        <label>Artist Name (Optional)</label>
+        <input type="text" class="input-control" id="artistInput" placeholder="e.g. Anuv Jain" value="" />
       </div>
 
       <button class="btn-action" id="searchBtn">Search & Play Song</button>
@@ -528,7 +528,7 @@
     function renderLyrics() {
       display.innerHTML = '';
       if (parsedLyrics.length === 0) {
-        display.innerHTML = '<div class="line">No timed lyrics found.</div>';
+        display.innerHTML = '<div class="line">No timed lyrics found for this track.</div>';
         return;
       }
 
@@ -564,6 +564,8 @@
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
+
+      if (!track) return;
 
       const queries = [
         `${track} ${artist} Romanized`,
@@ -616,70 +618,104 @@
     }
 
     async function searchAndPlay() {
-  const track = trackInput.value.trim();
-  const artist = artistInput.value.trim();
+      const track = trackInput.value.trim();
+      const artist = artistInput.value.trim();
 
-  if (!track) {
-    statusText.innerText = 'Please enter a song name!';
-    return;
-  }
+      if (!track) {
+        statusText.innerText = 'Please enter a song name!';
+        return;
+      }
 
-  statusText.innerText = `Searching audio for "${track}"...`;
+      statusText.innerText = `Searching audio for "${track}"...`;
+      let audioLoaded = false;
 
-  try {
-    const rawQuery = `${track} ${artist}`.trim();
-    const targetApi = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(rawQuery)}&limit=1`;
-    
-    // Pass through public CORS proxy to strip headers blocking Netlify
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApi)}`;
+      const searchUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(track + ' ' + artist)}&limit=1`;
+      
+      try {
+        const response = await fetch(searchUrl);
+        const result = await response.json();
 
-    const response = await fetch(proxyUrl);
-    const proxyData = await response.json();
-    const result = JSON.parse(proxyData.contents);
+        if (result && result.success && result.data.results.length > 0) {
+          const song = result.data.results[0];
+          const downloadUrls = song.downloadUrl;
 
-    if (result && result.success && result.data.results.length > 0) {
-      const song = result.data.results[0];
-      const downloadUrls = song.downloadUrl;
+          if (downloadUrls && downloadUrls.length > 0) {
+            const streamUrl = downloadUrls[downloadUrls.length - 1].url;
 
-      if (downloadUrls && downloadUrls.length > 0) {
-        const audioUrl = downloadUrls[downloadUrls.length - 1].url;
+            audioPlayer.src = streamUrl;
+            audioPlayer.load();
 
-        audioPlayer.src = audioUrl;
-        audioPlayer.load();
+            const displayTrack = song.name || track;
+            const displayArtist = (song.artists && song.artists.primary && song.artists.primary[0]) 
+              ? song.artists.primary[0].name 
+              : (artist || 'Artist');
 
-        const displayTrack = song.name || track;
-        const displayArtist = (song.artists && song.artists.primary && song.artists.primary[0]) 
-          ? song.artists.primary[0].name 
-          : (artist || 'Artist');
+            document.getElementById('displayTitle').innerText = displayTrack;
+            document.getElementById('displayArtist').innerText = displayArtist;
+            document.getElementById('heroTitle').innerText = displayTrack;
+            document.getElementById('heroArtist').innerText = displayArtist;
 
-        document.getElementById('displayTitle').innerText = displayTrack;
-        document.getElementById('displayArtist').innerText = displayArtist;
-        document.getElementById('heroTitle').innerText = displayTrack;
-        document.getElementById('heroArtist').innerText = displayArtist;
+            audioLoaded = true;
+            statusText.innerText = 'Audio stream loaded! Tap ▶ if playback needs a tap.';
 
-        const playPromise = audioPlayer.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
+            audioPlayer.play().then(() => {
               playBtn.innerText = '⏸';
               statusText.innerText = 'Playing online song!';
-            })
-            .catch(err => {
-              console.log('Mobile autoplay handled:', err);
-              statusText.innerText = 'Audio ready! Tap ▶ Play button.';
+            }).catch(e => {
+              console.log('Mobile autoplay requirement:', e);
             });
+          }
+        }
+      } catch (err) {
+        console.warn('Direct stream fetch failed, attempting proxy...', err);
+      }
+
+      if (!audioLoaded) {
+        try {
+          const proxySearchUrl = `https://corsproxy.io/?` + encodeURIComponent(searchUrl);
+          const proxyRes = await fetch(proxySearchUrl);
+          const proxyResult = await proxyRes.json();
+
+          if (proxyResult && proxyResult.success && proxyResult.data.results.length > 0) {
+            const song = proxyResult.data.results[0];
+            const downloadUrls = song.downloadUrl;
+
+            if (downloadUrls && downloadUrls.length > 0) {
+              const streamUrl = downloadUrls[downloadUrls.length - 1].url;
+
+              audioPlayer.src = streamUrl;
+              audioPlayer.load();
+
+              const displayTrack = song.name || track;
+              const displayArtist = (song.artists && song.artists.primary && song.artists.primary[0]) 
+                ? song.artists.primary[0].name 
+                : (artist || 'Artist');
+
+              document.getElementById('displayTitle').innerText = displayTrack;
+              document.getElementById('displayArtist').innerText = displayArtist;
+              document.getElementById('heroTitle').innerText = displayTrack;
+              document.getElementById('heroArtist').innerText = displayArtist;
+
+              audioLoaded = true;
+              statusText.innerText = 'Loaded via Proxy! Tap ▶ to play.';
+
+              audioPlayer.play().then(() => {
+                playBtn.innerText = '⏸';
+                statusText.innerText = 'Playing online song!';
+              }).catch(e => console.log('Mobile gesture needed:', e));
+            }
+          }
+        } catch (proxyErr) {
+          console.error('Fallback proxy failed:', proxyErr);
         }
       }
-    } else {
-      statusText.innerText = 'Audio stream not found online.';
-    }
-  } catch (err) {
-    console.error('Fetch error:', err);
-    statusText.innerText = 'Unable to connect to audio server.';
-  }
 
-  await fetchLyrics();
-}
+      if (!audioLoaded) {
+        statusText.innerText = 'Audio stream unavailable. Fetching lyrics...';
+      }
+
+      await fetchLyrics();
+    }
 
     audioPlayer.addEventListener('timeupdate', () => {
       const currentTime = audioPlayer.currentTime - lyricOffset;
