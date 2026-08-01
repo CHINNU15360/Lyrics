@@ -41,7 +41,7 @@
       display: flex;
       width: 100%;
       height: 100%;
-      padding-bottom: 110px;
+      padding-bottom: 140px;
     }
 
     .dev-badge {
@@ -51,15 +51,19 @@
       transform: translateX(-50%);
       z-index: 999;
       font-size: 0.8rem;
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.5px;
       color: #ffffff;
-      background: rgba(0, 0, 0, 0.55);
-      padding: 0.4rem 1.1rem;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 0.5rem 1.2rem;
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       pointer-events: none;
       white-space: nowrap;
+      text-transform: uppercase;
     }
 
     .hero-panel {
@@ -142,26 +146,31 @@
       padding-top: 1.5rem;
       padding-bottom: 3rem;
       font-size: 0.85rem;
-      font-weight: 600;
+      font-weight: 700;
       color: rgba(255, 255, 255, 0.4);
       border-top: 1px solid rgba(255, 255, 255, 0.1);
+      letter-spacing: 0.5px;
     }
 
+    /* Modernized Player Bar */
     .player-bar {
       position: fixed;
       bottom: 1.2rem;
       left: 50%;
       transform: translateX(-50%);
-      width: calc(100% - 2.4rem);
-      max-width: 500px;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 24px;
-      padding: 0.8rem 1.2rem;
+      width: calc(100% - 2rem);
+      max-width: 520px;
+      background: rgba(30, 30, 35, 0.75);
+      backdrop-filter: blur(35px);
+      -webkit-backdrop-filter: blur(35px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 28px;
+      padding: 1rem 1.2rem;
       z-index: 100;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
     }
 
     .player-info {
@@ -173,20 +182,21 @@
     .track-meta {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
+      gap: 0.9rem;
       overflow: hidden;
     }
 
     .album-art {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       background: rgba(255,255,255,0.1);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .track-text {
@@ -197,70 +207,107 @@
 
     .track-title {
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 1rem;
+      letter-spacing: -0.2px;
     }
 
     .track-artist {
-      font-size: 0.8rem;
-      opacity: 0.7;
+      font-size: 0.82rem;
+      opacity: 0.65;
+      margin-top: 1px;
     }
 
     .controls {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
+      gap: 0.6rem;
     }
 
     .btn-icon {
-      background: none;
-      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #ffffff;
-      font-size: 1.4rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+
+    .btn-icon:active {
+      transform: scale(0.92);
     }
 
     .btn-play {
       background: #ffffff;
       color: #000000;
-      font-size: 1.1rem;
+      border: none;
+      box-shadow: 0 4px 15px rgba(255,255,255,0.25);
     }
 
-    .progress-container {
+    .btn-play svg {
+      fill: #000000;
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-gear svg {
+      fill: #ffffff;
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Draggable Audio Scrubber Bar */
+    .scrubber-box {
       width: 100%;
-      height: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .seek-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
       background: rgba(255, 255, 255, 0.2);
-      border-radius: 2px;
-      margin-top: 0.8rem;
-      position: relative;
+      outline: none;
       cursor: pointer;
     }
 
-    .progress-fill {
-      height: 100%;
+    .seek-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
       background: #ffffff;
-      border-radius: 2px;
-      width: 0%;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .seek-slider::-webkit-slider-thumb:active {
+      transform: scale(1.3);
     }
 
     .time-labels {
       display: flex;
       justify-content: space-between;
-      font-size: 0.7rem;
-      opacity: 0.6;
-      margin-top: 0.3rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      opacity: 0.55;
     }
 
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(12px);
       z-index: 1000;
       display: none;
       align-items: flex-end;
@@ -273,7 +320,7 @@
 
     .modal-card {
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
       background: #1c1c1e;
       border-radius: 28px 28px 0 0;
       padding: 1.5rem;
@@ -325,9 +372,9 @@
 
     .file-btn {
       width: 100%;
-      padding: 0.75rem;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.1);
+      padding: 0.85rem;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
       border: 1px dashed rgba(255,255,255,0.3);
       color: #ffffff;
       font-weight: 600;
@@ -358,7 +405,6 @@
       min-height: 1.2em;
     }
 
-    /* Tap-Sync Tool Box */
     .sync-offset-box {
       margin-top: 1rem;
       background: rgba(255,255,255,0.05);
@@ -422,7 +468,7 @@
   <div class="bg-blur" id="bgBlur"></div>
 
   <div class="app-container">
-    <div class="dev-badge">Made by me</div>
+    <div class="dev-badge">MADE BY CHINNU</div>
 
     <div class="hero-panel">
       <div class="album-art" id="heroArt" style="width:200px; height:200px; font-size:4rem; border-radius:20px;">🎵</div>
@@ -445,17 +491,21 @@
         </div>
       </div>
       <div class="controls">
-        <button class="btn-icon btn-play" id="playBtn">▶</button>
-        <button class="btn-icon" id="gearBtn">⚙️</button>
+        <button class="btn-icon btn-play" id="playBtn" aria-label="Play/Pause">
+          <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="btn-icon btn-gear" id="gearBtn" aria-label="Settings">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
       </div>
     </div>
     
-    <div class="progress-container" id="progressContainer">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-    <div class="time-labels">
-      <span id="currTime">0:00</span>
-      <span id="durTime">0:00</span>
+    <div class="scrubber-box">
+      <input type="range" class="seek-slider" id="seekSlider" min="0" max="100" value="0" step="0.1" />
+      <div class="time-labels">
+        <span id="currTime">0:00</span>
+        <span id="durTime">0:00</span>
+      </div>
     </div>
   </div>
 
@@ -508,6 +558,7 @@
     const audioPlayer = document.getElementById('audioPlayer');
     const display = document.getElementById('lyricsDisplay');
     const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
     const gearBtn = document.getElementById('gearBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const modalOverlay = document.getElementById('modalOverlay');
@@ -516,8 +567,7 @@
     const artistInput = document.getElementById('artistInput');
     const audioFileInput = document.getElementById('audioFileInput');
     const statusText = document.getElementById('statusText');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressFill = document.getElementById('progressFill');
+    const seekSlider = document.getElementById('seekSlider');
     const currTimeText = document.getElementById('currTime');
     const durTimeText = document.getElementById('durTime');
     const tapSyncBtn = document.getElementById('tapSyncBtn');
@@ -525,6 +575,10 @@
     let parsedLyrics = [];
     let lyricOffset = 0.0;
     let autoScrollEnabled = true;
+    let isUserSeeking = false;
+
+    const playSVG = 'M8 5v14l11-7z';
+    const pauseSVG = 'M6 19h4V5H6v14zm8-14v14h4V5h-4z';
 
     function formatTime(secs) {
       if (isNaN(secs) || !isFinite(secs)) return '0:00';
@@ -578,7 +632,7 @@
         lineEl.addEventListener('click', () => {
           audioPlayer.currentTime = Math.max(0, item.time + lyricOffset);
           audioPlayer.play();
-          playBtn.innerText = '⏸';
+          playIcon.setAttribute('d', pauseSVG);
           autoScrollEnabled = true;
         });
 
@@ -587,7 +641,7 @@
 
       const footer = document.createElement('div');
       footer.className = 'lyrics-footer';
-      footer.innerHTML = 'Made by <span style="color:#fff;">me</span>';
+      footer.innerHTML = 'MADE BY <span style="color:#fff;">CHINNU</span>';
       display.appendChild(footer);
     }
 
@@ -641,7 +695,7 @@
       }
     }
 
-    // --- TIMELINE TRACKER ---
+    // --- TIMELINE & SCRUBBER SYNC ---
     audioPlayer.addEventListener('timeupdate', () => {
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let activeIndex = -1;
@@ -703,9 +757,9 @@
         }
       });
 
-      if (audioPlayer.duration && !isNaN(audioPlayer.duration)) {
+      if (audioPlayer.duration && !isNaN(audioPlayer.duration) && !isUserSeeking) {
         const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressFill.style.width = `${pct}%`;
+        seekSlider.value = pct;
         currTimeText.innerText = formatTime(audioPlayer.currentTime);
         durTimeText.innerText = formatTime(audioPlayer.duration);
       }
@@ -715,19 +769,36 @@
       if (audioPlayer.paused) {
         if (audioPlayer.src) {
           audioPlayer.play();
-          playBtn.innerText = '⏸';
+          playIcon.setAttribute('d', pauseSVG);
         } else {
           modalOverlay.classList.add('open');
         }
       } else {
         audioPlayer.pause();
-        playBtn.innerText = '▶';
+        playIcon.setAttribute('d', playSVG);
       }
     });
 
     gearBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     searchBtn.addEventListener('click', fetchLyrics);
+
+    // --- SCRUBBER CONTROLS ---
+    seekSlider.addEventListener('input', () => {
+      isUserSeeking = true;
+      if (audioPlayer.duration) {
+        const targetTime = (seekSlider.value / 100) * audioPlayer.duration;
+        currTimeText.innerText = formatTime(targetTime);
+      }
+    });
+
+    seekSlider.addEventListener('change', () => {
+      if (audioPlayer.duration) {
+        audioPlayer.currentTime = (seekSlider.value / 100) * audioPlayer.duration;
+      }
+      isUserSeeking = false;
+      autoScrollEnabled = true;
+    });
 
     // --- LOCAL FILE LOADER ---
     audioFileInput.addEventListener('change', (e) => {
@@ -748,23 +819,15 @@
         document.getElementById('heroArtist').innerText = 'Local MP3';
 
         trackInput.value = cleanTitle;
-        playBtn.innerText = '▶';
+        playIcon.setAttribute('d', playSVG);
 
         audioPlayer.onloadedmetadata = () => {
           durTimeText.innerText = formatTime(audioPlayer.duration);
-          progressFill.style.width = '0%';
+          seekSlider.value = 0;
           currTimeText.innerText = '0:00';
           statusText.innerText = `Loaded local file! Tap Fetch Lyrics.`;
         };
       }
-    });
-
-    progressContainer.addEventListener('click', (e) => {
-      if (!audioPlayer.duration) return;
-      const rect = progressContainer.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const pct = clickX / rect.width;
-      audioPlayer.currentTime = pct * audioPlayer.duration;
     });
 
     // --- ONE-TAP AUTO SYNC ---
@@ -773,7 +836,6 @@
         const firstLyricTime = parsedLyrics[0].time;
         const actualPlaybackTime = audioPlayer.currentTime;
         
-        // Compute exact time difference
         lyricOffset = actualPlaybackTime - firstLyricTime;
 
         const sign = lyricOffset >= 0 ? '+' : '';
