@@ -423,11 +423,15 @@
     .modal-card {
       width: 100%;
       max-width: 520px;
+      max-height: 85vh;
       background: #1c1c1e;
       border-radius: 28px 28px 0 0;
       padding: 1.5rem;
       box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
       position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .modal-close {
@@ -448,10 +452,12 @@
       font-size: 1.2rem;
       font-weight: 700;
       margin-bottom: 1.2rem;
+      flex-shrink: 0;
     }
 
     .input-group {
       margin-bottom: 1rem;
+      flex-shrink: 0;
     }
 
     .input-group label {
@@ -484,6 +490,7 @@
       text-align: center;
       margin-bottom: 1rem;
       display: block;
+      flex-shrink: 0;
     }
 
     .btn-action {
@@ -497,6 +504,7 @@
       cursor: pointer;
       font-size: 1rem;
       margin-top: 0.5rem;
+      flex-shrink: 0;
     }
 
     .status-text {
@@ -505,6 +513,58 @@
       margin-top: 0.6rem;
       text-align: center;
       min-height: 1.2em;
+      flex-shrink: 0;
+    }
+
+    /* Results container for download links */
+    .results-list {
+      overflow-y: auto;
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      max-height: 220px;
+      scrollbar-width: thin;
+    }
+
+    .result-item {
+      background: rgba(255,255,255,0.06);
+      padding: 0.75rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .result-info {
+      overflow: hidden;
+      margin-right: 0.5rem;
+    }
+
+    .result-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .result-artist {
+      font-size: 0.75rem;
+      opacity: 0.6;
+    }
+
+    .download-link-btn {
+      background: #34c759;
+      color: #000000;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     @media (min-width: 768px) {
@@ -536,7 +596,7 @@
     </div>
 
     <div class="lyrics-panel" id="lyricsDisplay">
-      <div class="line">Tap ⚙️ below to load audio & fetch lyrics!</div>
+      <div class="line">Tap ⚙️ below to search, download, & play!</div>
     </div>
   </div>
 
@@ -558,7 +618,7 @@
         <div class="album-art" id="playerArt">🎵</div>
         <div class="track-text">
           <div class="track-title" id="displayTitle">No Track Loaded</div>
-          <div class="track-artist" id="displayArtist">Tap gear to load</div>
+          <div class="track-artist" id="displayArtist">Tap gear to search & load</div>
         </div>
       </div>
       <div class="controls">
@@ -585,31 +645,24 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
       <button class="modal-close" id="closeModalBtn">✕</button>
-      <div class="modal-title">Song & Lyrics Options</div>
+      <div class="modal-title">Search & Download Songs</div>
 
       <label class="file-btn" for="audioFileInput">
-        📁 Choose Local Audio File (.mp3, .m4a)
+        📁 Choose Downloaded MP3 From Phone
       </label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
       <div class="input-group">
-        <label>Song Title</label>
-        <input type="text" class="input-control" id="trackInput" placeholder="e.g. Timeless" value="" />
+        <label>Search Any Song Online</label>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" class="input-control" id="trackInput" placeholder="e.g. Timeless" value="" />
+          <button class="btn-action" id="searchBtn" style="margin-top:0; width: 110px;">Search</button>
+        </div>
       </div>
 
-      <div class="input-group">
-        <label>Artist Name (Optional)</label>
-        <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
-      </div>
+      <div class="status-text" id="statusText">Search to find direct download options below:</div>
 
-      <div class="input-group">
-        <label>Direct MP3 Link (Optional)</label>
-        <input type="text" class="input-control" id="customUrlInput" placeholder="https://..." value="" />
-      </div>
-
-      <button class="btn-action" id="searchBtn">Fetch Lyrics & Play</button>
-
-      <div class="status-text" id="statusText"></div>
+      <div class="results-list" id="resultsList"></div>
     </div>
   </div>
 
@@ -622,10 +675,9 @@
     const modalOverlay = document.getElementById('modalOverlay');
     const searchBtn = document.getElementById('searchBtn');
     const trackInput = document.getElementById('trackInput');
-    const artistInput = document.getElementById('artistInput');
-    const customUrlInput = document.getElementById('customUrlInput');
     const audioFileInput = document.getElementById('audioFileInput');
     const statusText = document.getElementById('statusText');
+    const resultsList = document.getElementById('resultsList');
     const seekSlider = document.getElementById('seekSlider');
     const currTimeText = document.getElementById('currTime');
     const durTimeText = document.getElementById('durTime');
@@ -641,13 +693,8 @@
     let isUserSeeking = false;
     let activeIndex = -1;
 
-    const publicDatabase = {
-      "timeless": "https://ia801503.us.archive.org/15/items/the-weeknd-timeless/The%20Weeknd%20-%20Timeless.mp3"
-    };
-
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-
     const expandSVG = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
     const compressSVG = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
 
@@ -757,56 +804,54 @@
       }
     }
 
-    async function fetchLyrics() {
-      const track = trackInput.value.trim();
-      const artist = artistInput.value.trim();
-      const customUrl = customUrlInput.value.trim();
+    // 1. Search Online & Show Download Buttons
+    async function searchSongs() {
+      const query = trackInput.value.trim();
+      if (!query) return;
 
-      if (!track) return;
-
-      // CRITICAL FOR MOBILE BRAVE: Instantly trigger play/pause in the same tap gesture context
-      audioPlayer.play().catch(e => console.log("Gesture token acquired"));
-      audioPlayer.pause();
-
-      statusText.innerText = "Loading audio track...";
-
-      let targetAudioUrl = customUrl || publicDatabase[track.toLowerCase().trim()] || "";
-
-      if (targetAudioUrl) {
-        document.getElementById('displayTitle').innerText = track;
-        document.getElementById('displayArtist').innerText = artist || "Stream";
-        document.getElementById('heroTitle').innerText = track;
-        document.getElementById('heroArtist').innerText = artist || "Stream";
-
-        audioPlayer.src = targetAudioUrl;
-        audioPlayer.load();
-
-        audioPlayer.oncanplay = () => {
-          audioPlayer.play().catch(() => {
-            statusText.innerText = "Tap play button to start audio.";
-          });
-        };
-
-        statusText.innerText = "Stream connected! Loading lyrics...";
-      } else {
-        statusText.innerText = "No MP3 URL found. Select local MP3 or enter custom link!";
-      }
+      statusText.innerText = "Searching songs...";
+      resultsList.innerHTML = '';
 
       try {
-        const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(track + ' ' + artist)}`);
-        const lrcData = await lrcResp.json();
+        const response = await fetch(`https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
 
+        if (data && data.success && data.data && data.data.results.length > 0) {
+          statusText.innerText = "Tap 'Download' to save MP3 to your phone:";
+          
+          data.data.results.forEach(song => {
+            const dlObj = song.downloadUrl ? (song.downloadUrl.find(d => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1]) : null;
+            if (!dlObj) return;
+
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            
+            item.innerHTML = `
+              <div class="result-info">
+                <div class="result-name">${song.name}</div>
+                <div class="result-artist">${song.primaryArtists}</div>
+              </div>
+              <a href="${dlObj.url}" download="${song.name}.mp3" class="download-link-btn" target="_blank">⬇ Download</a>
+            `;
+            resultsList.appendChild(item);
+          });
+        } else {
+          statusText.innerText = "No results found.";
+        }
+      } catch (e) {
+        statusText.innerText = "Search failed. Use local MP3 file instead!";
+      }
+
+      // Also fetch lyrics automatically from LRCLIB
+      try {
+        const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
+        const lrcData = await lrcResp.json();
         if (Array.isArray(lrcData) && lrcData[0]?.syncedLyrics) {
           parsedLyrics = parseLRC(lrcData[0].syncedLyrics);
           renderLyrics();
-          modalOverlay.classList.remove('open');
-          statusText.innerText = 'Ready!';
-        } else {
-          statusText.innerText = 'Audio connected, but no timed lyrics found.';
         }
       } catch (err) {
-        console.error(err);
-        statusText.innerText = 'Error loading lyrics.';
+        console.error("Lyrics error", err);
       }
     }
 
@@ -893,7 +938,7 @@
 
     gearBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-    searchBtn.addEventListener('click', fetchLyrics);
+    searchBtn.addEventListener('click', searchSongs);
     retrackBtn.addEventListener('click', reTrackToCurrentLine);
 
     seekSlider.addEventListener('input', () => {
@@ -912,7 +957,7 @@
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Metadata Extractor (100% Mobile Safe)
+    // Local ID3 Metadata Extractor when they upload the downloaded song
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -947,33 +992,29 @@
               playerArt.innerText = "🎵";
             }
 
-            applyTrackMeta(title, artist);
+            document.getElementById('displayTitle').innerText = title;
+            document.getElementById('displayArtist').innerText = artist;
+            document.getElementById('heroTitle').innerText = title;
+            document.getElementById('heroArtist').innerText = artist;
+
+            audioPlayer.onloadedmetadata = () => {
+              durTimeText.innerText = formatTime(audioPlayer.duration);
+              seekSlider.value = 0;
+              currTimeText.innerText = '0:00';
+              statusText.innerText = `Loaded "${title}" successfully!`;
+              audioPlayer.play();
+              modalOverlay.classList.remove('open');
+            };
           },
           onError: function(error) {
-            console.log("ID3 Error: ", error);
-            applyTrackMeta(title, artist);
+            document.getElementById('displayTitle').innerText = title;
+            document.getElementById('displayArtist').innerText = artist;
+            audioPlayer.play();
+            modalOverlay.classList.remove('open');
           }
         });
       }
     });
-
-    function applyTrackMeta(title, artist) {
-      document.getElementById('displayTitle').innerText = title;
-      document.getElementById('displayArtist').innerText = artist;
-      document.getElementById('heroTitle').innerText = title;
-      document.getElementById('heroArtist').innerText = artist;
-
-      trackInput.value = title;
-      artistInput.value = artist !== "Local MP3" ? artist : "";
-
-      audioPlayer.onloadedmetadata = () => {
-        durTimeText.innerText = formatTime(audioPlayer.duration);
-        seekSlider.value = 0;
-        currTimeText.innerText = '0:00';
-        statusText.innerText = `Auto-detected "${title}". Fetching lyrics...`;
-        fetchLyrics();
-      };
-    }
 
     function adjustOffset(val) {
       if (val === 0) lyricOffset = 0;
@@ -986,10 +1027,7 @@
     tapSyncBtn.addEventListener('click', () => {
       if (parsedLyrics.length > 0 && audioPlayer.currentTime > 0) {
         const firstLyricTime = parsedLyrics[0].time;
-        const actualPlaybackTime = audioPlayer.currentTime;
-        
-        lyricOffset = actualPlaybackTime - firstLyricTime;
-
+        lyricOffset = audioPlayer.currentTime - firstLyricTime;
         const sign = lyricOffset >= 0 ? '+' : '';
         document.getElementById('offsetVal').innerText = `${sign}${lyricOffset.toFixed(1)}s`;
       }
