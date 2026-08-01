@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro</title>
-  <!-- jsmediatags CDN for local MP3 ID3 extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+  <!-- YouTube IFrame Player API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -500,29 +501,21 @@
       margin-top: 0.5rem;
     }
 
-    .progress-bar-container {
-      width: 100%;
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 3px;
-      margin-top: 0.8rem;
-      overflow: hidden;
-      display: none;
-    }
-
-    .progress-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: #34c759;
-      transition: width 0.1s linear;
-    }
-
     .status-text {
       font-size: 0.8rem;
       color: #34c759;
       margin-top: 0.6rem;
       text-align: center;
       min-height: 1.2em;
+    }
+
+    /* Hidden YouTube Player Iframe Container */
+    #ytPlayerContainer {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
     }
 
     @media (min-width: 768px) {
@@ -598,7 +591,8 @@
     </div>
   </div>
 
-  <audio id="audioPlayer"></audio>
+  <audio id="localAudioPlayer"></audio>
+  <div id="ytPlayerContainer"><div id="ytPlayer"></div></div>
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
@@ -620,18 +614,14 @@
         <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
 
-      <button class="btn-action" id="searchBtn">Fetch Lyrics & Song</button>
-
-      <div class="progress-bar-container" id="progressContainer">
-        <div class="progress-bar-fill" id="progressBarFill"></div>
-      </div>
+      <button class="btn-action" id="searchBtn">Fetch Lyrics & Play</button>
 
       <div class="status-text" id="statusText"></div>
     </div>
   </div>
 
   <script>
-    const audioPlayer = document.getElementById('audioPlayer');
+    const localAudioPlayer = document.getElementById('localAudioPlayer');
     const display = document.getElementById('lyricsDisplay');
     const playBtn = document.getElementById('playBtn');
     const gearBtn = document.getElementById('gearBtn');
@@ -650,14 +640,15 @@
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const fsIcon = document.getElementById('fsIcon');
     const playerArt = document.getElementById('playerArt');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBarFill = document.getElementById('progressBarFill');
     
+    let ytPlayer = null;
+    let isUsingYouTube = false;
     let parsedLyrics = [];
     let lyricOffset = 0.0;
     let autoScrollEnabled = true;
     let isUserSeeking = false;
     let activeIndex = -1;
+    let timeInterval = null;
 
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
@@ -683,9 +674,44 @@
       }
     });
 
-    audioPlayer.addEventListener('play', () => { playBtn.innerHTML = pauseHTML; });
-    audioPlayer.addEventListener('pause', () => { playBtn.innerHTML = playHTML; });
-    audioPlayer.addEventListener('ended', () => { playBtn.innerHTML = playHTML; });
+    // Init YouTube IFrame Engine
+    window.onYouTubeIframeAPIReady = function() {
+      ytPlayer = new YT.Player('ytPlayer', {
+        height: '1',
+        width: '1',
+        playerVars: { 'autoplay': 0, 'controls': 0 },
+        events: {
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    };
+
+    function onPlayerStateChange(event) {
+      if (event.data == YT.PlayerState.PLAYING) {
+        playBtn.innerHTML = pauseHTML;
+        startSyncLoop();
+      } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
+        playBtn.innerHTML = playHTML;
+        stopSyncLoop();
+      }
+    }
+
+    localAudioPlayer.addEventListener('play', () => { playBtn.innerHTML = pauseHTML; startSyncLoop(); });
+    localAudioPlayer.addEventListener('pause', () => { playBtn.innerHTML = playHTML; stopSyncLoop(); });
+
+    function getCurrentTime() {
+      if (isUsingYouTube && ytPlayer && ytPlayer.getCurrentTime) {
+        return ytPlayer.getCurrentTime() || 0;
+      }
+      return localAudioPlayer.currentTime || 0;
+    }
+
+    function getDuration() {
+      if (isUsingYouTube && ytPlayer && ytPlayer.getDuration) {
+        return ytPlayer.getDuration() || 0;
+      }
+      return localAudioPlayer.duration || 0;
+    }
 
     function formatTime(secs) {
       if (isNaN(secs) || !isFinite(secs)) return '0:00';
@@ -737,8 +763,14 @@
         });
 
         lineEl.addEventListener('click', () => {
-          audioPlayer.currentTime = Math.max(0, item.time + lyricOffset);
-          audioPlayer.play();
+          const targetTime = Math.max(0, item.time + lyricOffset);
+          if (isUsingYouTube && ytPlayer) {
+            ytPlayer.seekTo(targetTime, true);
+            ytPlayer.playVideo();
+          } else {
+            localAudioPlayer.currentTime = targetTime;
+            localAudioPlayer.play();
+          }
           reTrackToCurrentLine();
         });
 
@@ -771,85 +803,39 @@
       }
     }
 
-    // Direct Browser Download with Cobalt Open API Fast Lookup
+    // Fetch Lyrics & Play online audio
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
 
       if (!track) return;
 
-      statusText.innerText = "Searching open API stream...";
-      progressContainer.style.display = "block";
-      progressBarFill.style.width = "0%";
-
+      statusText.innerText = "Finding track on YouTube...";
       const fullQuery = encodeURIComponent(track + ' ' + artist);
 
       try {
-        // 1. Fast Vercel lookup for Cobalt stream URL
         const infoResp = await fetch(`/api/getAudio?q=${fullQuery}`);
         const infoData = await infoResp.json();
 
-        if (!infoData || !infoData.audioUrl) {
-          throw new Error("Track stream URL not found");
-        }
+        if (infoData && infoData.videoId) {
+          isUsingYouTube = true;
+          localAudioPlayer.pause();
 
-        document.getElementById('displayTitle').innerText = track;
-        document.getElementById('displayArtist').innerText = artist || 'Online Stream';
-        document.getElementById('heroTitle').innerText = track;
-        document.getElementById('heroArtist').innerText = artist || 'Online Stream';
+          document.getElementById('displayTitle').innerText = infoData.title || track;
+          document.getElementById('displayArtist').innerText = infoData.artist || artist;
+          document.getElementById('heroTitle').innerText = infoData.title || track;
+          document.getElementById('heroArtist').innerText = infoData.artist || artist;
 
-        // 2. Direct browser chunked download into device memory
-        statusText.innerText = "Downloading song chunk...";
-        const audioResp = await fetch(infoData.audioUrl);
-
-        if (!audioResp.ok) throw new Error("Failed to download audio stream");
-
-        const contentLength = audioResp.headers.get('content-length');
-        const total = contentLength ? parseInt(contentLength, 10) : 0;
-        let loaded = 0;
-
-        const reader = audioResp.body.getReader();
-        const chunks = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          chunks.push(value);
-          loaded += value.length;
-
-          if (total > 0) {
-            const percent = Math.round((loaded / total) * 100);
-            progressBarFill.style.width = `${percent}%`;
-            statusText.innerText = `Downloading song: ${percent}%`;
-          } else {
-            statusText.innerText = `Downloading song: ${(loaded / (1024 * 1024)).toFixed(1)}MB`;
+          if (ytPlayer && ytPlayer.loadVideoById) {
+            ytPlayer.loadVideoById(infoData.videoId);
+            ytPlayer.playVideo();
           }
         }
-
-        const blob = new Blob(chunks, { type: 'audio/mpeg' });
-        const audioBlobUrl = URL.createObjectURL(blob);
-
-        audioPlayer.pause();
-        audioPlayer.src = audioBlobUrl;
-        audioPlayer.load();
-
-        statusText.innerText = "Song downloaded! Fetching lyrics...";
-
-        audioPlayer.onloadedmetadata = () => {
-          durTimeText.innerText = formatTime(audioPlayer.duration);
-          seekSlider.value = 0;
-          currTimeText.innerText = '0:00';
-          audioPlayer.play().catch(e => console.log("Tap play button to start audio"));
-        };
-
       } catch (e) {
-        console.error("Download Error:", e);
-        statusText.innerText = "Online download blocked. Use local MP3!";
-        progressContainer.style.display = "none";
+        console.error("YouTube lookup error:", e);
       }
 
-      // 3. Fetch synced lyrics from LRCLIB
+      // Fetch lyrics from LRCLIB
       const queries = [
         `${track} ${artist}`,
         `${track} ${artist} Romanized`,
@@ -884,21 +870,28 @@
           parsedLyrics = parseLRC(match.syncedLyrics);
           renderLyrics();
           modalOverlay.classList.remove('open');
-          progressContainer.style.display = "none";
           statusText.innerText = 'Ready!';
         } else {
-          statusText.innerText = 'Song loaded, but no timed lyrics found.';
-          progressContainer.style.display = "none";
+          statusText.innerText = 'Audio playing, but no timed lyrics found.';
         }
       } catch (err) {
         console.error(err);
         statusText.innerText = 'Error loading lyrics.';
-        progressContainer.style.display = "none";
       }
     }
 
-    audioPlayer.addEventListener('timeupdate', () => {
-      const currentTime = audioPlayer.currentTime - lyricOffset;
+    function startSyncLoop() {
+      stopSyncLoop();
+      timeInterval = setInterval(updateLyricsAndScrubber, 100);
+    }
+
+    function stopSyncLoop() {
+      if (timeInterval) clearInterval(timeInterval);
+    }
+
+    function updateLyricsAndScrubber() {
+      const currentTime = getCurrentTime() - lyricOffset;
+      const duration = getDuration();
       activeIndex = -1;
 
       for (let i = 0; i < parsedLyrics.length; i++) {
@@ -958,23 +951,32 @@
         }
       });
 
-      if (audioPlayer.duration && !isNaN(audioPlayer.duration) && !isUserSeeking) {
-        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+      if (duration && !isNaN(duration) && !isUserSeeking) {
+        const pct = (getCurrentTime() / duration) * 100;
         seekSlider.value = pct;
-        currTimeText.innerText = formatTime(audioPlayer.currentTime);
-        durTimeText.innerText = formatTime(audioPlayer.duration);
+        currTimeText.innerText = formatTime(getCurrentTime());
+        durTimeText.innerText = formatTime(duration);
       }
-    });
+    }
 
     playBtn.addEventListener('click', () => {
-      if (audioPlayer.paused) {
-        if (audioPlayer.src) {
-          audioPlayer.play();
+      if (isUsingYouTube && ytPlayer) {
+        const state = ytPlayer.getPlayerState();
+        if (state == YT.PlayerState.PLAYING) {
+          ytPlayer.pauseVideo();
         } else {
-          modalOverlay.classList.add('open');
+          ytPlayer.playVideo();
         }
       } else {
-        audioPlayer.pause();
+        if (localAudioPlayer.paused) {
+          if (localAudioPlayer.src) {
+            localAudioPlayer.play();
+          } else {
+            modalOverlay.classList.add('open');
+          }
+        } else {
+          localAudioPlayer.pause();
+        }
       }
     });
 
@@ -985,31 +987,41 @@
 
     seekSlider.addEventListener('input', () => {
       isUserSeeking = true;
-      if (audioPlayer.duration) {
-        const targetTime = (seekSlider.value / 100) * audioPlayer.duration;
+      const duration = getDuration();
+      if (duration) {
+        const targetTime = (seekSlider.value / 100) * duration;
         currTimeText.innerText = formatTime(targetTime);
       }
     });
 
     seekSlider.addEventListener('change', () => {
-      if (audioPlayer.duration) {
-        audioPlayer.currentTime = (seekSlider.value / 100) * audioPlayer.duration;
+      const duration = getDuration();
+      if (duration) {
+        const targetTime = (seekSlider.value / 100) * duration;
+        if (isUsingYouTube && ytPlayer) {
+          ytPlayer.seekTo(targetTime, true);
+        } else {
+          localAudioPlayer.currentTime = targetTime;
+        }
       }
       isUserSeeking = false;
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Metadata Extractor
+    // Local ID3 Extractor
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        audioPlayer.pause();
-        audioPlayer.removeAttribute('src');
-        audioPlayer.load();
+        isUsingYouTube = false;
+        if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+
+        localAudioPlayer.pause();
+        localAudioPlayer.removeAttribute('src');
+        localAudioPlayer.load();
 
         const fileUrl = URL.createObjectURL(file);
-        audioPlayer.src = fileUrl;
-        audioPlayer.load();
+        localAudioPlayer.src = fileUrl;
+        localAudioPlayer.load();
 
         let title = file.name.replace(/\.[^/.]+$/, "");
         let artist = "Local MP3";
@@ -1053,8 +1065,8 @@
       trackInput.value = title;
       artistInput.value = artist !== "Local MP3" ? artist : "";
 
-      audioPlayer.onloadedmetadata = () => {
-        durTimeText.innerText = formatTime(audioPlayer.duration);
+      localAudioPlayer.onloadedmetadata = () => {
+        durTimeText.innerText = formatTime(localAudioPlayer.duration);
         seekSlider.value = 0;
         currTimeText.innerText = '0:00';
         statusText.innerText = `Auto-detected "${title}". Fetching lyrics...`;
@@ -1062,7 +1074,7 @@
       };
     }
 
-    // Live Sync Button Logic
+    // Live Sync Controls
     function adjustOffset(val) {
       if (val === 0) lyricOffset = 0;
       else lyricOffset += val;
@@ -1072,11 +1084,10 @@
     }
 
     tapSyncBtn.addEventListener('click', () => {
-      if (parsedLyrics.length > 0 && audioPlayer.currentTime > 0) {
+      const curr = getCurrentTime();
+      if (parsedLyrics.length > 0 && curr > 0) {
         const firstLyricTime = parsedLyrics[0].time;
-        const actualPlaybackTime = audioPlayer.currentTime;
-        
-        lyricOffset = actualPlaybackTime - firstLyricTime;
+        lyricOffset = curr - firstLyricTime;
 
         const sign = lyricOffset >= 0 ? '+' : '';
         document.getElementById('offsetVal').innerText = `${sign}${lyricOffset.toFixed(1)}s`;
