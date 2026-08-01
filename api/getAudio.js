@@ -1,18 +1,15 @@
-exports.handler = async function (event) {
-  const query = event.queryStringParameters ? event.queryStringParameters.q : null;
+export default async function handler(req, res) {
+  const query = req.query.q;
+
+  // Enable CORS so your app can call this API
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
 
   if (!query) {
-    return {
-      statusCode: 400,
-      headers: { 
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ error: "Missing query parameter" })
-    };
+    return res.status(400).json({ error: "Missing query parameter" });
   }
 
-  // List of public Invidious instances to loop through for reliability
+  // Public Invidious instances failover loop
   const instances = [
     "https://inv.projectsegfau.lt",
     "https://invidious.drgns.space",
@@ -34,7 +31,6 @@ exports.handler = async function (event) {
       const title = results[0].title;
       const author = results[0].author;
 
-      // Get video details for direct audio stream URL
       const videoUrl = `${instance}/api/v1/videos/${videoId}`;
       const videoResp = await fetch(videoUrl);
 
@@ -43,33 +39,22 @@ exports.handler = async function (event) {
       const videoData = await videoResp.json();
       const adaptiveFormats = videoData.adaptiveFormats || [];
 
-      // Find the best quality audio stream
+      // Find the highest quality audio stream
       const audioStream = adaptiveFormats
         .filter(f => f.type && f.type.startsWith("audio/"))
         .sort((a, b) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0))[0];
 
       if (audioStream && audioStream.url) {
-        return {
-          statusCode: 200,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            title: title,
-            artist: author,
-            audioUrl: audioStream.url
-          })
-        };
+        return res.status(200).json({
+          title: title,
+          artist: author,
+          audioUrl: audioStream.url
+        });
       }
     } catch (err) {
       console.log(`Failed on instance ${instance}:`, err.message);
     }
   }
 
-  return {
-    statusCode: 502,
-    headers: { "Access-Control-Allow-Origin": "*" },
-    body: JSON.stringify({ error: "All stream proxies are currently busy. Try local MP3!" })
-  };
-};
+  return res.status(502).json({ error: "All stream proxies are currently busy. Try local MP3!" });
+}
