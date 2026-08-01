@@ -4,12 +4,15 @@ exports.handler = async function (event) {
   if (!query) {
     return {
       statusCode: 400,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ error: "Missing query parameter" })
     };
   }
 
   try {
     const targetUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&limit=1`;
+    
+    // Uses global native fetch with HTTPS fallback
     const response = await fetch(targetUrl);
     const data = await response.json();
 
@@ -37,11 +40,13 @@ exports.handler = async function (event) {
 
     return {
       statusCode: 404,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ error: "Song stream not found" })
     };
   } catch (error) {
     return {
       statusCode: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ error: "Server error: " + error.message })
     };
   }
