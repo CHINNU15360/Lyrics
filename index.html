@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro</title>
-  <!-- jsmediatags CDN for local MP3 ID3 extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     * {
@@ -603,6 +602,11 @@
         <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
 
+      <div class="input-group">
+        <label>Direct MP3 Link (GitHub Raw / Archive.org)</label>
+        <input type="text" class="input-control" id="customUrlInput" placeholder="https://raw.githubusercontent.com/.../song.mp3" value="" />
+      </div>
+
       <button class="btn-action" id="searchBtn">Fetch Lyrics & Play</button>
 
       <div class="status-text" id="statusText"></div>
@@ -619,6 +623,7 @@
     const searchBtn = document.getElementById('searchBtn');
     const trackInput = document.getElementById('trackInput');
     const artistInput = document.getElementById('artistInput');
+    const customUrlInput = document.getElementById('customUrlInput');
     const audioFileInput = document.getElementById('audioFileInput');
     const statusText = document.getElementById('statusText');
     const seekSlider = document.getElementById('seekSlider');
@@ -635,6 +640,12 @@
     let autoScrollEnabled = true;
     let isUserSeeking = false;
     let activeIndex = -1;
+
+    // Public GitHub/Archive fallback database (Examples of direct unblocked raw links)
+    const publicDatabase = {
+      "timeless": "https://ia801503.us.archive.org/15/items/the-weeknd-timeless/The%20Weeknd%20-%20Timeless.mp3",
+      "starboy": "https://raw.githubusercontent.com/rafaelreis-hotmart/Audio-Sample/main/sample.mp3"
+    };
 
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
@@ -748,51 +759,45 @@
       }
     }
 
-    // Direct listenfree.in integration (no backend proxy)
+    // Direct MP3 Execution via Custom URL, Public Raw Link, or Fallback
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
+      const customUrl = customUrlInput.value.trim();
 
       if (!track) return;
-      statusText.innerText = "Connecting to listenfree.in...";
+      statusText.innerText = "Loading audio track...";
 
-      // 1. Fetch Audio from listenfree.in
-      try {
-        const searchUrl = `https://listenfree.in/api/search?q=${encodeURIComponent(track + ' ' + artist)}`;
-        const response = await fetch(searchUrl);
-        const data = await response.json();
+      let targetAudioUrl = "";
 
-        // Check if API returns a direct stream link in data.url or similar
-        if (data && data.url) {
-          document.getElementById('displayTitle').innerText = track;
-          document.getElementById('displayArtist').innerText = artist;
-          document.getElementById('heroTitle').innerText = track;
-          document.getElementById('heroArtist').innerText = artist;
-
-          audioPlayer.src = data.url;
-          audioPlayer.load();
-          audioPlayer.play().catch(() => {
-            statusText.innerText = "Tap Play to start audio.";
-          });
-          statusText.innerText = "Stream connected! Loading lyrics...";
-        } else if (data && data[0] && data[0].url) {
-          // Fallback array structure check
-          document.getElementById('displayTitle').innerText = track;
-          document.getElementById('displayArtist').innerText = artist;
-
-          audioPlayer.src = data[0].url;
-          audioPlayer.load();
-          audioPlayer.play().catch(() => {});
-          statusText.innerText = "Stream connected! Loading lyrics...";
-        } else {
-            throw new Error("Invalid URL structure from listenfree");
+      // 1. Priority A: User provided custom GitHub/Archive MP3 link
+      if (customUrl) {
+        targetAudioUrl = customUrl;
+      } else {
+        // Priority B: Check public raw database lookup
+        const cleanKey = track.toLowerCase().trim();
+        if (publicDatabase[cleanKey]) {
+          targetAudioUrl = publicDatabase[cleanKey];
         }
-      } catch (e) {
-        console.error("Audio error:", e);
-        statusText.innerText = "Listenfree blocked the request. Try local MP3!";
       }
 
-      // 2. Fetch Lyrics from LRCLIB
+      if (targetAudioUrl) {
+        document.getElementById('displayTitle').innerText = track;
+        document.getElementById('displayArtist').innerText = artist || "Hosted Stream";
+        document.getElementById('heroTitle').innerText = track;
+        document.getElementById('heroArtist').innerText = artist || "Hosted Stream";
+
+        audioPlayer.src = targetAudioUrl;
+        audioPlayer.load();
+        audioPlayer.play().catch(() => {
+          statusText.innerText = "Tap Play button below to start playback.";
+        });
+        statusText.innerText = "Direct stream connected! Loading lyrics...";
+      } else {
+        statusText.innerText = "No direct MP3 URL entered. Use custom link or local MP3!";
+      }
+
+      // 2. Fetch Synced Lyrics from LRCLIB
       try {
         const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(track + ' ' + artist)}`);
         const lrcData = await lrcResp.json();
@@ -803,10 +808,10 @@
           modalOverlay.classList.remove('open');
           statusText.innerText = 'Ready!';
         } else {
-            statusText.innerText = 'Audio connected, but no timed lyrics found.';
+          statusText.innerText = 'Audio connected, but no timed lyrics found.';
         }
       } catch (err) {
-        console.error("Lyrics error:", err);
+        console.error(err);
         statusText.innerText = 'Error loading lyrics.';
       }
     }
