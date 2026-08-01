@@ -493,7 +493,7 @@
       </div>
       <div class="controls">
         <button class="btn-icon btn-play" id="playBtn" aria-label="Play/Pause">
-          <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </button>
         <button class="btn-icon btn-gear" id="gearBtn" aria-label="Settings">
           <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
@@ -542,7 +542,6 @@
     const audioPlayer = document.getElementById('audioPlayer');
     const display = document.getElementById('lyricsDisplay');
     const playBtn = document.getElementById('playBtn');
-    const playIcon = document.getElementById('playIcon');
     const gearBtn = document.getElementById('gearBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const modalOverlay = document.getElementById('modalOverlay');
@@ -561,11 +560,21 @@
     let autoScrollEnabled = true;
     let isUserSeeking = false;
 
-    const playSVG = 'M8 5v14l11-7z';
-    const pauseSVG = 'M6 19h4V5H6v14zm8-14v14h4V5h-4z';
+    const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+    const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 
-    audioPlayer.onplay = () => playIcon.setAttribute('d', pauseSVG);
-    audioPlayer.onpause = () => playIcon.setAttribute('d', playSVG);
+    // --- RELIABLE INNERHTML TOGGLE ON AUDIO EVENTS ---
+    audioPlayer.addEventListener('play', () => {
+      playBtn.innerHTML = pauseHTML;
+    });
+
+    audioPlayer.addEventListener('pause', () => {
+      playBtn.innerHTML = playHTML;
+    });
+
+    audioPlayer.addEventListener('ended', () => {
+      playBtn.innerHTML = playHTML;
+    });
 
     function formatTime(secs) {
       if (isNaN(secs) || !isFinite(secs)) return '0:00';
