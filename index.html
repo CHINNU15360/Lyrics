@@ -324,9 +324,13 @@
       background: rgba(0,0,0,0.65);
       backdrop-filter: blur(12px);
       z-index: 1000;
-      display: flex;
+      display: none;
       align-items: flex-end;
       justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
     }
 
     .modal-card {
@@ -470,7 +474,7 @@
 
   <audio id="audioPlayer"></audio>
 
-  <div class="modal-overlay" id="modalOverlay">
+  <div class="modal-overlay open" id="modalOverlay">
     <div class="modal-card">
       <button class="modal-close" id="closeModalBtn">✕</button>
       <div class="modal-title">Song & Lyrics Options</div>
