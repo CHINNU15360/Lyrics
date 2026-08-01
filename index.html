@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-  <!-- YouTube IFrame Player API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -509,15 +507,6 @@
       min-height: 1.2em;
     }
 
-    /* Hidden YouTube Player Iframe Container */
-    #ytPlayerContainer {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-
     @media (min-width: 768px) {
       .hero-panel { display: flex; }
       .dev-badge { top: 24px; }
@@ -591,8 +580,7 @@
     </div>
   </div>
 
-  <audio id="localAudioPlayer"></audio>
-  <div id="ytPlayerContainer"><div id="ytPlayer"></div></div>
+  <audio id="audioPlayer"></audio>
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
@@ -621,7 +609,7 @@
   </div>
 
   <script>
-    const localAudioPlayer = document.getElementById('localAudioPlayer');
+    const audioPlayer = document.getElementById('audioPlayer');
     const display = document.getElementById('lyricsDisplay');
     const playBtn = document.getElementById('playBtn');
     const gearBtn = document.getElementById('gearBtn');
@@ -641,14 +629,11 @@
     const fsIcon = document.getElementById('fsIcon');
     const playerArt = document.getElementById('playerArt');
     
-    let ytPlayer = null;
-    let isUsingYouTube = false;
     let parsedLyrics = [];
     let lyricOffset = 0.0;
     let autoScrollEnabled = true;
     let isUserSeeking = false;
     let activeIndex = -1;
-    let timeInterval = null;
 
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
@@ -674,44 +659,9 @@
       }
     });
 
-    // Init YouTube IFrame Engine
-    window.onYouTubeIframeAPIReady = function() {
-      ytPlayer = new YT.Player('ytPlayer', {
-        height: '1',
-        width: '1',
-        playerVars: { 'autoplay': 0, 'controls': 0 },
-        events: {
-          'onStateChange': onPlayerStateChange
-        }
-      });
-    };
-
-    function onPlayerStateChange(event) {
-      if (event.data == YT.PlayerState.PLAYING) {
-        playBtn.innerHTML = pauseHTML;
-        startSyncLoop();
-      } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
-        playBtn.innerHTML = playHTML;
-        stopSyncLoop();
-      }
-    }
-
-    localAudioPlayer.addEventListener('play', () => { playBtn.innerHTML = pauseHTML; startSyncLoop(); });
-    localAudioPlayer.addEventListener('pause', () => { playBtn.innerHTML = playHTML; stopSyncLoop(); });
-
-    function getCurrentTime() {
-      if (isUsingYouTube && ytPlayer && ytPlayer.getCurrentTime) {
-        return ytPlayer.getCurrentTime() || 0;
-      }
-      return localAudioPlayer.currentTime || 0;
-    }
-
-    function getDuration() {
-      if (isUsingYouTube && ytPlayer && ytPlayer.getDuration) {
-        return ytPlayer.getDuration() || 0;
-      }
-      return localAudioPlayer.duration || 0;
-    }
+    audioPlayer.addEventListener('play', () => { playBtn.innerHTML = pauseHTML; });
+    audioPlayer.addEventListener('pause', () => { playBtn.innerHTML = playHTML; });
+    audioPlayer.addEventListener('ended', () => { playBtn.innerHTML = playHTML; });
 
     function formatTime(secs) {
       if (isNaN(secs) || !isFinite(secs)) return '0:00';
@@ -763,14 +713,8 @@
         });
 
         lineEl.addEventListener('click', () => {
-          const targetTime = Math.max(0, item.time + lyricOffset);
-          if (isUsingYouTube && ytPlayer) {
-            ytPlayer.seekTo(targetTime, true);
-            ytPlayer.playVideo();
-          } else {
-            localAudioPlayer.currentTime = targetTime;
-            localAudioPlayer.play();
-          }
+          audioPlayer.currentTime = Math.max(0, item.time + lyricOffset);
+          audioPlayer.play();
           reTrackToCurrentLine();
         });
 
@@ -803,39 +747,46 @@
       }
     }
 
-    // Fetch Lyrics & Play online audio
+    // Direct stream link execution
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
 
       if (!track) return;
 
-      statusText.innerText = "Finding track on YouTube...";
+      statusText.innerText = "Finding direct audio stream...";
       const fullQuery = encodeURIComponent(track + ' ' + artist);
+
+      // Trick the browser into unlocking audio playback by attempting an empty play immediately upon user click
+      audioPlayer.play().catch(e => console.log("Init block"));
+      audioPlayer.pause();
 
       try {
         const infoResp = await fetch(`/api/getAudio?q=${fullQuery}`);
         const infoData = await infoResp.json();
 
-        if (infoData && infoData.videoId) {
-          isUsingYouTube = true;
-          localAudioPlayer.pause();
-
+        if (infoData && infoData.audioUrl) {
           document.getElementById('displayTitle').innerText = infoData.title || track;
           document.getElementById('displayArtist').innerText = infoData.artist || artist;
           document.getElementById('heroTitle').innerText = infoData.title || track;
           document.getElementById('heroArtist').innerText = infoData.artist || artist;
 
-          if (ytPlayer && ytPlayer.loadVideoById) {
-            ytPlayer.loadVideoById(infoData.videoId);
-            ytPlayer.playVideo();
-          }
+          audioPlayer.src = infoData.audioUrl;
+          audioPlayer.load();
+          
+          audioPlayer.play().catch(e => {
+            statusText.innerText = "Tap the play button below to start audio.";
+          });
+          
+          statusText.innerText = "Stream connected! Loading lyrics...";
+        } else {
+          throw new Error("No URL");
         }
       } catch (e) {
-        console.error("YouTube lookup error:", e);
+        statusText.innerText = "Online track blocked. Try a different track or local MP3!";
       }
 
-      // Fetch lyrics from LRCLIB
+      // Fetch synced lyrics from LRCLIB
       const queries = [
         `${track} ${artist}`,
         `${track} ${artist} Romanized`,
@@ -880,18 +831,8 @@
       }
     }
 
-    function startSyncLoop() {
-      stopSyncLoop();
-      timeInterval = setInterval(updateLyricsAndScrubber, 100);
-    }
-
-    function stopSyncLoop() {
-      if (timeInterval) clearInterval(timeInterval);
-    }
-
-    function updateLyricsAndScrubber() {
-      const currentTime = getCurrentTime() - lyricOffset;
-      const duration = getDuration();
+    audioPlayer.addEventListener('timeupdate', () => {
+      const currentTime = audioPlayer.currentTime - lyricOffset;
       activeIndex = -1;
 
       for (let i = 0; i < parsedLyrics.length; i++) {
@@ -951,32 +892,23 @@
         }
       });
 
-      if (duration && !isNaN(duration) && !isUserSeeking) {
-        const pct = (getCurrentTime() / duration) * 100;
+      if (audioPlayer.duration && !isNaN(audioPlayer.duration) && !isUserSeeking) {
+        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         seekSlider.value = pct;
-        currTimeText.innerText = formatTime(getCurrentTime());
-        durTimeText.innerText = formatTime(duration);
+        currTimeText.innerText = formatTime(audioPlayer.currentTime);
+        durTimeText.innerText = formatTime(audioPlayer.duration);
       }
-    }
+    });
 
     playBtn.addEventListener('click', () => {
-      if (isUsingYouTube && ytPlayer) {
-        const state = ytPlayer.getPlayerState();
-        if (state == YT.PlayerState.PLAYING) {
-          ytPlayer.pauseVideo();
+      if (audioPlayer.paused) {
+        if (audioPlayer.src) {
+          audioPlayer.play();
         } else {
-          ytPlayer.playVideo();
+          modalOverlay.classList.add('open');
         }
       } else {
-        if (localAudioPlayer.paused) {
-          if (localAudioPlayer.src) {
-            localAudioPlayer.play();
-          } else {
-            modalOverlay.classList.add('open');
-          }
-        } else {
-          localAudioPlayer.pause();
-        }
+        audioPlayer.pause();
       }
     });
 
@@ -987,41 +919,31 @@
 
     seekSlider.addEventListener('input', () => {
       isUserSeeking = true;
-      const duration = getDuration();
-      if (duration) {
-        const targetTime = (seekSlider.value / 100) * duration;
+      if (audioPlayer.duration) {
+        const targetTime = (seekSlider.value / 100) * audioPlayer.duration;
         currTimeText.innerText = formatTime(targetTime);
       }
     });
 
     seekSlider.addEventListener('change', () => {
-      const duration = getDuration();
-      if (duration) {
-        const targetTime = (seekSlider.value / 100) * duration;
-        if (isUsingYouTube && ytPlayer) {
-          ytPlayer.seekTo(targetTime, true);
-        } else {
-          localAudioPlayer.currentTime = targetTime;
-        }
+      if (audioPlayer.duration) {
+        audioPlayer.currentTime = (seekSlider.value / 100) * audioPlayer.duration;
       }
       isUserSeeking = false;
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Extractor
+    // Local ID3 Metadata Extractor
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        isUsingYouTube = false;
-        if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
-
-        localAudioPlayer.pause();
-        localAudioPlayer.removeAttribute('src');
-        localAudioPlayer.load();
+        audioPlayer.pause();
+        audioPlayer.removeAttribute('src');
+        audioPlayer.load();
 
         const fileUrl = URL.createObjectURL(file);
-        localAudioPlayer.src = fileUrl;
-        localAudioPlayer.load();
+        audioPlayer.src = fileUrl;
+        audioPlayer.load();
 
         let title = file.name.replace(/\.[^/.]+$/, "");
         let artist = "Local MP3";
@@ -1065,8 +987,8 @@
       trackInput.value = title;
       artistInput.value = artist !== "Local MP3" ? artist : "";
 
-      localAudioPlayer.onloadedmetadata = () => {
-        durTimeText.innerText = formatTime(localAudioPlayer.duration);
+      audioPlayer.onloadedmetadata = () => {
+        durTimeText.innerText = formatTime(audioPlayer.duration);
         seekSlider.value = 0;
         currTimeText.innerText = '0:00';
         statusText.innerText = `Auto-detected "${title}". Fetching lyrics...`;
@@ -1074,7 +996,7 @@
       };
     }
 
-    // Live Sync Controls
+    // Live Sync Button Logic
     function adjustOffset(val) {
       if (val === 0) lyricOffset = 0;
       else lyricOffset += val;
@@ -1084,10 +1006,11 @@
     }
 
     tapSyncBtn.addEventListener('click', () => {
-      const curr = getCurrentTime();
-      if (parsedLyrics.length > 0 && curr > 0) {
+      if (parsedLyrics.length > 0 && audioPlayer.currentTime > 0) {
         const firstLyricTime = parsedLyrics[0].time;
-        lyricOffset = curr - firstLyricTime;
+        const actualPlaybackTime = audioPlayer.currentTime;
+        
+        lyricOffset = actualPlaybackTime - firstLyricTime;
 
         const sign = lyricOffset >= 0 ? '+' : '';
         document.getElementById('offsetVal').innerText = `${sign}${lyricOffset.toFixed(1)}s`;
