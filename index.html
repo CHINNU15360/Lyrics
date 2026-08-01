@@ -32,7 +32,6 @@
       background: radial-gradient(circle, #4a154b 0%, #111111 80%);
       filter: blur(60px);
       z-index: 1;
-      transition: background 1.5s ease;
     }
 
     .app-container {
@@ -62,7 +61,6 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       pointer-events: none;
-      white-space: nowrap;
       text-transform: uppercase;
     }
 
@@ -83,7 +81,6 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
 
     .fullscreen-btn svg {
@@ -343,7 +340,6 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
     }
 
     .modal-close {
@@ -422,38 +418,6 @@
       text-align: center;
       min-height: 1.2em;
     }
-
-    .offset-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 1rem;
-      background: rgba(255,255,255,0.06);
-      padding: 0.6rem 0.8rem;
-      border-radius: 12px;
-    }
-
-    .offset-label {
-      font-size: 0.8rem;
-      opacity: 0.8;
-      font-weight: 600;
-    }
-
-    .offset-buttons {
-      display: flex;
-      gap: 0.4rem;
-    }
-
-    .offset-btn {
-      background: rgba(255,255,255,0.12);
-      border: none;
-      color: #ffffff;
-      padding: 0.35rem 0.6rem;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -490,7 +454,7 @@
           <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </button>
         <button class="btn-icon btn-gear" id="gearBtn" aria-label="Settings">
-          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c-.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
         </button>
       </div>
     </div>
@@ -512,7 +476,7 @@
       <div class="modal-title">Song & Lyrics Options</div>
 
       <label class="file-btn" for="audioFileInput">
-        📁 Choose Downloaded MP3 File (.mp3, .m4a)
+        📁 Choose Local Audio File (.mp3, .m4a)
       </label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
@@ -527,15 +491,6 @@
       </div>
 
       <button class="btn-action" id="searchPlayBtn">Search & Play Song</button>
-
-      <div class="offset-container">
-        <span class="offset-label">Sync Timing Offset: <span id="offsetVal" style="color:#34c759;">0.0s</span></span>
-        <div class="offset-buttons">
-          <button class="offset-btn" onclick="adjustOffset(-0.5)">-0.5s</button>
-          <button class="offset-btn" onclick="adjustOffset(0.0)">0.0s</button>
-          <button class="offset-btn" onclick="adjustOffset(0.5)">+0.5s</button>
-        </div>
-      </div>
 
       <div class="status-text" id="statusText">Ready. Upload MP3 and enter title/artist to load lyrics.</div>
     </div>
@@ -560,7 +515,6 @@
     const playerArt = document.getElementById('playerArt');
     
     let parsedLyrics = [];
-    let lyricOffset = 0.0;
     let autoScrollEnabled = true;
     let isUserSeeking = false;
     let activeIndex = -1;
@@ -624,7 +578,7 @@
         });
 
         lineEl.addEventListener('click', () => {
-          audioPlayer.currentTime = Math.max(0, item.time + lyricOffset);
+          audioPlayer.currentTime = Math.max(0, item.time);
           audioPlayer.play();
           reTrackToCurrentLine();
         });
@@ -658,7 +612,6 @@
       }
     }
 
-    // File input handler for local MP3
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -705,11 +658,10 @@
           }
         });
 
-        statusText.innerText = "File loaded successfully. Click 'Search & Play Song' to fetch lyrics.";
+        statusText.innerText = "File loaded. Click 'Search & Play Song' to fetch lyrics.";
       }
     });
 
-    // Search and fetch lyrics from LRCLIB using exact track and artist fields
     searchPlayBtn.addEventListener('click', async () => {
       const title = songTitleInput.value.trim();
       const artist = artistNameInput.value.trim();
@@ -756,7 +708,7 @@
     });
 
     audioPlayer.addEventListener('timeupdate', () => {
-      const currentTime = audioPlayer.currentTime - lyricOffset;
+      const currentTime = audioPlayer.currentTime;
       activeIndex = -1;
 
       for (let i = 0; i < parsedLyrics.length; i++) {
@@ -855,11 +807,6 @@
       isUserSeeking = false;
       reTrackToCurrentLine();
     });
-
-    function adjustOffset(val) {
-      lyricOffset = val;
-      document.getElementById('offsetVal').innerText = `${lyricOffset >= 0 ? '+' : ''}${lyricOffset.toFixed(1)}s`;
-    }
 
     function handleManualScroll() {
       autoScrollEnabled = false;
