@@ -726,17 +726,20 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
+    // Flexible LRC parser that catches all valid timestamp styles
     function parseLRC(lrcText) {
+      if (!lrcText) return [];
       const lines = lrcText.split('\n');
       const result = [];
-      const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+      const timeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/;
 
       for (let line of lines) {
         const match = timeRegex.exec(line);
         if (match) {
           const minutes = parseInt(match[1], 10);
           const seconds = parseInt(match[2], 10);
-          const millis = parseInt(match[3].padEnd(3, '0'), 10);
+          const millisStr = match[3] ? match[3].padEnd(3, '0') : '000';
+          const millis = parseInt(millisStr, 10);
           const time = minutes * 60 + seconds + millis / 1000;
           const text = line.replace(timeRegex, '').trim();
 
@@ -803,7 +806,7 @@
       }
     }
 
-    // Automatically fetch lyrics from LRCLIB using file tags or clean file name
+    // Robust search loop that iterates through results until valid parsed lyrics are found
     async function fetchAutoLyrics(title, artist) {
       statusText.innerText = `Searching synced lyrics for "${title}"...`;
       try {
@@ -811,21 +814,28 @@
         const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
         const lrcData = await lrcResp.json();
 
-        if (Array.isArray(lrcData) && lrcData.length > 0 && lrcData[0]?.syncedLyrics) {
-          parsedLyrics = parseLRC(lrcData[0].syncedLyrics);
-          renderLyrics();
-          statusText.innerText = `Lyrics loaded successfully!`;
-        } else {
-          statusText.innerText = `Audio loaded, but no synced lyrics found.`;
-          display.innerHTML = '<div class="line">No timed lyrics found for this track.</div>';
+        if (Array.isArray(lrcData) && lrcData.length > 0) {
+          for (let item of lrcData) {
+            if (item.syncedLyrics) {
+              const parsed = parseLRC(item.syncedLyrics);
+              if (parsed.length > 0) {
+                parsedLyrics = parsed;
+                renderLyrics();
+                statusText.innerText = `Lyrics loaded successfully!`;
+                return;
+              }
+            }
+          }
         }
+        statusText.innerText = `Audio loaded, but no timed lyrics found.`;
+        display.innerHTML = '<div class="line">No timed lyrics found for this track.</div>';
       } catch (err) {
         console.error("Auto lyrics error", err);
         statusText.innerText = 'Error fetching lyrics.';
+        display.innerHTML = '<div class="line">Error loading lyrics.</div>';
       }
     }
 
-    // Search online to download songs
     async function searchSongs() {
       const query = trackInput.value.trim();
       if (!query) return;
@@ -966,7 +976,6 @@
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Metadata Extractor & Auto Lyric Trigger
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -1019,7 +1028,6 @@
               modalOverlay.classList.remove('open');
             };
 
-            // Automatically trigger lyric fetch
             fetchAutoLyrics(cleanTitle, artist);
           },
           onError: function(error) {
