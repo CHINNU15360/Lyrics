@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro</title>
+  <!-- jsmediatags CDN for local MP3 ID3 extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     * {
@@ -770,7 +771,7 @@
       }
     }
 
-    // Direct Song Chunk Downloader with Live Progress Bar
+    // Direct Browser Download with Fast Vercel Lookup
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
@@ -783,34 +784,34 @@
 
       const fullQuery = encodeURIComponent(track + ' ' + artist);
 
-      // 1. Fetch metadata info
       try {
-        const infoResp = await fetch(`/api/getAudio?q=${fullQuery}&mode=info`);
+        // 1. Quick Vercel lookup for direct stream URL
+        const infoResp = await fetch(`/api/getAudio?q=${fullQuery}`);
         const infoData = await infoResp.json();
 
-        if (infoData && infoData.title) {
-          document.getElementById('displayTitle').innerText = infoData.title;
-          document.getElementById('displayArtist').innerText = infoData.artist;
-          document.getElementById('heroTitle').innerText = infoData.title;
-          document.getElementById('heroArtist').innerText = infoData.artist;
+        if (!infoData || !infoData.audioUrl) {
+          throw new Error("Track stream URL not found");
         }
-      } catch (e) {
-        document.getElementById('displayTitle').innerText = track;
-        document.getElementById('displayArtist').innerText = artist || 'Online Stream';
-      }
 
-      // 2. Download audio stream directly into a local Blob URL
-      try {
+        const cleanTitle = infoData.title || track;
+        const cleanArtist = infoData.artist || artist;
+
+        document.getElementById('displayTitle').innerText = cleanTitle;
+        document.getElementById('displayArtist').innerText = cleanArtist;
+        document.getElementById('heroTitle').innerText = cleanTitle;
+        document.getElementById('heroArtist').innerText = cleanArtist;
+
+        // 2. Direct browser chunked download into device memory
         statusText.innerText = "Downloading song to device memory...";
-        const response = await fetch(`/api/getAudio?q=${fullQuery}`);
+        const audioResp = await fetch(infoData.audioUrl);
 
-        if (!response.ok) throw new Error("Stream download failed");
+        if (!audioResp.ok) throw new Error("Failed to download audio stream");
 
-        const contentLength = response.headers.get('content-length');
+        const contentLength = audioResp.headers.get('content-length');
         const total = contentLength ? parseInt(contentLength, 10) : 0;
         let loaded = 0;
 
-        const reader = response.body.getReader();
+        const reader = audioResp.body.getReader();
         const chunks = [];
 
         while (true) {
@@ -836,18 +837,18 @@
         audioPlayer.src = audioBlobUrl;
         audioPlayer.load();
 
-        statusText.innerText = "Song downloaded! Starting playback...";
-        
+        statusText.innerText = "Song ready! Loading lyrics...";
+
         audioPlayer.onloadedmetadata = () => {
           durTimeText.innerText = formatTime(audioPlayer.duration);
           seekSlider.value = 0;
           currTimeText.innerText = '0:00';
-          audioPlayer.play().catch(e => console.log("Tap play to start audio"));
+          audioPlayer.play().catch(e => console.log("Tap play button to start audio"));
         };
 
       } catch (e) {
         console.error("Download Error:", e);
-        statusText.innerText = "Couldn't download online song. Try local MP3!";
+        statusText.innerText = "Couldn't download online track. Use local MP3!";
         progressContainer.style.display = "none";
       }
 
