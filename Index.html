@@ -263,15 +263,6 @@
       margin-top: 0.3rem;
     }
 
-    /* Hidden YT Container */
-    #ytPlayerContainer {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-
     /* Modal Sheet */
     .modal-overlay {
       position: fixed;
@@ -443,9 +434,7 @@
     </div>
   </div>
 
-  <!-- Hidden HTML5 Audio Element & Hidden YT Container -->
-  <audio id="audioPlayer"></audio>
-  <div id="ytPlayerContainer"><div id="ytPlayer"></div></div>
+  <audio id="audioPlayer" crossorigin="anonymous"></audio>
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
@@ -459,12 +448,12 @@
 
       <div class="input-group">
         <label>Song Title</label>
-        <input type="text" class="input-control" id="trackInput" placeholder="e.g. Husn" value="" />
+        <input type="text" class="input-control" id="trackInput" placeholder="e.g. Timeless" value="" />
       </div>
 
       <div class="input-group">
         <label>Artist Name (Optional)</label>
-        <input type="text" class="input-control" id="artistInput" placeholder="e.g. Anuv Jain" value="" />
+        <input type="text" class="input-control" id="artistInput" placeholder="e.g. Weeknd" value="" />
       </div>
 
       <button class="btn-action" id="searchBtn">Search & Play Song</button>
@@ -481,9 +470,6 @@
       <div class="status-text" id="statusText"></div>
     </div>
   </div>
-
-  <!-- Load YouTube IFrame API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
     const audioPlayer = document.getElementById('audioPlayer');
@@ -505,26 +491,6 @@
     let parsedLyrics = [];
     let lyricOffset = 0.0;
     let autoScrollEnabled = true;
-
-    // Dual Playback State Tracker (Local vs YT)
-    let activeSource = 'none'; // 'local' or 'yt'
-    let ytPlayerInstance = null;
-
-    // Load YouTube API
-    function onYouTubeIframeAPIReady() {
-      ytPlayerInstance = new YT.Player('ytPlayer', {
-        height: '1',
-        width: '1',
-        videoId: '',
-        playerVars: { 'autoplay': 0, 'controls': 0 },
-        events: {
-          'onStateChange': (e) => {
-            if (e.data === YT.PlayerState.PLAYING) playBtn.innerText = '⏸';
-            else if (e.data === YT.PlayerState.PAUSED) playBtn.innerText = '▶';
-          }
-        }
-      });
-    }
 
     function formatTime(secs) {
       if (isNaN(secs)) return '0:00';
@@ -580,14 +546,8 @@
         });
 
         lineEl.addEventListener('click', () => {
-          const seekTime = Math.max(0, item.time + lyricOffset);
-          if (activeSource === 'local') {
-            audioPlayer.currentTime = seekTime;
-            audioPlayer.play();
-          } else if (activeSource === 'yt' && ytPlayerInstance) {
-            ytPlayerInstance.seekTo(seekTime, true);
-            ytPlayerInstance.playVideo();
-          }
+          audioPlayer.currentTime = Math.max(0, item.time + lyricOffset);
+          audioPlayer.play();
           playBtn.innerText = '⏸';
           autoScrollEnabled = true;
         });
@@ -648,6 +608,7 @@
           parsedLyrics = parseLRC(match.syncedLyrics);
           renderLyrics();
           modalOverlay.classList.remove('open');
+          statusText.innerText = 'Synced lyrics loaded successfully!';
         } else {
           statusText.innerText = 'No timed lyrics found.';
         }
@@ -666,58 +627,46 @@
         return;
       }
 
-      statusText.innerText = `Searching YouTube stream for "${track}"...`;
+      statusText.innerText = `Searching audio for "${track}"...`;
+      let audioLoaded = false;
 
+      // Primary Stream: Official Apple/iTunes CORS Endpoint
       try {
-        // Search YouTube via Invidious public metadata search
-        const ytRes = await fetch(`https://inv.id.my/api/v1/search?q=${encodeURIComponent(track + ' ' + artist)}&type=video`);
-        const ytData = await ytRes.json();
+        const query = encodeURIComponent(`${track} ${artist}`.trim());
+        const itunesUrl = `https://itunes.apple.com/search?term=${query}&media=music&entity=song&limit=1`;
+        
+        const res = await fetch(itunesUrl);
+        const data = await res.json();
 
-        if (Array.isArray(ytData) && ytData.length > 0) {
-          const videoId = ytData[0].videoId;
-          const videoTitle = ytData[0].title || track;
+        if (data && data.results && data.results.length > 0) {
+          const song = data.results[0];
+          if (song.previewUrl) {
+            audioPlayer.src = song.previewUrl;
+            audioPlayer.load();
 
-          // Pause local audio
-          audioPlayer.pause();
-          activeSource = 'yt';
+            const displayTrack = song.trackName || track;
+            const displayArtist = song.artistName || (artist || 'Artist');
 
-          if (ytPlayerInstance && ytPlayerInstance.cueVideoById) {
-            ytPlayerInstance.cueVideoById(videoId);
+            document.getElementById('displayTitle').innerText = displayTrack;
+            document.getElementById('displayArtist').innerText = displayArtist;
+            document.getElementById('heroTitle').innerText = displayTrack;
+            document.getElementById('heroArtist').innerText = displayArtist;
+
+            audioLoaded = true;
+            playBtn.innerText = '▶';
+            statusText.innerText = 'Audio stream ready! Tap ▶ Play to start.';
           }
-
-          document.getElementById('displayTitle').innerText = videoTitle;
-          document.getElementById('displayArtist').innerText = artist || 'Online Stream';
-          document.getElementById('heroTitle').innerText = videoTitle;
-          document.getElementById('heroArtist').innerText = artist || 'Online Stream';
-
-          playBtn.innerText = '▶';
-          statusText.innerText = 'Track loaded! Tap ▶ Play to listen.';
-        } else {
-          statusText.innerText = 'Song not found online.';
         }
-      } catch (err) {
-        console.error('Search failed:', err);
-        statusText.innerText = 'Search failed. Check your internet connection.';
+      } catch (e) {
+        console.warn('Primary stream lookup blocked:', e);
       }
 
+      // Fetch Synced Lyrics regardless of stream block
       await fetchLyrics();
     }
 
-    // --- TIMELINE MONITORING (LOOPS BOTH LOCAL & YT CURRENT TIME) ---
-    setInterval(() => {
-      let currentTime = 0;
-      let duration = 0;
-
-      if (activeSource === 'local') {
-        currentTime = audioPlayer.currentTime - lyricOffset;
-        duration = audioPlayer.duration;
-      } else if (activeSource === 'yt' && ytPlayerInstance && ytPlayerInstance.getCurrentTime) {
-        currentTime = ytPlayerInstance.getCurrentTime() - lyricOffset;
-        duration = ytPlayerInstance.getDuration();
-      } else {
-        return;
-      }
-
+    audioPlayer.addEventListener('timeupdate', () => {
+      const currentTime = audioPlayer.currentTime - lyricOffset;
       let activeIndex = -1;
 
       for (let i = 0; i < parsedLyrics.length; i++) {
@@ -777,35 +726,25 @@
         }
       });
 
-      if (duration) {
-        const pct = (currentTime / duration) * 100;
+      if (audioPlayer.duration) {
+        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         progressFill.style.width = `${pct}%`;
-        currTimeText.innerText = formatTime(currentTime);
-        durTimeText.innerText = formatTime(duration);
+        currTimeText.innerText = formatTime(audioPlayer.currentTime);
+        durTimeText.innerText = formatTime(audioPlayer.duration);
       }
-    }, 200);
+    });
 
-    // Toggle Play/Pause for Active Source
     playBtn.addEventListener('click', () => {
-      if (activeSource === 'local') {
-        if (audioPlayer.paused) {
+      if (audioPlayer.paused) {
+        if (audioPlayer.src) {
           audioPlayer.play();
           playBtn.innerText = '⏸';
         } else {
-          audioPlayer.pause();
-          playBtn.innerText = '▶';
-        }
-      } else if (activeSource === 'yt' && ytPlayerInstance) {
-        const state = ytPlayerInstance.getPlayerState();
-        if (state === YT.PlayerState.PLAYING) {
-          ytPlayerInstance.pauseVideo();
-          playBtn.innerText = '▶';
-        } else {
-          ytPlayerInstance.playVideo();
-          playBtn.innerText = '⏸';
+          modalOverlay.classList.add('open');
         }
       } else {
-        modalOverlay.classList.add('open');
+        audioPlayer.pause();
+        playBtn.innerText = '▶';
       }
     });
 
@@ -813,17 +752,11 @@
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     searchBtn.addEventListener('click', searchAndPlay);
 
-    // Local File Selector
+    // Local File Loader
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         const fileUrl = URL.createObjectURL(file);
-        
-        if (ytPlayerInstance && ytPlayerInstance.pauseVideo) {
-          ytPlayerInstance.pauseVideo();
-        }
-
-        activeSource = 'local';
         audioPlayer.src = fileUrl;
         audioPlayer.load();
 
@@ -835,21 +768,16 @@
 
         trackInput.value = cleanTitle;
         playBtn.innerText = '▶';
-        statusText.innerText = 'Local audio loaded! Tap Search & Play for lyrics, or ▶ Play to listen.';
+        statusText.innerText = 'Local audio loaded! Tap Search & Play for lyrics.';
       }
     });
 
-    // Progress Bar Seeking
     progressContainer.addEventListener('click', (e) => {
+      if (!audioPlayer.duration) return;
       const rect = progressContainer.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const pct = clickX / rect.width;
-
-      if (activeSource === 'local' && audioPlayer.duration) {
-        audioPlayer.currentTime = pct * audioPlayer.duration;
-      } else if (activeSource === 'yt' && ytPlayerInstance && ytPlayerInstance.getDuration) {
-        ytPlayerInstance.seekTo(pct * ytPlayerInstance.getDuration(), true);
-      }
+      audioPlayer.currentTime = pct * audioPlayer.duration;
     });
 
     document.getElementById('offsetMinus').addEventListener('click', () => {
