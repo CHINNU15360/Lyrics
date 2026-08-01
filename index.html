@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro</title>
-  <!-- jsmediatags CDN for local MP3 ID3 extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     * {
@@ -24,7 +23,6 @@
       display: flex;
     }
 
-    /* Ambient Background */
     .bg-blur {
       position: absolute;
       top: -10%;
@@ -68,7 +66,6 @@
       text-transform: uppercase;
     }
 
-    /* Fullscreen Toggle Button */
     .fullscreen-btn {
       position: absolute;
       top: 16px;
@@ -100,7 +97,6 @@
       fill: #ffffff;
     }
 
-    /* Floating Re-Track Lyrics Button */
     .retrack-btn {
       position: fixed;
       right: 1.2rem;
@@ -130,10 +126,6 @@
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0);
-    }
-
-    .retrack-btn:active {
-      transform: scale(0.95);
     }
 
     .hero-panel {
@@ -222,7 +214,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Player Container */
     .player-bar {
       position: fixed;
       bottom: 1.2rem;
@@ -243,7 +234,6 @@
       gap: 0.6rem;
     }
 
-    /* Live Sync On-Player Controls */
     .live-sync-bar {
       display: flex;
       align-items: center;
@@ -509,10 +499,27 @@
       margin-top: 0.5rem;
     }
 
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      margin-top: 0.8rem;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: #34c759;
+      transition: width 0.1s linear;
+    }
+
     .status-text {
       font-size: 0.8rem;
       color: #34c759;
-      margin-top: 0.8rem;
+      margin-top: 0.6rem;
       text-align: center;
       min-height: 1.2em;
     }
@@ -612,7 +619,11 @@
         <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
 
-      <button class="btn-action" id="searchBtn">Fetch Lyrics</button>
+      <button class="btn-action" id="searchBtn">Fetch Lyrics & Song</button>
+
+      <div class="progress-bar-container" id="progressContainer">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
 
       <div class="status-text" id="statusText"></div>
     </div>
@@ -638,6 +649,8 @@
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const fsIcon = document.getElementById('fsIcon');
     const playerArt = document.getElementById('playerArt');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBarFill = document.getElementById('progressBarFill');
     
     let parsedLyrics = [];
     let lyricOffset = 0.0;
@@ -757,89 +770,134 @@
       }
     }
 
+    // Direct Song Chunk Downloader with Live Progress Bar
     async function fetchLyrics() {
-  const track = trackInput.value.trim();
-  const artist = artistInput.value.trim();
+      const track = trackInput.value.trim();
+      const artist = artistInput.value.trim();
 
-  if (!track) return;
+      if (!track) return;
 
-  statusText.innerText = "Downloading & buffering audio...";
+      statusText.innerText = "Finding track online...";
+      progressContainer.style.display = "block";
+      progressBarFill.style.width = "0%";
 
-  const fullQuery = encodeURIComponent(track + ' ' + artist);
+      const fullQuery = encodeURIComponent(track + ' ' + artist);
 
-  // 1. Get track info
-  try {
-    const infoResp = await fetch(`/api/getAudio?q=${fullQuery}&mode=info`);
-    const infoData = await infoResp.json();
+      // 1. Fetch metadata info
+      try {
+        const infoResp = await fetch(`/api/getAudio?q=${fullQuery}&mode=info`);
+        const infoData = await infoResp.json();
 
-    if (infoData && infoData.title) {
-      document.getElementById('displayTitle').innerText = infoData.title;
-      document.getElementById('displayArtist').innerText = infoData.artist;
-      document.getElementById('heroTitle').innerText = infoData.title;
-      document.getElementById('heroArtist').innerText = infoData.artist;
-    }
-  } catch (e) {
-    document.getElementById('displayTitle').innerText = track;
-    document.getElementById('displayArtist').innerText = artist || 'Online Stream';
-  }
-
-  // 2. Set audio source directly to serverless proxy URL
-  const proxyAudioUrl = `/api/getAudio?q=${fullQuery}`;
-  audioPlayer.pause();
-  audioPlayer.src = proxyAudioUrl;
-  audioPlayer.load();
-
-  audioPlayer.play().catch(err => {
-    console.log("Tap play to start audio.");
-  });
-
-  // 3. Fetch synced lyrics from LRCLIB
-  const queries = [
-    `${track} ${artist}`,
-    `${track} ${artist} Romanized`,
-    `${track}`
-  ];
-
-  try {
-    let match = null;
-
-    for (const query of queries) {
-      const url = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (Array.isArray(data) && data.length > 0) {
-        const exactMatch = data.find(item => 
-          item.syncedLyrics && 
-          item.syncedLyrics.length > 0 &&
-          item.trackName.toLowerCase().includes(track.toLowerCase())
-        );
-
-        if (exactMatch) {
-          match = exactMatch;
-          break;
-        } else if (!match && data[0].syncedLyrics) {
-          match = data[0];
+        if (infoData && infoData.title) {
+          document.getElementById('displayTitle').innerText = infoData.title;
+          document.getElementById('displayArtist').innerText = infoData.artist;
+          document.getElementById('heroTitle').innerText = infoData.title;
+          document.getElementById('heroArtist').innerText = infoData.artist;
         }
+      } catch (e) {
+        document.getElementById('displayTitle').innerText = track;
+        document.getElementById('displayArtist').innerText = artist || 'Online Stream';
+      }
+
+      // 2. Download audio stream directly into a local Blob URL
+      try {
+        statusText.innerText = "Downloading song to device memory...";
+        const response = await fetch(`/api/getAudio?q=${fullQuery}`);
+
+        if (!response.ok) throw new Error("Stream download failed");
+
+        const contentLength = response.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        let loaded = 0;
+
+        const reader = response.body.getReader();
+        const chunks = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          chunks.push(value);
+          loaded += value.length;
+
+          if (total > 0) {
+            const percent = Math.round((loaded / total) * 100);
+            progressBarFill.style.width = `${percent}%`;
+            statusText.innerText = `Downloading song: ${percent}%`;
+          } else {
+            statusText.innerText = `Downloading song: ${(loaded / (1024 * 1024)).toFixed(1)}MB`;
+          }
+        }
+
+        const blob = new Blob(chunks, { type: 'audio/mpeg' });
+        const audioBlobUrl = URL.createObjectURL(blob);
+
+        audioPlayer.pause();
+        audioPlayer.src = audioBlobUrl;
+        audioPlayer.load();
+
+        statusText.innerText = "Song downloaded! Starting playback...";
+        
+        audioPlayer.onloadedmetadata = () => {
+          durTimeText.innerText = formatTime(audioPlayer.duration);
+          seekSlider.value = 0;
+          currTimeText.innerText = '0:00';
+          audioPlayer.play().catch(e => console.log("Tap play to start audio"));
+        };
+
+      } catch (e) {
+        console.error("Download Error:", e);
+        statusText.innerText = "Couldn't download online song. Try local MP3!";
+        progressContainer.style.display = "none";
+      }
+
+      // 3. Fetch synced lyrics from LRCLIB
+      const queries = [
+        `${track} ${artist}`,
+        `${track} ${artist} Romanized`,
+        `${track}`
+      ];
+
+      try {
+        let match = null;
+
+        for (const query of queries) {
+          const url = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (Array.isArray(data) && data.length > 0) {
+            const exactMatch = data.find(item => 
+              item.syncedLyrics && 
+              item.syncedLyrics.length > 0 &&
+              item.trackName.toLowerCase().includes(track.toLowerCase())
+            );
+
+            if (exactMatch) {
+              match = exactMatch;
+              break;
+            } else if (!match && data[0].syncedLyrics) {
+              match = data[0];
+            }
+          }
+        }
+
+        if (match && match.syncedLyrics) {
+          parsedLyrics = parseLRC(match.syncedLyrics);
+          renderLyrics();
+          modalOverlay.classList.remove('open');
+          progressContainer.style.display = "none";
+          statusText.innerText = 'Ready!';
+        } else {
+          statusText.innerText = 'Song loaded, but no timed lyrics found.';
+          progressContainer.style.display = "none";
+        }
+      } catch (err) {
+        console.error(err);
+        statusText.innerText = 'Error loading lyrics.';
+        progressContainer.style.display = "none";
       }
     }
-
-    if (match && match.syncedLyrics) {
-      parsedLyrics = parseLRC(match.syncedLyrics);
-      renderLyrics();
-      modalOverlay.classList.remove('open');
-      statusText.innerText = 'Audio streaming & lyrics loaded!';
-    } else {
-      statusText.innerText = 'Audio playing, but no timed lyrics found.';
-    }
-  } catch (err) {
-    console.error(err);
-    statusText.innerText = 'Error loading lyrics.';
-  }
-}
-
-  
-
 
     audioPlayer.addEventListener('timeupdate', () => {
       const currentTime = audioPlayer.currentTime - lyricOffset;
@@ -943,7 +1001,7 @@
       reTrackToCurrentLine();
     });
 
-    // Automatic local ID3 metadata extraction
+    // Local ID3 Metadata Extractor
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
