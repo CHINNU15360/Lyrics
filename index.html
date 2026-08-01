@@ -771,21 +771,21 @@
       }
     }
 
-    // Direct Browser Download with Fast Vercel Lookup
+    // Direct Browser Download with Cobalt Open API Fast Lookup
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
 
       if (!track) return;
 
-      statusText.innerText = "Finding track online...";
+      statusText.innerText = "Searching open API stream...";
       progressContainer.style.display = "block";
       progressBarFill.style.width = "0%";
 
       const fullQuery = encodeURIComponent(track + ' ' + artist);
 
       try {
-        // 1. Quick Vercel lookup for direct stream URL
+        // 1. Fast Vercel lookup for Cobalt stream URL
         const infoResp = await fetch(`/api/getAudio?q=${fullQuery}`);
         const infoData = await infoResp.json();
 
@@ -793,16 +793,13 @@
           throw new Error("Track stream URL not found");
         }
 
-        const cleanTitle = infoData.title || track;
-        const cleanArtist = infoData.artist || artist;
-
-        document.getElementById('displayTitle').innerText = cleanTitle;
-        document.getElementById('displayArtist').innerText = cleanArtist;
-        document.getElementById('heroTitle').innerText = cleanTitle;
-        document.getElementById('heroArtist').innerText = cleanArtist;
+        document.getElementById('displayTitle').innerText = track;
+        document.getElementById('displayArtist').innerText = artist || 'Online Stream';
+        document.getElementById('heroTitle').innerText = track;
+        document.getElementById('heroArtist').innerText = artist || 'Online Stream';
 
         // 2. Direct browser chunked download into device memory
-        statusText.innerText = "Downloading song to device memory...";
+        statusText.innerText = "Downloading song chunk...";
         const audioResp = await fetch(infoData.audioUrl);
 
         if (!audioResp.ok) throw new Error("Failed to download audio stream");
@@ -837,7 +834,7 @@
         audioPlayer.src = audioBlobUrl;
         audioPlayer.load();
 
-        statusText.innerText = "Song ready! Loading lyrics...";
+        statusText.innerText = "Song downloaded! Fetching lyrics...";
 
         audioPlayer.onloadedmetadata = () => {
           durTimeText.innerText = formatTime(audioPlayer.duration);
@@ -848,7 +845,7 @@
 
       } catch (e) {
         console.error("Download Error:", e);
-        statusText.innerText = "Couldn't download online track. Use local MP3!";
+        statusText.innerText = "Online download blocked. Use local MP3!";
         progressContainer.style.display = "none";
       }
 
