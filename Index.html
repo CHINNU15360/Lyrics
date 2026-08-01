@@ -22,7 +22,7 @@
       display: flex;
     }
 
-    /* Ambient Animated Blur Background */
+    /* Ambient Background */
     .bg-blur {
       position: absolute;
       top: -10%;
@@ -35,7 +35,6 @@
       transition: background 1.5s ease;
     }
 
-    /* Main Container */
     .app-container {
       position: relative;
       z-index: 2;
@@ -45,7 +44,6 @@
       padding-bottom: 110px;
     }
 
-    /* Developer Badge (Centered Top) */
     .dev-badge {
       position: absolute;
       top: 18px;
@@ -64,7 +62,6 @@
       white-space: nowrap;
     }
 
-    /* Hero Left Panel */
     .hero-panel {
       display: none;
       flex: 1;
@@ -87,7 +84,6 @@
       margin-top: 0.4rem;
     }
 
-    /* Lyrics Scroll Container */
     .lyrics-panel {
       flex: 1;
       height: 100%;
@@ -100,7 +96,6 @@
       display: none;
     }
 
-    /* --- LYRICS TYPOGRAPHY & ANIMATION --- */
     .line {
       font-size: clamp(2rem, 6.5vw, 3.2rem);
       font-weight: 800;
@@ -110,7 +105,6 @@
       transform-origin: left center;
       word-break: break-word;
       overflow-wrap: break-word;
-
       color: rgba(255, 255, 255, 0.25);
       filter: blur(6px);
       opacity: 0.35;
@@ -153,7 +147,6 @@
       border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Bottom Player Bar */
     .player-bar {
       position: fixed;
       bottom: 1.2rem;
@@ -263,7 +256,6 @@
       margin-top: 0.3rem;
     }
 
-    /* Modal Sheet */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -434,7 +426,7 @@
     </div>
   </div>
 
-  <audio id="audioPlayer" crossorigin="anonymous"></audio>
+  <audio id="audioPlayer"></audio>
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
@@ -453,7 +445,7 @@
 
       <div class="input-group">
         <label>Artist Name (Optional)</label>
-        <input type="text" class="input-control" id="artistInput" placeholder="e.g. Weeknd" value="" />
+        <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
 
       <button class="btn-action" id="searchBtn">Search & Play Song</button>
@@ -493,7 +485,7 @@
     let autoScrollEnabled = true;
 
     function formatTime(secs) {
-      if (isNaN(secs)) return '0:00';
+      if (isNaN(secs) || !isFinite(secs)) return '0:00';
       const m = Math.floor(secs / 60);
       const s = Math.floor(secs % 60);
       return `${m}:${s < 10 ? '0' : ''}${s}`;
@@ -568,9 +560,9 @@
       if (!track) return;
 
       const queries = [
+        `${track} ${artist}`,
         `${track} ${artist} Romanized`,
-        `${track} ${artist} Hinglish`,
-        `${track} ${artist}`
+        `${track}`
       ];
 
       try {
@@ -582,25 +574,18 @@
           const data = await response.json();
 
           if (Array.isArray(data) && data.length > 0) {
-            const englishScriptMatch = data.find(item => 
+            const exactMatch = data.find(item => 
               item.syncedLyrics && 
-              item.syncedLyrics.length > 0 && 
-              !containsDevanagari(item.syncedLyrics)
+              item.syncedLyrics.length > 0 &&
+              item.trackName.toLowerCase().includes(track.toLowerCase())
             );
 
-            if (englishScriptMatch) {
-              match = englishScriptMatch;
+            if (exactMatch) {
+              match = exactMatch;
               break;
+            } else if (!match && data[0].syncedLyrics) {
+              match = data[0];
             }
-          }
-        }
-
-        if (!match) {
-          const fallbackUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(track + ' ' + artist)}`;
-          const fallbackRes = await fetch(fallbackUrl);
-          const fallbackData = await fallbackRes.json();
-          if (Array.isArray(fallbackData)) {
-            match = fallbackData.find(item => item.syncedLyrics);
           }
         }
 
@@ -608,7 +593,7 @@
           parsedLyrics = parseLRC(match.syncedLyrics);
           renderLyrics();
           modalOverlay.classList.remove('open');
-          statusText.innerText = 'Synced lyrics loaded successfully!';
+          statusText.innerText = 'Full song & synced lyrics ready!';
         } else {
           statusText.innerText = 'No timed lyrics found.';
         }
@@ -627,44 +612,11 @@
         return;
       }
 
-      statusText.innerText = `Searching audio for "${track}"...`;
-      let audioLoaded = false;
-
-      // Primary Stream: Official Apple/iTunes CORS Endpoint
-      try {
-        const query = encodeURIComponent(`${track} ${artist}`.trim());
-        const itunesUrl = `https://itunes.apple.com/search?term=${query}&media=music&entity=song&limit=1`;
-        
-        const res = await fetch(itunesUrl);
-        const data = await res.json();
-
-        if (data && data.results && data.results.length > 0) {
-          const song = data.results[0];
-          if (song.previewUrl) {
-            audioPlayer.src = song.previewUrl;
-            audioPlayer.load();
-
-            const displayTrack = song.trackName || track;
-            const displayArtist = song.artistName || (artist || 'Artist');
-
-            document.getElementById('displayTitle').innerText = displayTrack;
-            document.getElementById('displayArtist').innerText = displayArtist;
-            document.getElementById('heroTitle').innerText = displayTrack;
-            document.getElementById('heroArtist').innerText = displayArtist;
-
-            audioLoaded = true;
-            playBtn.innerText = '▶';
-            statusText.innerText = 'Audio stream ready! Tap ▶ Play to start.';
-          }
-        }
-      } catch (e) {
-        console.warn('Primary stream lookup blocked:', e);
-      }
-
-      // Fetch Synced Lyrics regardless of stream block
+      statusText.innerText = `Searching lyrics for "${track}"...`;
       await fetchLyrics();
     }
 
+    // --- TIMELINE TRACKER ---
     audioPlayer.addEventListener('timeupdate', () => {
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let activeIndex = -1;
@@ -726,7 +678,7 @@
         }
       });
 
-      if (audioPlayer.duration) {
+      if (audioPlayer.duration && !isNaN(audioPlayer.duration)) {
         const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         progressFill.style.width = `${pct}%`;
         currTimeText.innerText = formatTime(audioPlayer.currentTime);
@@ -752,10 +704,16 @@
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     searchBtn.addEventListener('click', searchAndPlay);
 
-    // Local File Loader
+    // --- HARD SOURCE PURGE FOR LOCAL MP3 LOADING ---
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
+        // 1. Pause and completely reset existing player source
+        audioPlayer.pause();
+        audioPlayer.removeAttribute('src');
+        audioPlayer.load();
+
+        // 2. Assign new Blob Object URL for full local track
         const fileUrl = URL.createObjectURL(file);
         audioPlayer.src = fileUrl;
         audioPlayer.load();
@@ -768,7 +726,14 @@
 
         trackInput.value = cleanTitle;
         playBtn.innerText = '▶';
-        statusText.innerText = 'Local audio loaded! Tap Search & Play for lyrics.';
+
+        // 3. Update timeline once full metadata loads
+        audioPlayer.onloadedmetadata = () => {
+          durTimeText.innerText = formatTime(audioPlayer.duration);
+          progressFill.style.width = '0%';
+          currTimeText.innerText = '0:00';
+          statusText.innerText = `Full ${formatTime(audioPlayer.duration)} track loaded! Tap Search & Play for lyrics.`;
+        };
       }
     });
 
