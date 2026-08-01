@@ -1,13 +1,10 @@
 module.exports = async (req, res) => {
   // CORS Headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   const query = req.query.q;
@@ -16,28 +13,37 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Query JioSaavn primary public API for high-bitrate direct MP3 link
+    // 1. Search for track metadata & direct MP3 URL
     const searchUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}`;
-    const response = await fetch(searchUrl);
-    const data = await response.json();
+    const searchResp = await fetch(searchUrl);
+    const searchData = await searchResp.json();
 
-    if (data && data.success && data.data && data.data.results && data.data.results.length > 0) {
-      const track = data.data.results[0];
-      
-      // Get highest quality download URL (320kbps or 160kbps)
+    if (searchData && searchData.success && searchData.data && searchData.data.results.length > 0) {
+      const track = searchData.data.results[0];
       const downloadObj = track.downloadUrl ? (track.downloadUrl.find(d => d.quality === "320kbps") || track.downloadUrl[track.downloadUrl.length - 1]) : null;
 
       if (downloadObj && downloadObj.url) {
-        return res.status(200).json({
-          title: track.name || query,
-          artist: track.primaryArtists || "Online Stream",
-          audioUrl: downloadObj.url
-        });
+        // If mode is 'info', return song details
+        if (req.query.mode === 'info') {
+          return res.status(200).json({
+            title: track.name || query,
+            artist: track.primaryArtists || "Online Stream"
+          });
+        }
+
+        // 2. Download the audio stream and pipe raw bytes directly to browser
+        const audioResp = await fetch(downloadObj.url);
+        const arrayBuffer = await audioResp.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Length', buffer.length);
+        return res.status(200).send(buffer);
       }
     }
   } catch (err) {
-    console.error("Primary stream failed:", err);
+    console.error("Audio proxy error:", err);
   }
 
-  return res.status(502).json({ error: "Stream unavailable. Use local MP3!" });
+  return res.status(502).json({ error: "Failed to download audio stream" });
 };
