@@ -4,25 +4,51 @@ exports.handler = async function (event) {
   if (!query) {
     return {
       statusCode: 400,
-      headers: { "Access-Control-Allow-Origin": "*" },
+      headers: { 
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ error: "Missing query parameter" })
     };
   }
 
-  try {
-    const targetUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&limit=1`;
-    
-    // Uses global native fetch with HTTPS fallback
-    const response = await fetch(targetUrl);
-    const data = await response.json();
+  // List of public Invidious instances to loop through for reliability
+  const instances = [
+    "https://inv.projectsegfau.lt",
+    "https://invidious.drgns.space",
+    "https://invidious.nerdvpn.de",
+    "https://invidious.flokinet.to"
+  ];
 
-    if (data && data.success && data.data && data.data.results && data.data.results.length > 0) {
-      const song = data.data.results[0];
-      const downloadUrls = song.downloadUrl;
+  for (const instance of instances) {
+    try {
+      const searchUrl = `${instance}/api/v1/search?q=${encodeURIComponent(query + " audio")}&type=video`;
+      const response = await fetch(searchUrl);
 
-      if (downloadUrls && downloadUrls.length > 0) {
-        const streamUrl = downloadUrls[downloadUrls.length - 1].url;
+      if (!response.ok) continue;
 
+      const results = await response.json();
+      if (!Array.isArray(results) || results.length === 0) continue;
+
+      const videoId = results[0].videoId;
+      const title = results[0].title;
+      const author = results[0].author;
+
+      // Get video details for direct audio stream URL
+      const videoUrl = `${instance}/api/v1/videos/${videoId}`;
+      const videoResp = await fetch(videoUrl);
+
+      if (!videoResp.ok) continue;
+
+      const videoData = await videoResp.json();
+      const adaptiveFormats = videoData.adaptiveFormats || [];
+
+      // Find the best quality audio stream
+      const audioStream = adaptiveFormats
+        .filter(f => f.type && f.type.startsWith("audio/"))
+        .sort((a, b) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0))[0];
+
+      if (audioStream && audioStream.url) {
         return {
           statusCode: 200,
           headers: {
@@ -30,24 +56,20 @@ exports.handler = async function (event) {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            title: song.name || query,
-            artist: (song.artists && song.artists.primary && song.artists.primary[0]) ? song.artists.primary[0].name : "Online Artist",
-            audioUrl: streamUrl
+            title: title,
+            artist: author,
+            audioUrl: audioStream.url
           })
         };
       }
+    } catch (err) {
+      console.log(`Failed on instance ${instance}:`, err.message);
     }
-
-    return {
-      statusCode: 404,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ error: "Song stream not found" })
-    };
-  } catch (error) {
-    return {
-      statusCode: 500,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ error: "Server error: " + error.message })
-    };
   }
+
+  return {
+    statusCode: 502,
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: JSON.stringify({ error: "All stream proxies are currently busy. Try local MP3!" })
+  };
 };
