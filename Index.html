@@ -656,14 +656,8 @@
             document.getElementById('heroArtist').innerText = displayArtist;
 
             audioLoaded = true;
-            statusText.innerText = 'Audio stream loaded! Tap ▶ if playback needs a tap.';
-
-            audioPlayer.play().then(() => {
-              playBtn.innerText = '⏸';
-              statusText.innerText = 'Playing online song!';
-            }).catch(e => {
-              console.log('Mobile autoplay requirement:', e);
-            });
+            playBtn.innerText = '▶';
+            statusText.innerText = 'Track loaded! Tap ▶ Play to start.';
           }
         }
       } catch (err) {
@@ -697,12 +691,8 @@
               document.getElementById('heroArtist').innerText = displayArtist;
 
               audioLoaded = true;
-              statusText.innerText = 'Loaded via Proxy! Tap ▶ to play.';
-
-              audioPlayer.play().then(() => {
-                playBtn.innerText = '⏸';
-                statusText.innerText = 'Playing online song!';
-              }).catch(e => console.log('Mobile gesture needed:', e));
+              playBtn.innerText = '▶';
+              statusText.innerText = 'Track loaded! Tap ▶ Play to start.';
             }
           }
         } catch (proxyErr) {
@@ -804,17 +794,25 @@
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     searchBtn.addEventListener('click', searchAndPlay);
 
+    // Clean Local File Loader (Loads track in paused state)
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         const fileUrl = URL.createObjectURL(file);
         audioPlayer.src = fileUrl;
         audioPlayer.load();
-        document.getElementById('displayTitle').innerText = file.name.replace(/\.[^/.]+$/, "");
+
+        const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
+        document.getElementById('displayTitle').innerText = cleanTitle;
         document.getElementById('displayArtist').innerText = 'Local Audio';
-        statusText.innerText = 'Local audio loaded!';
-        audioPlayer.play();
-        playBtn.innerText = '⏸';
+        document.getElementById('heroTitle').innerText = cleanTitle;
+        document.getElementById('heroArtist').innerText = 'Local Audio';
+
+        // Auto-fill input title so user can fetch lyrics easily
+        trackInput.value = cleanTitle;
+
+        playBtn.innerText = '▶';
+        statusText.innerText = 'Local audio loaded! Tap Search & Play for lyrics, or ▶ Play to listen.';
       }
     });
 
