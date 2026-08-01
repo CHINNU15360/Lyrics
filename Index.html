@@ -358,24 +358,44 @@
       min-height: 1.2em;
     }
 
+    /* Multi-Button Sync Box */
     .sync-offset-box {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       margin-top: 1rem;
       background: rgba(255,255,255,0.05);
-      padding: 0.6rem 1rem;
-      border-radius: 12px;
+      padding: 0.8rem;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .sync-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+      font-size: 0.85rem;
+    }
+
+    .sync-btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
     }
 
     .offset-btn {
       background: rgba(255,255,255,0.15);
       border: none;
       color: #ffffff;
-      padding: 0.4rem 0.8rem;
+      padding: 0.4rem 0.6rem;
       border-radius: 8px;
       font-weight: 600;
+      font-size: 0.75rem;
       cursor: pointer;
+    }
+
+    .reset-btn {
+      background: rgba(255, 59, 48, 0.25);
+      color: #ff453a;
     }
 
     @media (min-width: 768px) {
@@ -448,14 +468,21 @@
         <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
 
-      <button class="btn-action" id="searchBtn">Search & Play Song</button>
+      <button class="btn-action" id="searchBtn">Search & Fetch Lyrics</button>
 
       <div class="sync-offset-box">
-        <span style="font-size: 0.85rem; opacity: 0.8;">Sync Timing Offset:</span>
-        <div>
-          <button class="offset-btn" id="offsetMinus">-0.5s</button>
-          <span id="offsetVal" style="margin: 0 0.5rem; font-weight:700;">0.0s</span>
-          <button class="offset-btn" id="offsetPlus">+0.5s</button>
+        <div class="sync-header">
+          <span>Lyric Timing Offset:</span>
+          <span id="offsetVal" style="font-weight:800; color:#34c759;">0.0s</span>
+        </div>
+        <div class="sync-btn-row">
+          <button class="offset-btn" id="m5">-5s</button>
+          <button class="offset-btn" id="m1">-1s</button>
+          <button class="offset-btn" id="m01">-0.1s</button>
+          <button class="offset-btn reset-btn" id="mReset">Reset</button>
+          <button class="offset-btn" id="p01">+0.1s</button>
+          <button class="offset-btn" id="p1">+1s</button>
+          <button class="offset-btn" id="p5">+5s</button>
         </div>
       </div>
 
@@ -593,7 +620,7 @@
           parsedLyrics = parseLRC(match.syncedLyrics);
           renderLyrics();
           modalOverlay.classList.remove('open');
-          statusText.innerText = 'Full song & synced lyrics ready!';
+          statusText.innerText = 'Lyrics loaded!';
         } else {
           statusText.innerText = 'No timed lyrics found.';
         }
@@ -605,7 +632,6 @@
 
     async function searchAndPlay() {
       const track = trackInput.value.trim();
-      const artist = artistInput.value.trim();
 
       if (!track) {
         statusText.innerText = 'Please enter a song name!';
@@ -708,12 +734,10 @@
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        // 1. Pause and completely reset existing player source
         audioPlayer.pause();
         audioPlayer.removeAttribute('src');
         audioPlayer.load();
 
-        // 2. Assign new Blob Object URL for full local track
         const fileUrl = URL.createObjectURL(file);
         audioPlayer.src = fileUrl;
         audioPlayer.load();
@@ -727,12 +751,11 @@
         trackInput.value = cleanTitle;
         playBtn.innerText = '▶';
 
-        // 3. Update timeline once full metadata loads
         audioPlayer.onloadedmetadata = () => {
           durTimeText.innerText = formatTime(audioPlayer.duration);
           progressFill.style.width = '0%';
           currTimeText.innerText = '0:00';
-          statusText.innerText = `Full ${formatTime(audioPlayer.duration)} track loaded! Tap Search & Play for lyrics.`;
+          statusText.innerText = `Loaded ${formatTime(audioPlayer.duration)} MP3! Tap Search & Fetch Lyrics.`;
         };
       }
     });
@@ -745,14 +768,22 @@
       audioPlayer.currentTime = pct * audioPlayer.duration;
     });
 
-    document.getElementById('offsetMinus').addEventListener('click', () => {
-      lyricOffset -= 0.5;
-      document.getElementById('offsetVal').innerText = `${lyricOffset >= 0 ? '+' : ''}${lyricOffset.toFixed(1)}s`;
-    });
-    document.getElementById('offsetPlus').addEventListener('click', () => {
-      lyricOffset += 0.5;
-      document.getElementById('offsetVal').innerText = `${lyricOffset >= 0 ? '+' : ''}${lyricOffset.toFixed(1)}s`;
-    });
+    // --- QUICK OFFSET HANDLERS ---
+    function adjustOffset(val) {
+      if (val === 0) lyricOffset = 0;
+      else lyricOffset += val;
+
+      const sign = lyricOffset >= 0 ? '+' : '';
+      document.getElementById('offsetVal').innerText = `${sign}${lyricOffset.toFixed(1)}s`;
+    }
+
+    document.getElementById('m5').addEventListener('click', () => adjustOffset(-5.0));
+    document.getElementById('m1').addEventListener('click', () => adjustOffset(-1.0));
+    document.getElementById('m01').addEventListener('click', () => adjustOffset(-0.1));
+    document.getElementById('mReset').addEventListener('click', () => adjustOffset(0));
+    document.getElementById('p01').addEventListener('click', () => adjustOffset(0.1));
+    document.getElementById('p1').addEventListener('click', () => adjustOffset(1.0));
+    document.getElementById('p5').addEventListener('click', () => adjustOffset(5.0));
 
     display.addEventListener('wheel', () => autoScrollEnabled = false);
     display.addEventListener('touchmove', () => autoScrollEnabled = false);
