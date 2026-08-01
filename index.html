@@ -516,7 +516,6 @@
       flex-shrink: 0;
     }
 
-    /* Results container for download links */
     .results-list {
       overflow-y: auto;
       margin-top: 1rem;
@@ -555,6 +554,23 @@
       opacity: 0.6;
     }
 
+    .action-group {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .sync-lyrics-btn {
+      background: #007aff;
+      color: #ffffff;
+      padding: 0.4rem 0.6rem;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+
     .download-link-btn {
       background: #34c759;
       color: #000000;
@@ -564,7 +580,6 @@
       font-weight: 700;
       text-decoration: none;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
     @media (min-width: 768px) {
@@ -596,7 +611,7 @@
     </div>
 
     <div class="lyrics-panel" id="lyricsDisplay">
-      <div class="line">Tap ⚙️ below to search, download, & play!</div>
+      <div class="line">Tap ⚙️ below to search, sync lyrics, & play!</div>
     </div>
   </div>
 
@@ -655,12 +670,12 @@
       <div class="input-group">
         <label>Search Any Song Online</label>
         <div style="display: flex; gap: 0.5rem;">
-          <input type="text" class="input-control" id="trackInput" placeholder="e.g. Timeless" value="" />
+          <input type="text" class="input-control" id="trackInput" placeholder="e.g. Diet Mountain Dew" value="" />
           <button class="btn-action" id="searchBtn" style="margin-top:0; width: 110px;">Search</button>
         </div>
       </div>
 
-      <div class="status-text" id="statusText">Search to find direct download options below:</div>
+      <div class="status-text" id="statusText">Tap 'Sync Lyrics' on your song, then download & upload!</div>
 
       <div class="results-list" id="resultsList"></div>
     </div>
@@ -804,7 +819,7 @@
       }
     }
 
-    // 1. Search Online & Show Download Buttons
+    // Fixed Search using precise track and artist name parameters to eliminate wrong/Korean lyrics
     async function searchSongs() {
       const query = trackInput.value.trim();
       if (!query) return;
@@ -817,7 +832,7 @@
         const data = await response.json();
 
         if (data && data.success && data.data && data.data.results.length > 0) {
-          statusText.innerText = "Tap 'Download' to save MP3 to your phone:";
+          statusText.innerText = "Tap 'Sync Lyrics' then download your song:";
           
           data.data.results.forEach(song => {
             const dlObj = song.downloadUrl ? (song.downloadUrl.find(d => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1]) : null;
@@ -831,7 +846,10 @@
                 <div class="result-name">${song.name}</div>
                 <div class="result-artist">${song.primaryArtists}</div>
               </div>
-              <a href="${dlObj.url}" download="${song.name}.mp3" class="download-link-btn" target="_blank">⬇ Download</a>
+              <div class="action-group">
+                <button class="sync-lyrics-btn" onclick="fetchPreciseLyrics('${encodeURIComponent(song.name)}', '${encodeURIComponent(song.primaryArtists)}')">🎯 Sync Lyrics</button>
+                <a href="${dlObj.url}" download="${song.name}.mp3" class="download-link-btn" target="_blank">⬇ Download</a>
+              </div>
             `;
             resultsList.appendChild(item);
           });
@@ -841,17 +859,33 @@
       } catch (e) {
         statusText.innerText = "Search failed. Use local MP3 file instead!";
       }
+    }
 
-      // Also fetch lyrics automatically from LRCLIB
+    // Precise lyric fetching using track_name and artist_name parameters
+    async function fetchPreciseLyrics(trackName, artistName) {
+      const decodedTrack = decodeURIComponent(trackName);
+      const decodedArtist = decodeURIComponent(artistName);
+      
+      statusText.innerText = `Fetching correct lyrics for "${decodedTrack}"...`;
+
       try {
-        const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
+        const lrcResp = await fetch(`https://lrclib.net/api/search?track_name=${trackName}&artist_name=${artistName}`);
         const lrcData = await lrcResp.json();
-        if (Array.isArray(lrcData) && lrcData[0]?.syncedLyrics) {
+
+        if (Array.isArray(lrcData) && lrcData.length > 0 && lrcData[0]?.syncedLyrics) {
           parsedLyrics = parseLRC(lrcData[0].syncedLyrics);
           renderLyrics();
+          document.getElementById('displayTitle').innerText = decodedTrack;
+          document.getElementById('displayArtist').innerText = decodedArtist;
+          document.getElementById('heroTitle').innerText = decodedTrack;
+          document.getElementById('heroArtist').innerText = decodedArtist;
+          statusText.innerText = `Lyrics synced! Now download the MP3 and choose it above.`;
+        } else {
+          statusText.innerText = `Could not find synced lyrics for "${decodedTrack}".`;
         }
       } catch (err) {
         console.error("Lyrics error", err);
+        statusText.innerText = 'Error loading lyrics.';
       }
     }
 
@@ -957,7 +991,6 @@
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Metadata Extractor when they upload the downloaded song
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
