@@ -758,78 +758,84 @@
     }
 
     async function fetchLyrics() {
-      const track = trackInput.value.trim();
-      const artist = artistInput.value.trim();
+  const track = trackInput.value.trim();
+  const artist = artistInput.value.trim();
 
-      if (!track) return;
+  if (!track) return;
 
-      statusText.innerText = "Searching online audio & lyrics...";
+  statusText.innerText = "Searching online audio & lyrics...";
 
-      // Call Vercel serverless API
-      try {
-        const audioResp = await fetch(`/api/getAudio?q=${encodeURIComponent(track + ' ' + artist)}`);
-        const audioData = await audioResp.json();
+  // 1. Fetch Online Stream
+  try {
+    const audioResp = await fetch(`/api/getAudio?q=${encodeURIComponent(track + ' ' + artist)}`);
+    const audioData = await audioResp.json();
 
-        if (audioData && audioData.audioUrl) {
-          audioPlayer.pause();
-          audioPlayer.src = audioData.audioUrl;
-          audioPlayer.load();
+    if (audioData && audioData.audioUrl) {
+      audioPlayer.pause();
+      audioPlayer.src = audioData.audioUrl;
+      audioPlayer.load();
 
-          document.getElementById('displayTitle').innerText = audioData.title || track;
-          document.getElementById('displayArtist').innerText = audioData.artist || artist;
-          document.getElementById('heroTitle').innerText = audioData.title || track;
-          document.getElementById('heroArtist').innerText = audioData.artist || artist;
+      const cleanTitle = audioData.title || track;
+      const cleanArtist = audioData.artist || artist;
 
-          audioPlayer.play();
+      document.getElementById('displayTitle').innerText = cleanTitle;
+      document.getElementById('displayArtist').innerText = cleanArtist;
+      document.getElementById('heroTitle').innerText = cleanTitle;
+      document.getElementById('heroArtist').innerText = cleanArtist;
+
+      audioPlayer.play().catch(err => {
+        console.log("Autoplay blocked by browser. Tap play button.");
+      });
+    }
+  } catch (e) {
+    console.log("Online stream unavailable, using existing audio source.");
+  }
+
+  // 2. Fetch Synced Lyrics
+  const queries = [
+    `${track} ${artist}`,
+    `${track} ${artist} Romanized`,
+    `${track}`
+  ];
+
+  try {
+    let match = null;
+
+    for (const query of queries) {
+      const url = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const exactMatch = data.find(item => 
+          item.syncedLyrics && 
+          item.syncedLyrics.length > 0 &&
+          item.trackName.toLowerCase().includes(track.toLowerCase())
+        );
+
+        if (exactMatch) {
+          match = exactMatch;
+          break;
+        } else if (!match && data[0].syncedLyrics) {
+          match = data[0];
         }
-      } catch (e) {
-        console.log("Online stream unavailable, using current track.");
-      }
-
-      // Fetch synced lyrics from LRCLIB
-      const queries = [
-        `${track} ${artist}`,
-        `${track} ${artist} Romanized`,
-        `${track}`
-      ];
-
-      try {
-        let match = null;
-
-        for (const query of queries) {
-          const url = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
-          const response = await fetch(url);
-          const data = await response.json();
-
-          if (Array.isArray(data) && data.length > 0) {
-            const exactMatch = data.find(item => 
-              item.syncedLyrics && 
-              item.syncedLyrics.length > 0 &&
-              item.trackName.toLowerCase().includes(track.toLowerCase())
-            );
-
-            if (exactMatch) {
-              match = exactMatch;
-              break;
-            } else if (!match && data[0].syncedLyrics) {
-              match = data[0];
-            }
-          }
-        }
-
-        if (match && match.syncedLyrics) {
-          parsedLyrics = parseLRC(match.syncedLyrics);
-          renderLyrics();
-          modalOverlay.classList.remove('open');
-          statusText.innerText = 'Online audio & lyrics loaded!';
-        } else {
-          statusText.innerText = 'Audio playing, but no timed lyrics found.';
-        }
-      } catch (err) {
-        console.error(err);
-        statusText.innerText = 'Error loading lyrics.';
       }
     }
+
+    if (match && match.syncedLyrics) {
+      parsedLyrics = parseLRC(match.syncedLyrics);
+      renderLyrics();
+      modalOverlay.classList.remove('open');
+      statusText.innerText = 'Online audio & lyrics loaded!';
+    } else {
+      statusText.innerText = 'Audio playing, but no timed lyrics found.';
+    }
+  } catch (err) {
+    console.error(err);
+    statusText.innerText = 'Error loading lyrics.';
+  }
+}
+
 
     audioPlayer.addEventListener('timeupdate', () => {
       const currentTime = audioPlayer.currentTime - lyricOffset;
