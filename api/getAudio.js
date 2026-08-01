@@ -13,7 +13,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // 1. Search for track metadata & direct MP3 URL
     const searchUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}`;
     const searchResp = await fetch(searchUrl);
     const searchData = await searchResp.json();
@@ -23,7 +22,6 @@ module.exports = async (req, res) => {
       const downloadObj = track.downloadUrl ? (track.downloadUrl.find(d => d.quality === "320kbps") || track.downloadUrl[track.downloadUrl.length - 1]) : null;
 
       if (downloadObj && downloadObj.url) {
-        // If mode is 'info', return song details
         if (req.query.mode === 'info') {
           return res.status(200).json({
             title: track.name || query,
@@ -31,7 +29,6 @@ module.exports = async (req, res) => {
           });
         }
 
-        // 2. Download the audio stream and pipe raw bytes directly to browser
         const audioResp = await fetch(downloadObj.url);
         const arrayBuffer = await audioResp.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -45,5 +42,5 @@ module.exports = async (req, res) => {
     console.error("Audio proxy error:", err);
   }
 
-  return res.status(502).json({ error: "Failed to download audio stream" });
+  return res.status(502).json({ error: "Failed to fetch online song." });
 };
