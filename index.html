@@ -603,8 +603,8 @@
       </div>
 
       <div class="input-group">
-        <label>Direct MP3 Link (GitHub Raw / Archive.org)</label>
-        <input type="text" class="input-control" id="customUrlInput" placeholder="https://raw.githubusercontent.com/.../song.mp3" value="" />
+        <label>Direct MP3 Link (Optional)</label>
+        <input type="text" class="input-control" id="customUrlInput" placeholder="https://..." value="" />
       </div>
 
       <button class="btn-action" id="searchBtn">Fetch Lyrics & Play</button>
@@ -641,10 +641,8 @@
     let isUserSeeking = false;
     let activeIndex = -1;
 
-    // Public GitHub/Archive fallback database (Examples of direct unblocked raw links)
     const publicDatabase = {
-      "timeless": "https://ia801503.us.archive.org/15/items/the-weeknd-timeless/The%20Weeknd%20-%20Timeless.mp3",
-      "starboy": "https://raw.githubusercontent.com/rafaelreis-hotmart/Audio-Sample/main/sample.mp3"
+      "timeless": "https://ia801503.us.archive.org/15/items/the-weeknd-timeless/The%20Weeknd%20-%20Timeless.mp3"
     };
 
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
@@ -759,45 +757,41 @@
       }
     }
 
-    // Direct MP3 Execution via Custom URL, Public Raw Link, or Fallback
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
       const customUrl = customUrlInput.value.trim();
 
       if (!track) return;
+
+      // CRITICAL FOR MOBILE BRAVE: Instantly trigger play/pause in the same tap gesture context
+      audioPlayer.play().catch(e => console.log("Gesture token acquired"));
+      audioPlayer.pause();
+
       statusText.innerText = "Loading audio track...";
 
-      let targetAudioUrl = "";
-
-      // 1. Priority A: User provided custom GitHub/Archive MP3 link
-      if (customUrl) {
-        targetAudioUrl = customUrl;
-      } else {
-        // Priority B: Check public raw database lookup
-        const cleanKey = track.toLowerCase().trim();
-        if (publicDatabase[cleanKey]) {
-          targetAudioUrl = publicDatabase[cleanKey];
-        }
-      }
+      let targetAudioUrl = customUrl || publicDatabase[track.toLowerCase().trim()] || "";
 
       if (targetAudioUrl) {
         document.getElementById('displayTitle').innerText = track;
-        document.getElementById('displayArtist').innerText = artist || "Hosted Stream";
+        document.getElementById('displayArtist').innerText = artist || "Stream";
         document.getElementById('heroTitle').innerText = track;
-        document.getElementById('heroArtist').innerText = artist || "Hosted Stream";
+        document.getElementById('heroArtist').innerText = artist || "Stream";
 
         audioPlayer.src = targetAudioUrl;
         audioPlayer.load();
-        audioPlayer.play().catch(() => {
-          statusText.innerText = "Tap Play button below to start playback.";
-        });
-        statusText.innerText = "Direct stream connected! Loading lyrics...";
+
+        audioPlayer.oncanplay = () => {
+          audioPlayer.play().catch(() => {
+            statusText.innerText = "Tap play button to start audio.";
+          });
+        };
+
+        statusText.innerText = "Stream connected! Loading lyrics...";
       } else {
-        statusText.innerText = "No direct MP3 URL entered. Use custom link or local MP3!";
+        statusText.innerText = "No MP3 URL found. Select local MP3 or enter custom link!";
       }
 
-      // 2. Fetch Synced Lyrics from LRCLIB
       try {
         const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(track + ' ' + artist)}`);
         const lrcData = await lrcResp.json();
@@ -918,7 +912,7 @@
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Metadata Extractor
+    // Local ID3 Metadata Extractor (100% Mobile Safe)
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -981,7 +975,6 @@
       };
     }
 
-    // Live Sync Button Logic
     function adjustOffset(val) {
       if (val === 0) lyricOffset = 0;
       else lyricOffset += val;
