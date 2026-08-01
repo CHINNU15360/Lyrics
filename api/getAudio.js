@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   const query = req.query.q;
 
-  // Enable CORS so your app can call this API
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       const videoData = await videoResp.json();
       const adaptiveFormats = videoData.adaptiveFormats || [];
 
-      // Find the highest quality audio stream
+      // Find the highest bitrate audio stream
       const audioStream = adaptiveFormats
         .filter(f => f.type && f.type.startsWith("audio/"))
         .sort((a, b) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0))[0];
