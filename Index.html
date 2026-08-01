@@ -358,7 +358,6 @@
       min-height: 1.2em;
     }
 
-    /* Multi-Button Sync Box */
     .sync-offset-box {
       margin-top: 1rem;
       background: rgba(255,255,255,0.05);
@@ -468,7 +467,7 @@
         <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
 
-      <button class="btn-action" id="searchBtn">Search & Fetch Lyrics</button>
+      <button class="btn-action" id="searchBtn">Search & Play Song</button>
 
       <div class="sync-offset-box">
         <div class="sync-header">
@@ -516,10 +515,6 @@
       const m = Math.floor(secs / 60);
       const s = Math.floor(secs % 60);
       return `${m}:${s < 10 ? '0' : ''}${s}`;
-    }
-
-    function containsDevanagari(text) {
-      return /[\u0900-\u097F]/.test(text);
     }
 
     function parseLRC(lrcText) {
@@ -620,9 +615,8 @@
           parsedLyrics = parseLRC(match.syncedLyrics);
           renderLyrics();
           modalOverlay.classList.remove('open');
-          statusText.innerText = 'Lyrics loaded!';
         } else {
-          statusText.innerText = 'No timed lyrics found.';
+          statusText.innerText = 'Audio ready, but no timed lyrics found.';
         }
       } catch (err) {
         console.error(err);
@@ -632,13 +626,53 @@
 
     async function searchAndPlay() {
       const track = trackInput.value.trim();
+      const artist = artistInput.value.trim();
 
       if (!track) {
         statusText.innerText = 'Please enter a song name!';
         return;
       }
 
-      statusText.innerText = `Searching lyrics for "${track}"...`;
+      statusText.innerText = `Searching backend audio for "${track}"...`;
+      const searchQuery = `${track} ${artist}`.trim();
+
+      try {
+        // Calls your Netlify serverless function
+        const res = await fetch(`/.netlify/functions/getAudio?q=${encodeURIComponent(searchQuery)}`);
+        
+        if (!res.ok) {
+          throw new Error(`Server status ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data && data.audioUrl) {
+          audioPlayer.pause();
+          audioPlayer.removeAttribute('src');
+          audioPlayer.load();
+
+          audioPlayer.src = data.audioUrl;
+          audioPlayer.load();
+
+          document.getElementById('displayTitle').innerText = data.title;
+          document.getElementById('displayArtist').innerText = data.artist;
+          document.getElementById('heroTitle').innerText = data.title;
+          document.getElementById('heroArtist').innerText = data.artist;
+
+          playBtn.innerText = '▶';
+          statusText.innerText = 'Full online track ready! Loading lyrics...';
+
+          audioPlayer.onloadedmetadata = () => {
+            durTimeText.innerText = formatTime(audioPlayer.duration);
+          };
+        } else {
+          statusText.innerText = 'Audio stream not found online.';
+        }
+      } catch (err) {
+        console.error('Backend search error:', err);
+        statusText.innerText = 'Failed to fetch online audio.';
+      }
+
       await fetchLyrics();
     }
 
@@ -730,7 +764,7 @@
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     searchBtn.addEventListener('click', searchAndPlay);
 
-    // --- HARD SOURCE PURGE FOR LOCAL MP3 LOADING ---
+    // --- LOCAL MP3 LOADER ---
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -755,7 +789,7 @@
           durTimeText.innerText = formatTime(audioPlayer.duration);
           progressFill.style.width = '0%';
           currTimeText.innerText = '0:00';
-          statusText.innerText = `Loaded ${formatTime(audioPlayer.duration)} MP3! Tap Search & Fetch Lyrics.`;
+          statusText.innerText = `Loaded ${formatTime(audioPlayer.duration)} MP3! Tap Search & Play for lyrics.`;
         };
       }
     });
@@ -768,7 +802,7 @@
       audioPlayer.currentTime = pct * audioPlayer.duration;
     });
 
-    // --- QUICK OFFSET HANDLERS ---
+    // --- OFFSET HANDLERS ---
     function adjustOffset(val) {
       if (val === 0) lyricOffset = 0;
       else lyricOffset += val;
