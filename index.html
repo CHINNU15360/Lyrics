@@ -554,23 +554,6 @@
       opacity: 0.6;
     }
 
-    .action-group {
-      display: flex;
-      gap: 0.4rem;
-      flex-shrink: 0;
-    }
-
-    .sync-lyrics-btn {
-      background: #007aff;
-      color: #ffffff;
-      padding: 0.4rem 0.6rem;
-      border-radius: 8px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-    }
-
     .download-link-btn {
       background: #34c759;
       color: #000000;
@@ -580,6 +563,7 @@
       font-weight: 700;
       text-decoration: none;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     @media (min-width: 768px) {
@@ -607,11 +591,11 @@
     <div class="hero-panel">
       <div class="album-art" id="heroArt" style="width:200px; height:200px; font-size:4rem; border-radius:20px;">🎵</div>
       <div class="hero-title" id="heroTitle">Apple Music Lyrics</div>
-      <div class="hero-artist" id="heroArtist">Search a song to start</div>
+      <div class="hero-artist" id="heroArtist">Upload MP3 to start</div>
     </div>
 
     <div class="lyrics-panel" id="lyricsDisplay">
-      <div class="line">Tap ⚙️ below to search, sync lyrics, & play!</div>
+      <div class="line">Upload your downloaded MP3 below to load lyrics automatically!</div>
     </div>
   </div>
 
@@ -633,7 +617,7 @@
         <div class="album-art" id="playerArt">🎵</div>
         <div class="track-text">
           <div class="track-title" id="displayTitle">No Track Loaded</div>
-          <div class="track-artist" id="displayArtist">Tap gear to search & load</div>
+          <div class="track-artist" id="displayArtist">Tap gear to upload MP3</div>
         </div>
       </div>
       <div class="controls">
@@ -660,7 +644,7 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
       <button class="modal-close" id="closeModalBtn">✕</button>
-      <div class="modal-title">Search & Download Songs</div>
+      <div class="modal-title">Upload & Search Songs</div>
 
       <label class="file-btn" for="audioFileInput">
         📁 Choose Downloaded MP3 From Phone
@@ -668,14 +652,14 @@
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
       <div class="input-group">
-        <label>Search Any Song Online</label>
+        <label>Or Search Songs Online to Download</label>
         <div style="display: flex; gap: 0.5rem;">
-          <input type="text" class="input-control" id="trackInput" placeholder="e.g. Diet Mountain Dew" value="" />
+          <input type="text" class="input-control" id="trackInput" placeholder="e.g. All Girls Are The Same" value="" />
           <button class="btn-action" id="searchBtn" style="margin-top:0; width: 110px;">Search</button>
         </div>
       </div>
 
-      <div class="status-text" id="statusText">Tap 'Sync Lyrics' on your song, then download & upload!</div>
+      <div class="status-text" id="statusText">Upload an MP3 to automatically fetch lyrics!</div>
 
       <div class="results-list" id="resultsList"></div>
     </div>
@@ -819,7 +803,29 @@
       }
     }
 
-    // Fixed Search using precise track and artist name parameters to eliminate wrong/Korean lyrics
+    // Automatically fetch lyrics from LRCLIB using file tags or clean file name
+    async function fetchAutoLyrics(title, artist) {
+      statusText.innerText = `Searching synced lyrics for "${title}"...`;
+      try {
+        let query = `${title} ${artist !== "Local MP3" ? artist : ""}`;
+        const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
+        const lrcData = await lrcResp.json();
+
+        if (Array.isArray(lrcData) && lrcData.length > 0 && lrcData[0]?.syncedLyrics) {
+          parsedLyrics = parseLRC(lrcData[0].syncedLyrics);
+          renderLyrics();
+          statusText.innerText = `Lyrics loaded successfully!`;
+        } else {
+          statusText.innerText = `Audio loaded, but no synced lyrics found.`;
+          display.innerHTML = '<div class="line">No timed lyrics found for this track.</div>';
+        }
+      } catch (err) {
+        console.error("Auto lyrics error", err);
+        statusText.innerText = 'Error fetching lyrics.';
+      }
+    }
+
+    // Search online to download songs
     async function searchSongs() {
       const query = trackInput.value.trim();
       if (!query) return;
@@ -832,7 +838,7 @@
         const data = await response.json();
 
         if (data && data.success && data.data && data.data.results.length > 0) {
-          statusText.innerText = "Tap 'Sync Lyrics' then download your song:";
+          statusText.innerText = "Tap 'Download' to save MP3 to your phone:";
           
           data.data.results.forEach(song => {
             const dlObj = song.downloadUrl ? (song.downloadUrl.find(d => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1]) : null;
@@ -846,10 +852,7 @@
                 <div class="result-name">${song.name}</div>
                 <div class="result-artist">${song.primaryArtists}</div>
               </div>
-              <div class="action-group">
-                <button class="sync-lyrics-btn" onclick="fetchPreciseLyrics('${encodeURIComponent(song.name)}', '${encodeURIComponent(song.primaryArtists)}')">🎯 Sync Lyrics</button>
-                <a href="${dlObj.url}" download="${song.name}.mp3" class="download-link-btn" target="_blank">⬇ Download</a>
-              </div>
+              <a href="${dlObj.url}" download="${song.name}.mp3" class="download-link-btn" target="_blank">⬇ Download</a>
             `;
             resultsList.appendChild(item);
           });
@@ -857,35 +860,7 @@
           statusText.innerText = "No results found.";
         }
       } catch (e) {
-        statusText.innerText = "Search failed. Use local MP3 file instead!";
-      }
-    }
-
-    // Precise lyric fetching using track_name and artist_name parameters
-    async function fetchPreciseLyrics(trackName, artistName) {
-      const decodedTrack = decodeURIComponent(trackName);
-      const decodedArtist = decodeURIComponent(artistName);
-      
-      statusText.innerText = `Fetching correct lyrics for "${decodedTrack}"...`;
-
-      try {
-        const lrcResp = await fetch(`https://lrclib.net/api/search?track_name=${trackName}&artist_name=${artistName}`);
-        const lrcData = await lrcResp.json();
-
-        if (Array.isArray(lrcData) && lrcData.length > 0 && lrcData[0]?.syncedLyrics) {
-          parsedLyrics = parseLRC(lrcData[0].syncedLyrics);
-          renderLyrics();
-          document.getElementById('displayTitle').innerText = decodedTrack;
-          document.getElementById('displayArtist').innerText = decodedArtist;
-          document.getElementById('heroTitle').innerText = decodedTrack;
-          document.getElementById('heroArtist').innerText = decodedArtist;
-          statusText.innerText = `Lyrics synced! Now download the MP3 and choose it above.`;
-        } else {
-          statusText.innerText = `Could not find synced lyrics for "${decodedTrack}".`;
-        }
-      } catch (err) {
-        console.error("Lyrics error", err);
-        statusText.innerText = 'Error loading lyrics.';
+        statusText.innerText = "Search failed.";
       }
     }
 
@@ -991,6 +966,7 @@
       reTrackToCurrentLine();
     });
 
+    // Local ID3 Metadata Extractor & Auto Lyric Trigger
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -1002,13 +978,14 @@
         audioPlayer.src = fileUrl;
         audioPlayer.load();
 
-        let title = file.name.replace(/\.[^/.]+$/, "");
+        let rawName = file.name.replace(/\.[^/.]+$/, "");
+        let cleanTitle = rawName.replace(/[_]/g, " ").replace(/-/g, " ");
         let artist = "Local MP3";
 
         window.jsmediatags.read(file, {
           onSuccess: function(tag) {
             const tags = tag.tags;
-            if (tags.title) title = tags.title;
+            if (tags.title) cleanTitle = tags.title;
             if (tags.artist) artist = tags.artist;
 
             if (tags.picture) {
@@ -1020,30 +997,39 @@
               const imageUrl = `data:${format};base64,${window.btoa(base64String)}`;
               playerArt.style.backgroundImage = `url('${imageUrl}')`;
               playerArt.innerText = "";
+              document.getElementById('heroArt').style.backgroundImage = `url('${imageUrl}')`;
+              document.getElementById('heroArt').innerText = "";
             } else {
               playerArt.style.backgroundImage = "none";
               playerArt.innerText = "🎵";
+              document.getElementById('heroArt').style.backgroundImage = "none";
+              document.getElementById('heroArt').innerText = "🎵";
             }
 
-            document.getElementById('displayTitle').innerText = title;
+            document.getElementById('displayTitle').innerText = cleanTitle;
             document.getElementById('displayArtist').innerText = artist;
-            document.getElementById('heroTitle').innerText = title;
+            document.getElementById('heroTitle').innerText = cleanTitle;
             document.getElementById('heroArtist').innerText = artist;
 
             audioPlayer.onloadedmetadata = () => {
               durTimeText.innerText = formatTime(audioPlayer.duration);
               seekSlider.value = 0;
               currTimeText.innerText = '0:00';
-              statusText.innerText = `Loaded "${title}" successfully!`;
               audioPlayer.play();
               modalOverlay.classList.remove('open');
             };
+
+            // Automatically trigger lyric fetch
+            fetchAutoLyrics(cleanTitle, artist);
           },
           onError: function(error) {
-            document.getElementById('displayTitle').innerText = title;
+            document.getElementById('displayTitle').innerText = cleanTitle;
             document.getElementById('displayArtist').innerText = artist;
+            document.getElementById('heroTitle').innerText = cleanTitle;
+            document.getElementById('heroArtist').innerText = artist;
             audioPlayer.play();
             modalOverlay.classList.remove('open');
+            fetchAutoLyrics(cleanTitle, artist);
           }
         });
       }
