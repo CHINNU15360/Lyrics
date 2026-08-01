@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro</title>
+  <!-- jsmediatags CDN for local MP3 ID3 extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     * {
@@ -747,97 +748,65 @@
       }
     }
 
-    // Direct Browser Stream Request (Skips Vercel entirely)
+    // Direct listenfree.in integration (no backend proxy)
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
 
       if (!track) return;
+      statusText.innerText = "Connecting to listenfree.in...";
 
-      statusText.innerText = "Finding direct audio stream...";
-      const fullQuery = encodeURIComponent(track + ' ' + artist);
-
-      // Tell mobile browser it's allowed to play media
-      audioPlayer.play().catch(e => console.log("Unlocking audio..."));
-      audioPlayer.pause();
-
+      // 1. Fetch Audio from listenfree.in
       try {
-        // Direct fetch from browser to open API, completely bypassing Vercel restrictions
-        const searchUrl = `https://saavn.dev/api/search/songs?query=${fullQuery}`;
-        const searchResp = await fetch(searchUrl);
-        const searchData = await searchResp.json();
+        const searchUrl = `https://listenfree.in/api/search?q=${encodeURIComponent(track + ' ' + artist)}`;
+        const response = await fetch(searchUrl);
+        const data = await response.json();
 
-        if (searchData && searchData.success && searchData.data && searchData.data.results.length > 0) {
-          const song = searchData.data.results[0];
-          const downloadObj = song.downloadUrl ? (song.downloadUrl.find(d => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1]) : null;
+        // Check if API returns a direct stream link in data.url or similar
+        if (data && data.url) {
+          document.getElementById('displayTitle').innerText = track;
+          document.getElementById('displayArtist').innerText = artist;
+          document.getElementById('heroTitle').innerText = track;
+          document.getElementById('heroArtist').innerText = artist;
 
-          if (downloadObj && downloadObj.url) {
-            document.getElementById('displayTitle').innerText = song.name || track;
-            document.getElementById('displayArtist').innerText = song.primaryArtists || artist;
-            document.getElementById('heroTitle').innerText = song.name || track;
-            document.getElementById('heroArtist').innerText = song.primaryArtists || artist;
+          audioPlayer.src = data.url;
+          audioPlayer.load();
+          audioPlayer.play().catch(() => {
+            statusText.innerText = "Tap Play to start audio.";
+          });
+          statusText.innerText = "Stream connected! Loading lyrics...";
+        } else if (data && data[0] && data[0].url) {
+          // Fallback array structure check
+          document.getElementById('displayTitle').innerText = track;
+          document.getElementById('displayArtist').innerText = artist;
 
-            // Direct assignment bypasses the CORS fetch block
-            audioPlayer.src = downloadObj.url;
-            audioPlayer.load();
-
-            audioPlayer.play().catch(e => {
-              statusText.innerText = "Tap the play button below to start audio.";
-            });
-            
-            statusText.innerText = "Stream connected! Loading lyrics...";
-          } else {
-            throw new Error("No URL found in API response");
-          }
+          audioPlayer.src = data[0].url;
+          audioPlayer.load();
+          audioPlayer.play().catch(() => {});
+          statusText.innerText = "Stream connected! Loading lyrics...";
         } else {
-          throw new Error("Track not found on API");
+            throw new Error("Invalid URL structure from listenfree");
         }
       } catch (e) {
-        console.error("Stream connection failed:", e);
-        statusText.innerText = "Online track blocked. Try a different track or local MP3!";
+        console.error("Audio error:", e);
+        statusText.innerText = "Listenfree blocked the request. Try local MP3!";
       }
 
-      // Fetch synced lyrics from LRCLIB
-      const queries = [
-        `${track} ${artist}`,
-        `${track} ${artist} Romanized`,
-        `${track}`
-      ];
-
+      // 2. Fetch Lyrics from LRCLIB
       try {
-        let match = null;
+        const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(track + ' ' + artist)}`);
+        const lrcData = await lrcResp.json();
 
-        for (const query of queries) {
-          const url = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
-          const response = await fetch(url);
-          const data = await response.json();
-
-          if (Array.isArray(data) && data.length > 0) {
-            const exactMatch = data.find(item => 
-              item.syncedLyrics && 
-              item.syncedLyrics.length > 0 &&
-              item.trackName.toLowerCase().includes(track.toLowerCase())
-            );
-
-            if (exactMatch) {
-              match = exactMatch;
-              break;
-            } else if (!match && data[0].syncedLyrics) {
-              match = data[0];
-            }
-          }
-        }
-
-        if (match && match.syncedLyrics) {
-          parsedLyrics = parseLRC(match.syncedLyrics);
+        if (Array.isArray(lrcData) && lrcData[0]?.syncedLyrics) {
+          parsedLyrics = parseLRC(lrcData[0].syncedLyrics);
           renderLyrics();
           modalOverlay.classList.remove('open');
           statusText.innerText = 'Ready!';
         } else {
-          statusText.innerText = 'Audio playing, but no timed lyrics found.';
+            statusText.innerText = 'Audio connected, but no timed lyrics found.';
         }
       } catch (err) {
-        console.error(err);
+        console.error("Lyrics error:", err);
         statusText.innerText = 'Error loading lyrics.';
       }
     }
