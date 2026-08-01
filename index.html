@@ -747,7 +747,7 @@
       }
     }
 
-    // Direct stream link execution
+    // Direct Browser Stream Request (Skips Vercel entirely)
     async function fetchLyrics() {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
@@ -757,32 +757,43 @@
       statusText.innerText = "Finding direct audio stream...";
       const fullQuery = encodeURIComponent(track + ' ' + artist);
 
-      // Trick the browser into unlocking audio playback by attempting an empty play immediately upon user click
-      audioPlayer.play().catch(e => console.log("Init block"));
+      // Tell mobile browser it's allowed to play media
+      audioPlayer.play().catch(e => console.log("Unlocking audio..."));
       audioPlayer.pause();
 
       try {
-        const infoResp = await fetch(`/api/getAudio?q=${fullQuery}`);
-        const infoData = await infoResp.json();
+        // Direct fetch from browser to open API, completely bypassing Vercel restrictions
+        const searchUrl = `https://saavn.dev/api/search/songs?query=${fullQuery}`;
+        const searchResp = await fetch(searchUrl);
+        const searchData = await searchResp.json();
 
-        if (infoData && infoData.audioUrl) {
-          document.getElementById('displayTitle').innerText = infoData.title || track;
-          document.getElementById('displayArtist').innerText = infoData.artist || artist;
-          document.getElementById('heroTitle').innerText = infoData.title || track;
-          document.getElementById('heroArtist').innerText = infoData.artist || artist;
+        if (searchData && searchData.success && searchData.data && searchData.data.results.length > 0) {
+          const song = searchData.data.results[0];
+          const downloadObj = song.downloadUrl ? (song.downloadUrl.find(d => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1]) : null;
 
-          audioPlayer.src = infoData.audioUrl;
-          audioPlayer.load();
-          
-          audioPlayer.play().catch(e => {
-            statusText.innerText = "Tap the play button below to start audio.";
-          });
-          
-          statusText.innerText = "Stream connected! Loading lyrics...";
+          if (downloadObj && downloadObj.url) {
+            document.getElementById('displayTitle').innerText = song.name || track;
+            document.getElementById('displayArtist').innerText = song.primaryArtists || artist;
+            document.getElementById('heroTitle').innerText = song.name || track;
+            document.getElementById('heroArtist').innerText = song.primaryArtists || artist;
+
+            // Direct assignment bypasses the CORS fetch block
+            audioPlayer.src = downloadObj.url;
+            audioPlayer.load();
+
+            audioPlayer.play().catch(e => {
+              statusText.innerText = "Tap the play button below to start audio.";
+            });
+            
+            statusText.innerText = "Stream connected! Loading lyrics...";
+          } else {
+            throw new Error("No URL found in API response");
+          }
         } else {
-          throw new Error("No URL");
+          throw new Error("Track not found on API");
         }
       } catch (e) {
+        console.error("Stream connection failed:", e);
         statusText.innerText = "Online track blocked. Try a different track or local MP3!";
       }
 
