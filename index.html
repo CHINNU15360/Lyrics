@@ -34,41 +34,42 @@
     .lyrics-panel { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 1.5rem; overflow: hidden; position: relative; text-align: center; }
     .lyrics-panel::-webkit-scrollbar { display: none; }
     
-    .line { position: absolute; opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; max-width: 100%; word-break: normal; overflow-wrap: break-word; line-height: 1.2; padding: 0 0.5rem; }
-    .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.12s ease-out, text-shadow 0.15s ease-out, transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    
-    .line.active { opacity: 1 !important; position: relative !important; transform: scale(1.05); pointer-events: auto; }
-    .line.past, .line.future { opacity: 0 !important; transform: scale(0.9) translateY(10px); pointer-events: none; }
+    /* HIDE ALL INACTIVE LINES STRICTLY */
+    .line { position: absolute; opacity: 0 !important; pointer-events: none; visibility: hidden; }
+    .line.active { opacity: 1 !important; visibility: visible !important; position: relative !important; transform: scale(1.05); pointer-events: auto; max-width: 100%; word-break: normal; overflow-wrap: break-word; line-height: 1.2; padding: 0 0.5rem; }
+    .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.1s ease-out, text-shadow 0.1s ease-out, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
     /* DOOM TV STYLE */
-    .lyrics-doom .line.active { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); transform: scale(1.12) rotateX(0deg); }
-    .lyrics-doom .line.active .word.active-word { color: #ffcc00; transform: scale(1.2); text-shadow: 0 0 40px #ffcc00, 0 0 10px #ffffff; }
+    .lyrics-doom .line.active { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; }
+    .lyrics-doom .line.active .word.filled { color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
+    .lyrics-doom .line.active .word.active-word { color: #ffcc00 !important; transform: scale(1.2); text-shadow: 0 0 40px #ffcc00, 0 0 10px #ffffff; }
 
     /* REEL HOLLOW STYLE */
-    .lyrics-reel .line.active { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; }
-    .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.7); }
+    .lyrics-reel .line.active { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+    .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.6); }
     .lyrics-reel .line.active .word.filled { color: rgba(255, 255, 255, 0.9); -webkit-text-stroke: 0px; }
-    .lyrics-reel .line.active .word.active-word { color: #ffffff; -webkit-text-stroke: 0px; text-shadow: 0 0 25px #ffffff; transform: scale(1.15); }
+    .lyrics-reel .line.active .word.active-word { color: #ffffff !important; -webkit-text-stroke: 0px; text-shadow: 0 0 25px #ffffff; transform: scale(1.15); }
 
     /* CAPCUT POP */
     .lyrics-capcut .line.active { font-family: 'Anton', sans-serif; font-size: clamp(2.3rem, 8vw, 4.2rem); text-transform: uppercase; }
+    .lyrics-capcut .line.active .word { color: rgba(255, 255, 255, 0.3); -webkit-text-stroke: 2px #000; }
     .lyrics-capcut .line.active .word.filled { color: #ffffff; -webkit-text-stroke: 2px #000; }
-    .lyrics-capcut .line.active .word.active-word { color: #ffcc00; transform: scale(1.15) rotate(-3deg); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000; z-index: 10; position: relative; }
+    .lyrics-capcut .line.active .word.active-word { color: #ffcc00 !important; transform: scale(1.15) rotate(-3deg); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000; z-index: 10; position: relative; }
 
     /* CHAOTIC EDIT STYLE */
     .lyrics-chaotic .line.active { font-size: clamp(2.3rem, 7.5vw, 4rem); text-transform: uppercase; }
-    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); }
+    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); color: rgba(255, 255, 255, 0.25); -webkit-text-stroke: 2px #000; }
     .lyrics-chaotic .line.active .word.filled { color: var(--rand-color, #ffffff); -webkit-text-stroke: 2px #000; text-shadow: 3px 3px 0 #000; }
-    .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.1) translateY(-6px); z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); color: var(--rand-color, #ffcc00) !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); color: var(--rand-color, #ffcc00) !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.1) translateY(-6px); color: var(--rand-color, #ffcc00) !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); color: var(--rand-color, #ffcc00) !important; z-index: 10; position: relative; }
 
     /* APPLE STYLE */
-    .lyrics-apple .line.active { font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 700; color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.65); letter-spacing: -0.5px; }
-    .lyrics-apple .line.active .word { color: rgba(255, 255, 255, 0.4); }
+    .lyrics-apple .line.active { font-size: clamp(2.2rem, 7.0vw, 3.5rem); font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px; }
+    .lyrics-apple .line.active .word { color: rgba(255, 255, 255, 0.3); }
     .lyrics-apple .line.active .word.filled,
-    .lyrics-apple .line.active .word.active-word { color: #ffffff; text-shadow: 0 0 30px #ffffff; }
+    .lyrics-apple .line.active .word.active-word { color: #ffffff !important; text-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
 
     .lyrics-footer { margin-top: 5rem; padding-top: 1.5rem; padding-bottom: 3rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
     
@@ -338,7 +339,6 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // ROBUST ELRC PARSER: Captures leading words and all timestamps perfectly
     function parseLRC(lrcText) {
       hasWordLevelTimestamps = false;
       const lines = lrcText.split('\n');
@@ -350,7 +350,6 @@
         if (match) {
           const lineTime = parseInt(match[1]) * 60 + parseInt(match[2]) + (match[3] ? parseInt(match[3].padEnd(3,'0'))/1000 : 0);
           let rawText = line.replace(lineTimeRegex, '').trim();
-          rawText = rawText.replace(/["'`]/g, '');
 
           let reg = /<(\d{2}):(\d{2})(?:\.(\d{1,3}))?>/g;
           let m;
@@ -454,7 +453,7 @@
 
       const allLines = document.querySelectorAll('.line');
       
-      if (newActiveIndex !== activeIndex && autoScrollEnabled) {
+      if (newActiveIndex !== activeIndex) {
           activeIndex = newActiveIndex;
       }
 
@@ -463,10 +462,7 @@
       allLines.forEach((el, index) => {
         const wordSpans = el.querySelectorAll('.word');
 
-        if (index < newActiveIndex) {
-          el.className = 'line past';
-          wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
-        } else if (index === newActiveIndex) {
+        if (index === newActiveIndex) {
           el.className = 'line active';
 
           if (activeLineData.words) {
@@ -497,7 +493,7 @@
             });
           }
         } else {
-          el.className = 'line future';
+          el.className = 'line';
           wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
         }
       });
