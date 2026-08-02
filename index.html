@@ -5,16 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro - Local Player</title>
   
-  <!-- PASTE THIS LINE HERE -->
   <link rel="manifest" href="manifest.json">
-
-  <!-- Rest of your existing links & fonts... -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Apple Music Lyrics Pro - Local Player</title>
-  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
@@ -56,11 +47,11 @@
     .retrack-btn { position: fixed; right: 1.2rem; bottom: 13rem; z-index: 99; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; padding: 0.55rem 1rem; border-radius: 20px; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s; }
     .retrack-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
     
-    /* PROPER SCROLLING LYRICS LIST */
-    .lyrics-panel { flex: 1; height: 100%; overflow-y: auto; padding: 45vh 1.5rem 40vh 1.5rem; scrollbar-width: none; text-align: center; scroll-behavior: smooth; }
+    /* PROPER SCROLLING LYRICS LIST CENTERED */
+    .lyrics-panel { flex: 1; height: 100%; overflow-y: auto; padding: calc(50vh - 60px) 1.5rem calc(50vh + 100px) 1.5rem; scrollbar-width: none; text-align: center; scroll-behavior: smooth; }
     .lyrics-panel::-webkit-scrollbar { display: none; }
     
-    .line { position: relative; word-break: normal; overflow-wrap: break-word; margin-bottom: 2.5rem; line-height: 1.2; transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease; max-width: 100%; padding: 0 0.5rem; opacity: 0.3; transform: scale(0.9); cursor: pointer; }
+    .line { position: relative; word-break: normal; overflow-wrap: break-word; margin-bottom: 2.5rem; line-height: 1.2; transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease; max-width: 100%; padding: 0 0.5rem; opacity: 0.3; transform: scale(0.9); cursor: pointer; text-align: center; }
     .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.1s ease-out, text-shadow 0.1s ease-out, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     
     .line.active { opacity: 1; transform: scale(1.05); }
@@ -79,7 +70,7 @@
     .lyrics-reel .line.active .word.filled { color: rgba(255, 255, 255, 0.9); -webkit-text-stroke: 0px; }
     .lyrics-reel .line.active .word.active-word { color: var(--active-color) !important; -webkit-text-stroke: 0px; text-shadow: 0 0 25px var(--active-color); transform: scale(1.15); z-index: 10; position: relative; }
 
-        /* CAPCUT / REELS EDIT STYLE (PODCAST VIDEO STYLE) */
+    /* CAPCUT / REELS EDIT STYLE (PODCAST VIDEO STYLE) */
     .lyrics-capcut .line { 
       font-family: 'Montserrat', sans-serif; 
       font-weight: 900; 
@@ -99,7 +90,7 @@
       text-shadow: 0 4px 15px rgba(0,0,0,0.9);
     }
     .lyrics-capcut .line.active .word.active-word { 
-      color: #FFD000 !important; 
+      color: var(--active-color, #FFD000) !important; 
       transform: scale(1.2); 
       text-shadow: 0 0 20px rgba(255, 208, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 1); 
       -webkit-text-stroke: 0px;
@@ -290,6 +281,13 @@
   </div>
 
   <script>
+    // Service Worker Registration for PWA support
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+
     const audioPlayer = document.getElementById('audioPlayer');
     const display = document.getElementById('lyricsDisplay');
     const playBtn = document.getElementById('playBtn');
@@ -406,7 +404,8 @@
     let currentStyle = localStorage.getItem('lyricStyle') || 'doom';
     function applyLyricStyle(styleType) {
       styleBtns.forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.style-btn[data-style="${styleType}"]`).classList.add('active');
+      const targetBtn = document.querySelector(`.style-btn[data-style="${styleType}"]`);
+      if (targetBtn) targetBtn.classList.add('active');
       display.className = `lyrics-panel lyrics-${styleType}`;
       localStorage.setItem('lyricStyle', styleType);
       currentStyle = styleType;
@@ -781,15 +780,6 @@
     document.getElementById('p01').addEventListener('click', () => adjust(0.1));
     document.getElementById('p1').addEventListener('click', () => adjust(1));
     document.getElementById('mReset').addEventListener('click', () => { lyricOffset=0; document.getElementById('offsetVal').innerText='0.0s'; });
-  
-    // PASTE THIS SERVICE WORKER BLOCK RIGHT AT THE TOP OF YOUR SCRIPT:
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration skipped:', err));
-    }
-
-    // Your existing variables start here...
-    const audioPlayer = document.getElementById('audioPlayer');
-    const display = document.getElementById('lyricsDisplay');
 
   </script>
 </body>
