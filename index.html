@@ -30,7 +30,7 @@
     .retrack-btn { position: fixed; right: 1.2rem; bottom: 13rem; z-index: 99; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; padding: 0.55rem 1rem; border-radius: 20px; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s; }
     .retrack-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
     
-    /* PURE REEL CENTERED DISPLAY */
+    /* PURE CENTERED DISPLAY */
     .lyrics-panel { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 1.5rem; overflow: hidden; position: relative; text-align: center; }
     .lyrics-panel::-webkit-scrollbar { display: none; }
     
@@ -65,7 +65,10 @@
     .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); z-index: 10; position: relative; }
 
     /* APPLE STYLE */
-    .lyrics-apple .line.active { font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 800; color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.65); }
+    .lyrics-apple .line.active { font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 700; color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.65); letter-spacing: -0.5px; }
+    .lyrics-apple .line.active .word { color: rgba(255, 255, 255, 0.4); }
+    .lyrics-apple .line.active .word.filled,
+    .lyrics-apple .line.active .word.active-word { color: #ffffff; text-shadow: 0 0 30px #ffffff; }
 
     .lyrics-footer { margin-top: 5rem; padding-top: 1.5rem; padding-bottom: 3rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
     
@@ -192,10 +195,10 @@
         </div>
       </div>
 
-      <label class="file-btn" for="audioFileInput">📁 Choose Local Audio File (.mp3, .m4a)</label>
+      <label class="file-btn" for="audioFileInput" id="audioBtnLabel">📁 Choose Local Audio File (.mp3, .m4a)</label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
-      <label class="file-btn" for="lrcFileInput">📄 Optional: Upload Custom .LRC/.ELRC File</label>
+      <label class="file-btn" for="lrcFileInput" id="lrcBtnLabel">📄 Optional: Upload Custom .LRC/.ELRC File</label>
       <input type="file" id="lrcFileInput" accept=".lrc,.elrc,.txt" style="display:none;" />
 
       <input type="text" class="input-control" id="trackInput" placeholder="Song Title" />
@@ -221,6 +224,8 @@
     const artistInput = document.getElementById('artistInput');
     const audioFileInput = document.getElementById('audioFileInput');
     const lrcFileInput = document.getElementById('lrcFileInput');
+    const audioBtnLabel = document.getElementById('audioBtnLabel');
+    const lrcBtnLabel = document.getElementById('lrcBtnLabel');
     const statusText = document.getElementById('statusText');
     const seekSlider = document.getElementById('seekSlider');
     const currTimeText = document.getElementById('currTime');
@@ -494,6 +499,10 @@
       hasCustomLyricsLoaded = false;
       audioPlayer.src = URL.createObjectURL(file);
       
+      // IMMEDIATE STATUS FEEDBACK
+      audioBtnLabel.innerText = `✅ Audio Loaded: ${file.name}`;
+      statusText.innerText = `✅ Audio loaded successfully! Ready.`;
+      
       let rawName = file.name.replace(/\.[^/.]+$/, "").replace(/[_]/g, " ").replace(/-/g, " ");
       window.jsmediatags.read(file, {
         onSuccess: function(tag) {
@@ -520,8 +529,11 @@
           parsedLyrics = parseLRC(evt.target.result);
           hasCustomLyricsLoaded = true;
           renderLyrics();
+          
+          // IMMEDIATE STATUS FEEDBACK
+          lrcBtnLabel.innerText = `✅ ELRC Loaded: ${file.name}`;
+          statusText.innerText = hasWordLevelTimestamps ? '✅ Enhanced Word-Level (.ELRC) Loaded & Locked!' : '✅ Custom LRC Loaded & Locked!';
           modalOverlay.classList.remove('open');
-          statusText.innerText = hasWordLevelTimestamps ? 'Enhanced Word-Level (.ELRC) Loaded!' : 'Custom LRC Loaded!';
         };
         reader.readAsText(file);
       }
@@ -537,7 +549,7 @@
         durTimeText.innerText = formatTime(audioPlayer.duration);
         
         if (!hasCustomLyricsLoaded) {
-          statusText.innerText = `Fetching lyrics...`;
+          statusText.innerText = `Fetching online lyrics...`;
           fetchOnlyLyrics(title, artist === "Local MP3" ? "" : artist);
         } else {
           statusText.innerText = `Using custom uploaded .ELRC file!`;
@@ -567,10 +579,12 @@
             parsedLyrics = parseLRC(item.syncedLyrics);
             renderLyrics();
             modalOverlay.classList.remove('open');
+            statusText.innerText = '✅ Online Lyrics Loaded!';
             return;
           }
         }
         display.innerHTML = '<div class="line active">No timed lyrics found. Upload custom .ELRC file below!</div>';
+        statusText.innerText = '⚠️ No online lyrics found. Upload .ELRC file!';
       } catch (err) { statusText.innerText = 'Error loading lyrics.'; }
     }
 
