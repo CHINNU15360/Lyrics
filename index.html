@@ -748,51 +748,13 @@
       }
     }
 
-    // Direct listenfree.in integration (no backend proxy)
-    async function fetchLyrics() {
-      const track = trackInput.value.trim();
-      const artist = artistInput.value.trim();
+    function resetSyncOffset() {
+      lyricOffset = 0.0;
+      document.getElementById('offsetVal').innerText = '0.0s';
+    }
 
-      if (!track) return;
-      statusText.innerText = "Connecting to listenfree.in...";
-
-      // 1. Fetch Audio from listenfree.in
-      try {
-        const searchUrl = `https://listenfree.in/api/search?q=${encodeURIComponent(track + ' ' + artist)}`;
-        const response = await fetch(searchUrl);
-        const data = await response.json();
-
-        // Check if API returns a direct stream link in data.url or similar
-        if (data && data.url) {
-          document.getElementById('displayTitle').innerText = track;
-          document.getElementById('displayArtist').innerText = artist;
-          document.getElementById('heroTitle').innerText = track;
-          document.getElementById('heroArtist').innerText = artist;
-
-          audioPlayer.src = data.url;
-          audioPlayer.load();
-          audioPlayer.play().catch(() => {
-            statusText.innerText = "Tap Play to start audio.";
-          });
-          statusText.innerText = "Stream connected! Loading lyrics...";
-        } else if (data && data[0] && data[0].url) {
-          // Fallback array structure check
-          document.getElementById('displayTitle').innerText = track;
-          document.getElementById('displayArtist').innerText = artist;
-
-          audioPlayer.src = data[0].url;
-          audioPlayer.load();
-          audioPlayer.play().catch(() => {});
-          statusText.innerText = "Stream connected! Loading lyrics...";
-        } else {
-            throw new Error("Invalid URL structure from listenfree");
-        }
-      } catch (e) {
-        console.error("Audio error:", e);
-        statusText.innerText = "Listenfree blocked the request. Try local MP3!";
-      }
-
-      // 2. Fetch Lyrics from LRCLIB
+    // Fetches ONLY lyrics (used by both local and online flows)
+    async function fetchOnlyLyrics(track, artist) {
       try {
         const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(track + ' ' + artist)}`);
         const lrcData = await lrcResp.json();
@@ -803,11 +765,57 @@
           modalOverlay.classList.remove('open');
           statusText.innerText = 'Ready!';
         } else {
-            statusText.innerText = 'Audio connected, but no timed lyrics found.';
+          statusText.innerText = 'Audio connected, but no timed lyrics found.';
+          display.innerHTML = '<div class="line">No timed lyrics found for this track.</div>';
         }
       } catch (err) {
         console.error("Lyrics error:", err);
         statusText.innerText = 'Error loading lyrics.';
+      }
+    }
+
+    // Online Search Flow: Fetches audio from listenfree AND lyrics from LRCLIB
+    async function fetchLyricsAndAudio() {
+      const track = trackInput.value.trim();
+      const artist = artistInput.value.trim();
+
+      if (!track) return;
+      statusText.innerText = "Connecting to listenfree.in...";
+      
+      resetSyncOffset();
+
+      try {
+        const searchUrl = `https://listenfree.in/api/search?q=${encodeURIComponent(track + ' ' + artist)}`;
+        const response = await fetch(searchUrl);
+        const data = await response.json();
+
+        let audioUrl = null;
+        if (data && data.url) {
+            audioUrl = data.url;
+        } else if (data && data[0] && data[0].url) {
+            audioUrl = data[0].url;
+        }
+
+        if (audioUrl) {
+          document.getElementById('displayTitle').innerText = track;
+          document.getElementById('displayArtist').innerText = artist;
+          document.getElementById('heroTitle').innerText = track;
+          document.getElementById('heroArtist').innerText = artist;
+
+          audioPlayer.src = audioUrl;
+          audioPlayer.load();
+          audioPlayer.play().catch(() => {
+            statusText.innerText = "Tap Play to start audio.";
+          });
+          statusText.innerText = "Stream connected! Loading lyrics...";
+          
+          await fetchOnlyLyrics(track, artist);
+        } else {
+            throw new Error("Invalid URL structure from listenfree");
+        }
+      } catch (e) {
+        console.error("Audio error:", e);
+        statusText.innerText = "Listenfree blocked the request. Try local MP3!";
       }
     }
 
@@ -894,7 +902,7 @@
 
     gearBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-    searchBtn.addEventListener('click', fetchLyrics);
+    searchBtn.addEventListener('click', fetchLyricsAndAudio);
     retrackBtn.addEventListener('click', reTrackToCurrentLine);
 
     seekSlider.addEventListener('input', () => {
@@ -913,7 +921,7 @@
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Metadata Extractor
+    // Local ID3 Metadata Extractor & Flow
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -967,12 +975,17 @@
       trackInput.value = title;
       artistInput.value = artist !== "Local MP3" ? artist : "";
 
+      resetSyncOffset();
+
       audioPlayer.onloadedmetadata = () => {
         durTimeText.innerText = formatTime(audioPlayer.duration);
         seekSlider.value = 0;
         currTimeText.innerText = '0:00';
         statusText.innerText = `Auto-detected "${title}". Fetching lyrics...`;
-        fetchLyrics();
+        
+        // Pass empty string for artist if it is just the fallback "Local MP3"
+        fetchOnlyLyrics(title, artist === "Local MP3" ? "" : artist);
+        audioPlayer.play();
       };
     }
 
