@@ -36,12 +36,14 @@
     
     .line { position: absolute; opacity: 0 !important; pointer-events: none; visibility: hidden; }
     .line.active { opacity: 1 !important; visibility: visible !important; position: relative !important; transform: scale(1.05); pointer-events: auto; max-width: 100%; word-break: normal; overflow-wrap: break-word; line-height: 1.2; padding: 0 0.5rem; }
-    .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.08s ease-out, text-shadow 0.08s ease-out, transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    
+    /* DEFAULT WORD STYLING */
+    .line .word { display: inline-block; margin-right: 0.25em; color: rgba(255, 255, 255, 0.3); transition: color 0.08s ease-out, text-shadow 0.08s ease-out, transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .line .word.filled { color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+    .line .word.active-word { color: #ffcc00 !important; transform: scale(1.2); text-shadow: 0 0 35px #ffcc00, 0 0 10px #ffffff; z-index: 10; position: relative; }
 
     /* DOOM TV STYLE */
-    .lyrics-doom .line.active { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.35); text-transform: uppercase; }
-    .lyrics-doom .line.active .word.filled { color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
-    .lyrics-doom .line.active .word.active-word { color: #ffcc00 !important; transform: scale(1.2); text-shadow: 0 0 40px #ffcc00, 0 0 10px #ffffff; }
+    .lyrics-doom .line.active { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; text-transform: uppercase; }
 
     /* REEL HOLLOW STYLE */
     .lyrics-reel .line.active { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
@@ -66,9 +68,6 @@
 
     /* APPLE STYLE */
     .lyrics-apple .line.active { font-size: clamp(2.2rem, 7.0vw, 3.5rem); font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px; }
-    .lyrics-apple .line.active .word { color: rgba(255, 255, 255, 0.35); }
-    .lyrics-apple .line.active .word.filled { color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.5); }
-    .lyrics-apple .line.active .word.active-word { color: #ffffff !important; transform: scale(1.12); text-shadow: 0 0 35px #ffffff, 0 0 10px #ffcc00; }
 
     .lyrics-footer { margin-top: 5rem; padding-top: 1.5rem; padding-bottom: 3rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
     
@@ -338,7 +337,6 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // PERFECT ELRC PARSER: Accurately maps <mm:ss.xx> tags to words
     function parseLRC(lrcText) {
       hasWordLevelTimestamps = false;
       const lines = lrcText.split('\n');
