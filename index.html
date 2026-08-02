@@ -34,38 +34,41 @@
     .lyrics-panel { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 1.5rem; overflow: hidden; position: relative; text-align: center; }
     .lyrics-panel::-webkit-scrollbar { display: none; }
     
-    .line { position: absolute; opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; max-width: 100%; word-break: normal; overflow-wrap: break-word; line-height: 1.2; padding: 0 0.5rem; }
-    .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.12s ease-out, text-shadow 0.15s ease-out, transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    /* STRICT VISIBILITY RULES */
+    .line { position: absolute; opacity: 0 !important; pointer-events: none; visibility: hidden; }
+    .line.active { opacity: 1 !important; visibility: visible !important; position: relative !important; transform: scale(1.05); pointer-events: auto; max-width: 100%; word-break: normal; overflow-wrap: break-word; line-height: 1.2; padding: 0 0.5rem; }
     
-    .line.active { opacity: 1 !important; position: relative !important; transform: scale(1.05); pointer-events: auto; }
-    .line.past, .line.future { opacity: 0 !important; transform: scale(0.9) translateY(10px); pointer-events: none; }
+    /* DEFAULT WORD STYLING */
+    .line .word { display: inline-block; margin-right: 0.25em; color: rgba(255, 255, 255, 0.3); transition: color 0.08s ease-out, text-shadow 0.08s ease-out, transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .line .word.filled { color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+    .line .word.active-word { color: #ffcc00 !important; transform: scale(1.2); text-shadow: 0 0 35px #ffcc00, 0 0 10px #ffffff; z-index: 10; position: relative; }
 
     /* DOOM TV STYLE */
-    .lyrics-doom .line.active { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); transform: scale(1.12) rotateX(0deg); }
-    .lyrics-doom .line.active .word.active-word { color: #ffcc00; transform: scale(1.2); text-shadow: 0 0 40px #ffcc00, 0 0 10px #ffffff; }
+    .lyrics-doom .line.active { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; text-transform: uppercase; }
 
     /* REEL HOLLOW STYLE */
-    .lyrics-reel .line.active { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; }
-    .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.7); }
+    .lyrics-reel .line.active { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+    .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.5); }
     .lyrics-reel .line.active .word.filled { color: rgba(255, 255, 255, 0.9); -webkit-text-stroke: 0px; }
-    .lyrics-reel .line.active .word.active-word { color: #ffffff; -webkit-text-stroke: 0px; text-shadow: 0 0 25px #ffffff; transform: scale(1.15); }
+    .lyrics-reel .line.active .word.active-word { color: #ffffff !important; -webkit-text-stroke: 0px; text-shadow: 0 0 25px #ffffff; transform: scale(1.15); }
 
     /* CAPCUT POP */
     .lyrics-capcut .line.active { font-family: 'Anton', sans-serif; font-size: clamp(2.3rem, 8vw, 4.2rem); text-transform: uppercase; }
+    .lyrics-capcut .line.active .word { color: rgba(255, 255, 255, 0.3); -webkit-text-stroke: 2px #000; }
     .lyrics-capcut .line.active .word.filled { color: #ffffff; -webkit-text-stroke: 2px #000; }
-    .lyrics-capcut .line.active .word.active-word { color: #ffcc00; transform: scale(1.15) rotate(-3deg); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000; z-index: 10; position: relative; }
+    .lyrics-capcut .line.active .word.active-word { color: #ffcc00 !important; transform: scale(1.15) rotate(-3deg); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000; z-index: 10; position: relative; }
 
     /* CHAOTIC EDIT STYLE */
     .lyrics-chaotic .line.active { font-size: clamp(2.3rem, 7.5vw, 4rem); text-transform: uppercase; }
-    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); }
+    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); color: rgba(255, 255, 255, 0.25); -webkit-text-stroke: 2px #000; }
     .lyrics-chaotic .line.active .word.filled { color: var(--rand-color, #ffffff); -webkit-text-stroke: 2px #000; text-shadow: 3px 3px 0 #000; }
-    .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.1) translateY(-6px); z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); color: #ffcc00 !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); color: #ffcc00 !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.1) translateY(-6px); color: #ffcc00 !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); color: #ffcc00 !important; z-index: 10; position: relative; }
 
     /* APPLE STYLE */
-    .lyrics-apple .line.active { font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 700; color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.65); letter-spacing: -0.5px; }
+    .lyrics-apple .line.active { font-size: clamp(2.2rem, 7.0vw, 3.5rem); font-weight: 700; text-transform: none; letter-spacing: -0.5px; }
 
     .lyrics-footer { margin-top: 5rem; padding-top: 1.5rem; padding-bottom: 3rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
     
@@ -107,7 +110,14 @@
     .style-btn { padding: 0.65rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #ffffff; font-weight: 600; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
     .style-btn.active { background: #ffffff; color: #000000; border-color: #ffffff; }
     .input-control { width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #ffffff; font-size: 0.95rem; outline: none; margin-bottom: 1rem;}
+    
+    /* FILE GROUP FOR REMOVE BUTTON */
     .file-btn { width: 100%; padding: 0.85rem; border-radius: 14px; background: rgba(255,255,255,0.08); border: 1px dashed rgba(255,255,255,0.3); color: #ffffff; font-weight: 600; cursor: pointer; text-align: center; margin-bottom: 0.8rem; display: block; }
+    .file-group { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; width: 100%; }
+    .file-group .file-btn { margin-bottom: 0; flex: 1; }
+    .btn-remove { background: rgba(255, 59, 48, 0.15); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.4); border-radius: 14px; padding: 0 1.2rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: none; }
+    .btn-remove:hover { background: #ff3b30; color: #ffffff; }
+    
     .btn-action { width: 100%; padding: 0.85rem; border-radius: 14px; background: #ffffff; color: #000000; font-weight: 700; border: none; cursor: pointer; font-size: 1rem; }
     .btn-elrc { background: #34c759; color: #000000; margin-top: 0.5rem; }
     .status-text { font-size: 0.8rem; color: #34c759; margin-top: 0.6rem; text-align: center; min-height: 1.2em; }
@@ -195,7 +205,10 @@
       <label class="file-btn" for="audioFileInput" id="audioBtnLabel">📁 Choose Local Audio File (.mp3, .m4a)</label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
-      <label class="file-btn" for="lrcFileInput" id="lrcBtnLabel">📄 Optional: Upload Custom .LRC/.ELRC File</label>
+      <div class="file-group">
+        <label class="file-btn" for="lrcFileInput" id="lrcBtnLabel">📄 Upload Custom .ELRC</label>
+        <button class="btn-remove" id="removeLrcBtn">✕ Clear</button>
+      </div>
       <input type="file" id="lrcFileInput" accept=".lrc,.elrc,.txt" style="display:none;" />
 
       <input type="text" class="input-control" id="trackInput" placeholder="Song Title" />
@@ -221,13 +234,13 @@
     const artistInput = document.getElementById('artistInput');
     const audioFileInput = document.getElementById('audioFileInput');
     const lrcFileInput = document.getElementById('lrcFileInput');
+    const removeLrcBtn = document.getElementById('removeLrcBtn');
     const audioBtnLabel = document.getElementById('audioBtnLabel');
     const lrcBtnLabel = document.getElementById('lrcBtnLabel');
     const statusText = document.getElementById('statusText');
     const seekSlider = document.getElementById('seekSlider');
     const currTimeText = document.getElementById('currTime');
     const durTimeText = document.getElementById('durTime');
-    const retrackBtn = document.getElementById('retrackBtn');
     const playerArt = document.getElementById('playerArt');
     const bgBlur = document.getElementById('bgBlur');
     const rgbOverlay = document.getElementById('rgbOverlay');
@@ -236,7 +249,6 @@
     
     let parsedLyrics = [];
     let lyricOffset = 0.0;
-    let autoScrollEnabled = true;
     let isUserSeeking = false;
     let activeIndex = -1;
     let animationFrameId = null;
@@ -311,7 +323,6 @@
     
     document.addEventListener('fullscreenchange', toggleFullscreenUI);
     document.addEventListener('webkitfullscreenchange', toggleFullscreenUI);
-
     fullscreenBtn.addEventListener('click', () => {
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
@@ -335,35 +346,47 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
+    // ROBUST ELRC PARSER: Prevents plain text flashing by cleanly assigning times
     function parseLRC(lrcText) {
       hasWordLevelTimestamps = false;
       const lines = lrcText.split('\n');
       const result = [];
       const lineTimeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/;
-      const wordTimeRegex = /<(\d{2}):(\d{2})(?:\.(\d{1,3}))?>\s*([^\s<]+)/g;
 
       for (let line of lines) {
         const match = lineTimeRegex.exec(line);
         if (match) {
           const lineTime = parseInt(match[1]) * 60 + parseInt(match[2]) + (match[3] ? parseInt(match[3].padEnd(3,'0'))/1000 : 0);
-          let rawText = line.replace(lineTimeRegex, '').trim();
+          let rawText = line.replace(lineTimeRegex, '').trim().replace(/["'`]/g, '');
 
-          const words = [];
-          let wordMatch;
-          
-          while ((wordMatch = wordTimeRegex.exec(rawText)) !== null) {
+          if (/<(\d{2}):(\d{2})(?:\.(\d{1,3}))?>/.test(rawText)) {
             hasWordLevelTimestamps = true;
-            const wordTime = parseInt(wordMatch[1]) * 60 + parseInt(wordMatch[2]) + (wordMatch[3] ? parseInt(wordMatch[3].padEnd(3,'0'))/1000 : 0);
-            let cleanWord = wordMatch[4].replace(/["'`]/g, '');
-            if (cleanWord) {
-              words.push({ text: cleanWord, time: wordTime });
-            }
-          }
+            let reg = /<(\d{2}):(\d{2})(?:\.(\d{1,3}))?>/g;
+            let m;
+            let lastPos = 0;
+            let currentTime = lineTime;
+            let allWords = [];
 
-          if (words.length > 0) {
-            result.push({ time: lineTime, text: words.map(w => w.text).join(' '), words: words });
-          } else if (rawText) {
-            result.push({ time: lineTime, text: rawText, words: null });
+            while ((m = reg.exec(rawText)) !== null) {
+              let textBefore = rawText.substring(lastPos, m.index).trim();
+              if (textBefore) {
+                textBefore.split(/\s+/).forEach(w => allWords.push({text: w, time: currentTime}));
+              }
+              currentTime = parseInt(m[1]) * 60 + parseInt(m[2]) + (m[3] ? parseInt(m[3].padEnd(3,'0'))/1000 : 0);
+              lastPos = reg.lastIndex;
+            }
+            let textRemaining = rawText.substring(lastPos).trim();
+            if (textRemaining) {
+              textRemaining.split(/\s+/).forEach(w => allWords.push({text: w, time: currentTime}));
+            }
+
+            if (allWords.length > 0) {
+              result.push({ time: lineTime, text: allWords.map(w=>w.text).join(' '), words: allWords });
+            }
+          } else {
+            if (rawText) {
+              result.push({ time: lineTime, text: rawText, words: null });
+            }
           }
         }
       }
@@ -379,7 +402,7 @@
         lineEl.className = 'line';
         lineEl.id = `line-${index}`;
 
-        const wordList = item.words || item.text.split(' ').map(t => ({ text: t }));
+        const wordList = item.words || item.text.split(' ').map(t => ({ text: t, time: item.time }));
         wordList.forEach((w) => {
           const wordSpan = document.createElement('span');
           wordSpan.className = 'word';
@@ -395,7 +418,6 @@
         lineEl.addEventListener('click', () => {
           audioPlayer.currentTime = Math.max(0, item.time + lyricOffset);
           audioPlayer.play();
-          autoScrollEnabled = true;
         });
         display.appendChild(lineEl);
       });
@@ -418,9 +440,7 @@
       for (let i = 0; i < parsedLyrics.length; i++) {
         if (currentTime >= parsedLyrics[i].time) {
           newActiveIndex = i;
-        } else {
-          break;
-        }
+        } else { break; }
       }
 
       if (audioPlayer.duration && !isUserSeeking) {
@@ -431,13 +451,9 @@
 
       if (newActiveIndex === -1) return;
 
-      const allLines = document.querySelectorAll('.line');
-      
-      if (newActiveIndex !== activeIndex) {
-          activeIndex = newActiveIndex;
-      }
-
+      if (newActiveIndex !== activeIndex) { activeIndex = newActiveIndex; }
       const activeLineData = parsedLyrics[newActiveIndex];
+      const allLines = document.querySelectorAll('.line');
 
       allLines.forEach((el, index) => {
         const wordSpans = el.querySelectorAll('.word');
@@ -446,19 +462,21 @@
           el.className = 'line active';
 
           if (activeLineData.words) {
-            activeLineData.words.forEach((wObj, wIdx) => {
-              if (wordSpans[wIdx]) {
-                if (currentTime >= wObj.time) {
-                  const nextWord = activeLineData.words[wIdx + 1];
-                  if (!nextWord || currentTime < nextWord.time) {
-                    wordSpans[wIdx].classList.add('filled', 'active-word');
-                  } else {
-                    wordSpans[wIdx].classList.add('filled');
-                    wordSpans[wIdx].classList.remove('active-word');
-                  }
+            // FIX: Identify exact active time step to prevent flashing grouped words
+            let activeTime = -1;
+            activeLineData.words.forEach(w => { if (currentTime >= w.time) activeTime = w.time; });
+
+            wordSpans.forEach((wSpan, wIdx) => {
+              let wObj = activeLineData.words[wIdx];
+              if (currentTime >= wObj.time) {
+                if (wObj.time === activeTime) {
+                  wSpan.classList.add('filled', 'active-word');
                 } else {
-                  wordSpans[wIdx].classList.remove('filled', 'active-word');
+                  wSpan.classList.add('filled');
+                  wSpan.classList.remove('active-word');
                 }
+              } else {
+                wSpan.classList.remove('filled', 'active-word');
               }
             });
           } else {
@@ -482,17 +500,31 @@
     playBtn.addEventListener('click', () => audioPlayer.paused ? (audioPlayer.src ? audioPlayer.play() : modalOverlay.classList.add('open')) : audioPlayer.pause());
     gearBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-    retrackBtn.addEventListener('click', () => { autoScrollEnabled = true; retrackBtn.classList.remove('visible'); syncLyricsToTime(); });
 
     seekSlider.addEventListener('input', () => { isUserSeeking = true; currTimeText.innerText = formatTime((seekSlider.value / 100) * audioPlayer.duration); });
     seekSlider.addEventListener('change', () => { audioPlayer.currentTime = (seekSlider.value / 100) * audioPlayer.duration; isUserSeeking = false; });
 
+    // MANUAL CLEAR BUTTON
+    removeLrcBtn.addEventListener('click', () => {
+      hasCustomLyricsLoaded = false;
+      lrcFileInput.value = '';
+      lrcBtnLabel.innerText = '📄 Upload Custom .ELRC';
+      removeLrcBtn.style.display = 'none';
+      statusText.innerText = '🗑️ Custom lyrics cleared.';
+      fetchOnlyLyrics(trackInput.value.trim(), artistInput.value.trim());
+    });
+
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      hasCustomLyricsLoaded = false;
-      audioPlayer.src = URL.createObjectURL(file);
       
+      // AUTO CLEAR OLD CUSTOM LYRICS FOR NEW AUDIO
+      hasCustomLyricsLoaded = false;
+      lrcFileInput.value = '';
+      lrcBtnLabel.innerText = '📄 Upload Custom .ELRC';
+      removeLrcBtn.style.display = 'none';
+
+      audioPlayer.src = URL.createObjectURL(file);
       audioBtnLabel.innerText = `✅ Audio Loaded: ${file.name}`;
       statusText.innerText = `✅ Audio loaded successfully! Ready.`;
       
@@ -521,9 +553,10 @@
         reader.onload = function(evt) {
           parsedLyrics = parseLRC(evt.target.result);
           hasCustomLyricsLoaded = true;
+          removeLrcBtn.style.display = 'block'; // SHOW REMOVE BUTTON
           renderLyrics();
           
-          lrcBtnLabel.innerText = `✅ ELRC Loaded: ${file.name}`;
+          lrcBtnLabel.innerText = `✅ Loaded: ${file.name}`;
           statusText.innerText = hasWordLevelTimestamps ? '✅ Enhanced Word-Level (.ELRC) Loaded & Locked!' : '✅ Custom LRC Loaded & Locked!';
           modalOverlay.classList.remove('open');
         };
@@ -582,6 +615,9 @@
 
     searchBtn.addEventListener('click', () => {
       hasCustomLyricsLoaded = false;
+      lrcFileInput.value = '';
+      lrcBtnLabel.innerText = '📄 Upload Custom .ELRC';
+      removeLrcBtn.style.display = 'none';
       lyricOffset = 0; document.getElementById('offsetVal').innerText = '0.0s';
       fetchOnlyLyrics(trackInput.value.trim(), artistInput.value.trim());
     });
