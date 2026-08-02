@@ -68,9 +68,7 @@
 
     .lyrics-footer { margin-top: 5rem; padding-top: 1.5rem; padding-bottom: 3rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
     
-    /* RAISED PLAYER BAR TO CLEAR BRAVE TOOLBAR */
     .player-bar { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); width: calc(100% - 1.8rem); max-width: 520px; background: rgba(30, 30, 35, 0.85); backdrop-filter: blur(35px); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 28px; padding: 0.8rem 1rem; z-index: 100; display: flex; flex-direction: column; gap: 0.6rem; transition: opacity 0.3s, transform 0.3s; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
-    
     .live-sync-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.08); padding: 0.35rem 0.5rem; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.1); }
     .sync-label { font-size: 0.72rem; font-weight: 700; color: #34c759; min-width: 65px; }
     .sync-actions { display: flex; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; }
@@ -332,6 +330,7 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
+    // SANITIZED PARSER TO CLEAN QUOTES, UNDERSCORES, AND BROKEN CHARS
     function parseLRC(lrcText) {
       hasWordLevelTimestamps = false;
       const lines = lrcText.split('\n');
@@ -343,7 +342,10 @@
         const match = lineTimeRegex.exec(line);
         if (match) {
           const lineTime = parseInt(match[1]) * 60 + parseInt(match[2]) + (match[3] ? parseInt(match[3].padEnd(3,'0'))/1000 : 0);
-          const rawText = line.replace(lineTimeRegex, '').trim();
+          let rawText = line.replace(lineTimeRegex, '').trim();
+
+          // Strip leftover quotes or broken markdown artifacts from external files
+          rawText = rawText.replace(/["'`]/g, '');
 
           const words = [];
           let wordMatch;
@@ -351,7 +353,10 @@
           while ((wordMatch = wordTimeRegex.exec(rawText)) !== null) {
             hasWordLevelTimestamps = true;
             const wordTime = parseInt(wordMatch[1]) * 60 + parseInt(wordMatch[2]) + (wordMatch[3] ? parseInt(wordMatch[3].padEnd(3,'0'))/1000 : 0);
-            words.push({ text: wordMatch[4], time: wordTime });
+            let cleanWord = wordMatch[4].replace(/["'`]/g, '');
+            if (cleanWord) {
+              words.push({ text: cleanWord, time: wordTime });
+            }
           }
 
           if (words.length > 0) {
