@@ -744,8 +744,13 @@
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         const audioData = audioBuffer.getChannelData(0);
 
-        const output = await aiPipeline(audioData, { return_timestamps: 'word' });
-        
+        // Process long audio in 30-second chunks to prevent browser crashes
+const output = await aiPipeline(audioData, { 
+  chunk_length_s: 30, 
+  stride_length_s: 5,
+  return_timestamps: 'word' 
+});
+
         const cleanText = output.text.replace(/\[.*?\]|\(.*?\)/g, '').trim();
 
         parsedLyrics = [{
