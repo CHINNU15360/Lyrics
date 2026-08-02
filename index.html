@@ -338,33 +338,51 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
+    // ROBUST ELRC PARSER: Captures leading words and all timestamps perfectly
     function parseLRC(lrcText) {
       hasWordLevelTimestamps = false;
       const lines = lrcText.split('\n');
       const result = [];
       const lineTimeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/;
-      const wordTimeRegex = /<(\d{2}):(\d{2})(?:\.(\d{1,3}))?>\s*([^\s<]+)/g;
 
       for (let line of lines) {
         const match = lineTimeRegex.exec(line);
         if (match) {
           const lineTime = parseInt(match[1]) * 60 + parseInt(match[2]) + (match[3] ? parseInt(match[3].padEnd(3,'0'))/1000 : 0);
           let rawText = line.replace(lineTimeRegex, '').trim();
+          rawText = rawText.replace(/["'`]/g, '');
 
-          const words = [];
-          let wordMatch;
-          
-          while ((wordMatch = wordTimeRegex.exec(rawText)) !== null) {
-            hasWordLevelTimestamps = true;
-            const wordTime = parseInt(wordMatch[1]) * 60 + parseInt(wordMatch[2]) + (wordMatch[3] ? parseInt(wordMatch[3].padEnd(3,'0'))/1000 : 0);
-            let cleanWord = wordMatch[4].replace(/["'`]/g, '');
-            if (cleanWord) {
-              words.push({ text: cleanWord, time: wordTime });
+          let reg = /<(\d{2}):(\d{2})(?:\.(\d{1,3}))?>/g;
+          let m;
+          let segments = [];
+          let lastPos = 0;
+          let currentTime = lineTime;
+
+          while ((m = reg.exec(rawText)) !== null) {
+            let textBefore = rawText.substring(lastPos, m.index).trim();
+            if (textBefore) {
+              segments.push({ text: textBefore, time: currentTime });
             }
+            currentTime = parseInt(m[1]) * 60 + parseInt(m[2]) + (m[3] ? parseInt(m[3].padEnd(3,'0'))/1000 : 0);
+            hasWordLevelTimestamps = true;
+            lastPos = reg.lastIndex;
           }
 
-          if (words.length > 0) {
-            result.push({ time: lineTime, text: words.map(w => w.text).join(' '), words: words });
+          let textRemaining = rawText.substring(lastPos).trim();
+          if (textRemaining) {
+            segments.push({ text: textRemaining, time: currentTime });
+          }
+
+          let allWords = [];
+          segments.forEach(seg => {
+            let subWords = seg.text.split(/\s+/).filter(w => w.length > 0);
+            subWords.forEach(sw => {
+              allWords.push({ text: sw, time: seg.time });
+            });
+          });
+
+          if (allWords.length > 0) {
+            result.push({ time: lineTime, text: allWords.map(w => w.text).join(' '), words: allWords });
           } else if (rawText) {
             result.push({ time: lineTime, text: rawText, words: null });
           }
@@ -382,7 +400,7 @@
         lineEl.className = 'line';
         lineEl.id = `line-${index}`;
 
-        const wordList = item.words || item.text.split(' ').map(t => ({ text: t }));
+        const wordList = item.words || item.text.split(' ').map(t => ({ text: t, time: item.time }));
         wordList.forEach((w) => {
           const wordSpan = document.createElement('span');
           wordSpan.className = 'word';
@@ -499,7 +517,6 @@
       hasCustomLyricsLoaded = false;
       audioPlayer.src = URL.createObjectURL(file);
       
-      // IMMEDIATE STATUS FEEDBACK
       audioBtnLabel.innerText = `✅ Audio Loaded: ${file.name}`;
       statusText.innerText = `✅ Audio loaded successfully! Ready.`;
       
@@ -530,7 +547,6 @@
           hasCustomLyricsLoaded = true;
           renderLyrics();
           
-          // IMMEDIATE STATUS FEEDBACK
           lrcBtnLabel.innerText = `✅ ELRC Loaded: ${file.name}`;
           statusText.innerText = hasWordLevelTimestamps ? '✅ Enhanced Word-Level (.ELRC) Loaded & Locked!' : '✅ Custom LRC Loaded & Locked!';
           modalOverlay.classList.remove('open');
