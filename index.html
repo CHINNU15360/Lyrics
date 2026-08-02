@@ -434,7 +434,8 @@ function applyTheme(themeType) {
         const match = lineTimeRegex.exec(line);
         if (match) {
           const lineTime = parseInt(match[1]) * 60 + parseInt(match[2]) + (match[3] ? parseInt(match[3].padEnd(3,'0'))/1000 : 0);
-          let rawText = line.replace(lineTimeRegex, '').trim().replace(/["'`]/g, '');
+           let rawText = line.replace(lineTimeRegex, '').trim().replace(/["'`]/g, '');
+              rawText = rawText.replace(/\[.*?\]|\(.*?\)/g, '').trim();
 
           if (/<(\d{2}):(\d{2})(?:\.(\d{1,3}))?>/.test(rawText)) {
             hasWordLevelTimestamps = true;
@@ -779,15 +780,21 @@ document.getElementById('aiSyncBtn').addEventListener('click', async () => {
     // Run Whisper with word-level timestamps
     const output = await aiPipeline(audioData, { return_timestamps: 'word' });
     
-    // Convert AI Output to internal ELRC structure
-    parsedLyrics = [{
-      time: 0,
-      text: output.text,
-      words: output.chunks.map(chunk => ({
-        text: chunk.text.trim(),
-        time: chunk.timestamp[0]
-      }))
-    }];
+    // Replace the parsedLyrics = [...] line in the AI block with this:
+const cleanText = output.text.replace(/\[.*?\]|\(.*?\)/g, '').trim();
+
+parsedLyrics = [{
+  time: 0,
+  text: cleanText,
+  words: output.chunks
+    .filter(chunk => !/\[.*?\]|\(.*?\)/.test(chunk.text))
+    .map(chunk => ({
+      text: chunk.text.trim(),
+      time: chunk.timestamp[0]
+    }))
+    .filter(w => w.text.length > 0)
+}];
+
 
     hasCustomLyricsLoaded = true;
     hasWordLevelTimestamps = true;
