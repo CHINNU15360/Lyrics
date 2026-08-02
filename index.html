@@ -29,14 +29,16 @@
 
     .retrack-btn { position: fixed; right: 1.2rem; bottom: 13rem; z-index: 99; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; padding: 0.55rem 1rem; border-radius: 20px; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s; }
     .retrack-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .lyrics-panel { flex: 1; height: 100%; overflow-y: auto; padding: 45vh 1.8rem 40vh 1.8rem; scrollbar-width: none; }
+    .lyrics-panel { flex: 1; height: 100%; overflow-y: auto; padding: 45vh 1.5rem 40vh 1.5rem; scrollbar-width: none; text-align: center; }
     .lyrics-panel::-webkit-scrollbar { display: none; }
     
-    .line { cursor: pointer; transform-origin: center center; word-break: break-word; overflow-wrap: break-word; margin-bottom: 2.5rem; line-height: 1.2; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, filter 0.4s ease; }
+    /* FIXED LINE WRAPPING SO LONG SENTENCES NEVER CUT OFF */
+    .line { cursor: pointer; word-break: normal; overflow-wrap: break-word; margin-bottom: 2.5rem; line-height: 1.2; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, filter 0.4s ease; max-width: 100%; padding: 0 0.5rem; }
     .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.12s ease-out, text-shadow 0.15s ease-out, transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .line.future { opacity: 0 !important; transform: translateY(30px) scale(0.9); pointer-events: none; }
     
-    /* === FIXED APPLE STYLE === */
-    .lyrics-apple .line { font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 800; color: rgba(255, 255, 255, 0.25); filter: blur(4px); opacity: 0.35; transform: scale(0.92); text-align: left; transform-origin: left center; }
+    /* APPLE STYLE */
+    .lyrics-apple .line { font-size: clamp(2rem, 6.5vw, 3.2rem); font-weight: 800; color: rgba(255, 255, 255, 0.25); filter: blur(4px); opacity: 0.35; transform: scale(0.92); }
     .lyrics-apple .line.past { color: rgba(255, 255, 255, 0.35); filter: blur(0px); opacity: 0.45; transform: scale(0.95); }
     .lyrics-apple .line.active { opacity: 1 !important; filter: blur(0px) !important; transform: scale(1.02) translateY(0) !important; color: #ffffff; }
     .lyrics-apple .word { color: rgba(255, 255, 255, 0.3); }
@@ -44,33 +46,29 @@
     .lyrics-apple .line.active .word.active-word { color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.65); }
 
     /* DOOM TV STYLE */
-    .lyrics-doom { text-align: center; }
-    .lyrics-doom .line { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.18); filter: blur(4px); transform: scale(0.85) rotateX(25deg); text-align: center; }
+    .lyrics-doom .line { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.3rem, 7.5vw, 4.2rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.18); filter: blur(4px); transform: scale(0.85) rotateX(25deg); }
     .lyrics-doom .line.past { opacity: 0.25; filter: blur(3px); transform: scale(0.9) rotateX(10deg); }
-    .lyrics-doom .line.active { opacity: 1; filter: blur(0px); transform: scale(1.15) rotateX(0deg); }
+    .lyrics-doom .line.active { opacity: 1; filter: blur(0px); transform: scale(1.12) rotateX(0deg); }
     .lyrics-doom .line.active .word { color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
-    .lyrics-doom .line.active .word.active-word { color: #ffcc00; transform: scale(1.25); text-shadow: 0 0 40px #ffcc00, 0 0 10px #ffffff; }
-    .lyrics-doom .line.future { opacity: 0 !important; transform: translateY(30px) scale(0.9); pointer-events: none; }
+    .lyrics-doom .line.active .word.active-word { color: #ffcc00; transform: scale(1.2); text-shadow: 0 0 40px #ffcc00, 0 0 10px #ffffff; }
 
     /* REEL HOLLOW */
-    .lyrics-reel .line { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; color: rgba(255, 255, 255, 0.25); text-align: left; transform-origin: left center; }
+    .lyrics-reel .line { font-size: clamp(2.3rem, 7.5vw, 4.2rem); font-weight: 900; letter-spacing: -1px; color: rgba(255, 255, 255, 0.25); }
     .lyrics-reel .line.past { opacity: 0.2; transform: scale(0.95); }
     .lyrics-reel .line.active { opacity: 1; transform: scale(1.02) translateY(0); }
     .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.6); }
     .lyrics-reel .line.active .word.filled { color: rgba(255, 255, 255, 0.85); -webkit-text-stroke: 0px; }
     .lyrics-reel .line.active .word.active-word { color: #ffffff; -webkit-text-stroke: 0px; text-shadow: 0 0 25px #ffffff; transform: scale(1.15); }
-    .lyrics-reel .line.future { opacity: 0 !important; transform: translateY(30px) scale(0.9); pointer-events: none; }
 
     /* CAPCUT POP */
-    .lyrics-capcut .line { font-family: 'Anton', sans-serif; font-size: clamp(2.2rem, 8vw, 4.2rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.3); text-align: left; transform-origin: left center; }
+    .lyrics-capcut .line { font-family: 'Anton', sans-serif; font-size: clamp(2.2rem, 7.5vw, 4rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.3); }
     .lyrics-capcut .line.past { opacity: 0.4; transform: scale(0.95); }
     .lyrics-capcut .line.active { opacity: 1; transform: scale(1) translateY(0); }
     .lyrics-capcut .line.active .word.filled { color: #ffffff; -webkit-text-stroke: 2px #000; }
     .lyrics-capcut .line.active .word.active-word { color: #ffcc00; transform: scale(1.15) rotate(-3deg); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000; z-index: 10; position: relative; }
-    .lyrics-capcut .line.future { opacity: 0 !important; transform: translateY(30px) scale(0.9); pointer-events: none; }
 
     /* CHAOTIC EDIT STYLE */
-    .lyrics-chaotic .line { font-size: clamp(2.2rem, 7.5vw, 4rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.2); text-align: left; transform-origin: left center; }
+    .lyrics-chaotic .line { font-size: clamp(2.2rem, 7vw, 3.8rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.2); }
     .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.1s; }
     .lyrics-chaotic .line.past { opacity: 0.3; transform: scale(0.95); }
     .lyrics-chaotic .line.active { opacity: 1; transform: scale(1.02) translateY(0); }
@@ -79,7 +77,6 @@
     .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); z-index: 10; position: relative; }
     .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.1) translateY(-6px); z-index: 10; position: relative; }
     .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); z-index: 10; position: relative; }
-    .lyrics-chaotic .line.future { opacity: 0 !important; transform: translateY(30px) scale(0.9); pointer-events: none; }
 
     .lyrics-footer { margin-top: 5rem; padding-top: 1.5rem; padding-bottom: 3rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
     
@@ -139,7 +136,7 @@
     </button>
     <button class="retrack-btn" id="retrackBtn"><span>⬇ Track Line</span></button>
 
-    <div class="lyrics-panel lyrics-apple" id="lyricsDisplay">
+    <div class="lyrics-panel lyrics-doom" id="lyricsDisplay">
       <div class="line">Tap ⚙️ below to load audio & lyrics file!</div>
     </div>
   </div>
@@ -198,10 +195,10 @@
       <div class="settings-group">
         <label>Lyrics Animation Style</label>
         <div class="style-row">
-          <button class="style-btn active" data-style="apple">Apple Style</button>
-          <button class="style-btn" data-style="doom">Doom TV</button>
+          <button class="style-btn active" data-style="doom">Doom TV</button>
           <button class="style-btn" data-style="chaotic">Chaotic Edit</button>
           <button class="style-btn" data-style="capcut">CapCut Pop</button>
+          <button class="style-btn" data-style="apple">Apple Style</button>
         </div>
       </div>
 
@@ -298,7 +295,7 @@
     applyTheme(currentTheme);
 
     const styleBtns = document.querySelectorAll('.style-btn');
-    let currentStyle = localStorage.getItem('lyricStyle') || 'apple';
+    let currentStyle = localStorage.getItem('lyricStyle') || 'doom';
     function applyLyricStyle(styleType) {
       styleBtns.forEach(btn => btn.classList.remove('active'));
       document.querySelector(`.style-btn[data-style="${styleType}"]`).classList.add('active');
