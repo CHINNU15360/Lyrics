@@ -772,7 +772,7 @@
       }
     });
 
-        document.getElementById('aiSyncBtn').addEventListener('click', async () => {
+            document.getElementById('aiSyncBtn').addEventListener('click', async () => {
       if (!audioPlayer.src) {
         statusText.innerText = "⚠️ Please load an audio file first!";
         return;
@@ -781,7 +781,10 @@
       try {
         statusText.innerText = "⏳ Loading AI Whisper Model...";
         if (!aiPipeline) {
-          aiPipeline = await window.transformersPipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+          // You MUST include the revision: 'output_attentions' config for word timestamps to work!
+          aiPipeline = await window.transformersPipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', {
+             revision: 'output_attentions'
+          });
         }
 
         statusText.innerText = "🎙️ AI is analyzing audio & generating word timestamps...";
@@ -792,24 +795,30 @@
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         const audioData = audioBuffer.getChannelData(0);
 
+        // Tell the pipeline we specifically want 'word' timestamps
         const output = await aiPipeline(audioData, { return_timestamps: 'word' });
         
-        // Filter out unwanted background noise tags like [MUSIC]
-        const cleanChunks = output.chunks
-          .filter(chunk => !/\[.*?\]|\(.*?\)/.test(chunk.text))
+        // Filter out unwanted bracket tags (like [MUSIC])
+        const cleanChunks = (output.chunks || [])
+          .filter(chunk => chunk.text && !/\[.*?\]|\(.*?\)/.test(chunk.text))
           .map(chunk => ({
             text: chunk.text.trim(),
-            time: chunk.timestamp[0]
+            time: chunk.timestamp ? chunk.timestamp[0] : 0
           }))
           .filter(w => w.text.length > 0);
 
-        // Group words into lines of ~6 words so the UI renders them properly
-        parsedLyrics = [];
+        if (cleanChunks.length === 0) {
+          statusText.innerText = "⚠️ AI couldn't detect vocals clearly. Keeping original lyrics.";
+          return; 
+        }
+
+        // Group words into lines of ~6 words for proper rendering
+        const newParsed = [];
         const WORDS_PER_LINE = 6;
         for (let i = 0; i < cleanChunks.length; i += WORDS_PER_LINE) {
           const lineWords = cleanChunks.slice(i, i + WORDS_PER_LINE);
           if (lineWords.length > 0) {
-            parsedLyrics.push({
+            newParsed.push({
               time: lineWords[0].time,
               text: lineWords.map(w => w.text).join(' '),
               words: lineWords
@@ -817,6 +826,7 @@
           }
         }
 
+        parsedLyrics = newParsed;
         hasCustomLyricsLoaded = true;
         hasWordLevelTimestamps = true;
         renderLyrics();
@@ -825,7 +835,7 @@
         statusText.innerText = "✨ AI Word-Level Sync Generated!";
       } catch (err) {
         console.error(err);
-        statusText.innerText = "❌ AI Generation failed. Use custom .ELRC instead.";
+        statusText.innerText = "❌ AI Generation failed. Keeping current lyrics.";
       }
     });
 
