@@ -15,7 +15,6 @@
     }
 
     body {
-      /* Pushing Helvetica/Arial for that stark, clean look */
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
       background: #000000;
       color: #ffffff;
@@ -127,12 +126,11 @@
       transform: translateY(0);
     }
 
-    /* REEL STYLE LYRICS ENGINE */
     .lyrics-panel {
       flex: 1;
       height: 100%;
       overflow-y: auto;
-      padding: 45vh 1.8rem 45vh 1.8rem;
+      padding: 45vh 1.8rem 40vh 1.8rem;
       scrollbar-width: none;
     }
 
@@ -140,44 +138,73 @@
       display: none;
     }
 
+    /* BASE LYRIC STYLES */
     .line {
-      font-size: clamp(2.5rem, 8vw, 4.5rem);
-      font-weight: 900;
-      letter-spacing: -2px;
-      line-height: 1.1;
-      margin-bottom: 2rem;
       cursor: pointer;
       transform-origin: left center;
       word-break: break-word;
       overflow-wrap: break-word;
-      color: rgba(255, 255, 255, 0.25);
+      margin-bottom: 2rem;
+      line-height: 1.2;
       transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     }
-
-    .line.past {
-      opacity: 0.2;
-      transform: scale(0.95);
-    }
-
-    .line.active {
-      opacity: 1;
-      transform: scale(1.02);
-    }
-
+    
     .line .word {
       display: inline-block;
       margin-right: 0.18em;
       transition: color 0.15s ease-out, -webkit-text-stroke 0.15s ease-out, text-shadow 0.2s ease-out;
     }
 
-    /* Unsung active words become a sleek transparent outline */
-    .line.active .word {
+    /* === 1. APPLE STYLE === */
+    .lyrics-apple .line {
+      font-size: clamp(2rem, 6.5vw, 3.2rem);
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.25);
+      filter: blur(6px);
+      opacity: 0.35;
+      transform: scale(0.92);
+    }
+    .lyrics-apple .line.past {
+      color: rgba(255, 255, 255, 0.35);
+      filter: blur(0px);
+      opacity: 0.45;
+      transform: scale(0.95);
+    }
+    .lyrics-apple .line.active {
+      opacity: 1;
+      filter: blur(0px);
+      transform: scale(1.04);
+      color: #ffffff;
+    }
+    .lyrics-apple .word {
+      color: rgba(255, 255, 255, 0.3);
+    }
+    .lyrics-apple .line.active .word.filled {
+      color: #ffffff;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+    }
+
+    /* === 2. REEL STYLE === */
+    .lyrics-reel .line {
+      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      color: rgba(255, 255, 255, 0.25);
+    }
+    .lyrics-reel .line.past {
+      opacity: 0.2;
+      transform: scale(0.95);
+    }
+    .lyrics-reel .line.active {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+    .lyrics-reel .line.active .word {
       color: transparent;
       -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.7);
     }
-
-    /* Sung active words fill in solid with a cinematic glow */
-    .line.active .word.filled {
+    .lyrics-reel .line.active .word.filled {
       color: #ffffff;
       -webkit-text-stroke: 1.5px #ffffff;
       text-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
@@ -403,12 +430,16 @@
     .modal-card {
       width: 100%;
       max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
       background: #1c1c1e;
       border-radius: 28px 28px 0 0;
       padding: 1.5rem;
       box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
       position: relative;
     }
+
+    .modal-card::-webkit-scrollbar { display: none; }
 
     .modal-close {
       position: absolute;
@@ -430,15 +461,21 @@
       margin-bottom: 1.2rem;
     }
 
-    /* Appearance Settings */
-    .appearance-group {
+    /* Settings Groups */
+    .settings-group {
       margin-bottom: 1.2rem;
+    }
+    
+    .settings-group label {
+      display: block;
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-bottom: 0.5rem;
     }
     
     .theme-row {
       display: flex;
       gap: 0.8rem;
-      margin-top: 0.5rem;
     }
 
     .theme-circle {
@@ -456,15 +493,32 @@
       transform: scale(1.15);
     }
 
-    .input-group {
-      margin-bottom: 1rem;
+    .style-row {
+      display: flex;
+      gap: 0.6rem;
     }
 
-    .input-group label {
-      display: block;
-      font-size: 0.8rem;
-      opacity: 0.7;
-      margin-bottom: 0.4rem;
+    .style-btn {
+      flex: 1;
+      padding: 0.65rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .style-btn.active {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
+
+    .input-group {
+      margin-bottom: 1rem;
     }
 
     .input-control {
@@ -533,7 +587,8 @@
       <span>⬇ Track Line</span>
     </button>
 
-    <div class="lyrics-panel" id="lyricsDisplay">
+    <!-- The container class swaps between 'lyrics-apple' and 'lyrics-reel' -->
+    <div class="lyrics-panel lyrics-reel" id="lyricsDisplay">
       <div class="line">Tap ⚙️ below to choose a local MP3 & load lyrics!</div>
     </div>
   </div>
@@ -585,7 +640,7 @@
       <button class="modal-close" id="closeModalBtn">✕</button>
       <div class="modal-title">Settings</div>
 
-      <div class="appearance-group">
+      <div class="settings-group">
         <label>Theme Color</label>
         <div class="theme-row" id="themeRow">
           <div class="theme-circle" data-bg="dynamic" style="background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);" title="Dynamic Art (Default)"></div>
@@ -596,17 +651,25 @@
         </div>
       </div>
 
+      <div class="settings-group">
+        <label>Lyrics Animation Style</label>
+        <div class="style-row" id="styleRow">
+          <button class="style-btn" data-style="apple">Apple Style</button>
+          <button class="style-btn" data-style="reel">Reel Style</button>
+        </div>
+      </div>
+
       <label class="file-btn" for="audioFileInput">
         📁 Choose Local Audio File (.mp3, .m4a)
       </label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
-      <div class="input-group">
+      <div class="settings-group">
         <label>Song Title</label>
         <input type="text" class="input-control" id="trackInput" placeholder="e.g. Timeless" value="" />
       </div>
 
-      <div class="input-group">
+      <div class="settings-group">
         <label>Artist Name (Optional)</label>
         <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
@@ -675,13 +738,31 @@
     }
 
     themeCircles.forEach(circle => {
-      circle.addEventListener('click', () => {
-        applyTheme(circle.getAttribute('data-bg'));
-      });
+      circle.addEventListener('click', () => applyTheme(circle.getAttribute('data-bg')));
     });
-
     applyTheme(currentTheme);
 
+    // Lyrics Style Management
+    const styleBtns = document.querySelectorAll('.style-btn');
+    let currentStyle = localStorage.getItem('lyricStyle') || 'reel';
+
+    function applyLyricStyle(styleType) {
+      styleBtns.forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.querySelector(`.style-btn[data-style="${styleType}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      display.className = `lyrics-panel lyrics-${styleType}`;
+      
+      localStorage.setItem('lyricStyle', styleType);
+      currentStyle = styleType;
+    }
+
+    styleBtns.forEach(btn => {
+      btn.addEventListener('click', () => applyLyricStyle(btn.getAttribute('data-style')));
+    });
+    applyLyricStyle(currentStyle);
+
+    // Icons
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
     const expandSVG = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
