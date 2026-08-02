@@ -248,7 +248,7 @@
     let activeIndex = -1;
     let animationFrameId = null;
     let hasWordLevelTimestamps = false;
-    let hasCustomLyricsLoaded = false; // LOCK FLAG TO PREVENT ONLINE OVERWRITE
+    let hasCustomLyricsLoaded = false;
     
     const chaoticColors = ['#ffcc00', '#ff003c', '#00e6ff', '#34c759', '#ffffff'];
     const chaoticFonts = ["'Anton', sans-serif", "'Bebas Neue', sans-serif", "'Permanent Marker', cursive", "'Space Mono', monospace"];
@@ -422,9 +422,13 @@
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let newActiveIndex = -1;
 
+      // STRICT LINE TIMING: Keep line active until the next line actually starts
       for (let i = 0; i < parsedLyrics.length; i++) {
-        if (currentTime >= parsedLyrics[i].time) newActiveIndex = i;
-        else break;
+        if (currentTime >= parsedLyrics[i].time) {
+          newActiveIndex = i;
+        } else {
+          break;
+        }
       }
 
       if (audioPlayer.duration && !isUserSeeking) {
@@ -464,6 +468,7 @@
               if (wordSpans[wIdx]) {
                 if (currentTime >= wObj.time) {
                   const nextWord = activeLineData.words[wIdx + 1];
+                  // Keep word highlighted until next word starts OR until line ends
                   if (!nextWord || currentTime < nextWord.time) {
                     wordSpans[wIdx].classList.add('filled', 'active-word');
                   } else {
@@ -476,7 +481,7 @@
               }
             });
           } else {
-            const nextLineTime = parsedLyrics[newActiveIndex + 1] ? parsedLyrics[newActiveIndex + 1].time : activeLineData.time + 3.0;
+            const nextLineTime = parsedLyrics[newActiveIndex + 1] ? parsedLyrics[newActiveIndex + 1].time : activeLineData.time + 4.0;
             const progress = Math.min(Math.max((currentTime - activeLineData.time) / (nextLineTime - activeLineData.time), 0), 1);
             const wordsToFill = Math.floor(progress * wordSpans.length);
 
@@ -507,7 +512,7 @@
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      hasCustomLyricsLoaded = false; // Reset lock for new audio file
+      hasCustomLyricsLoaded = false;
       audioPlayer.src = URL.createObjectURL(file);
       
       let rawName = file.name.replace(/\.[^/.]+$/, "").replace(/[_]/g, " ").replace(/-/g, " ");
@@ -534,7 +539,7 @@
         const reader = new FileReader();
         reader.onload = function(evt) {
           parsedLyrics = parseLRC(evt.target.result);
-          hasCustomLyricsLoaded = true; // LOCK IN CUSTOM UPLOADED LYRICS SO ONLINE FETCH NEVER OVERWRITES THEM
+          hasCustomLyricsLoaded = true; // LOCK CUSTOM ELRC FILE
           renderLyrics();
           modalOverlay.classList.remove('open');
           statusText.innerText = hasWordLevelTimestamps ? 'Enhanced Word-Level (.ELRC) Loaded!' : 'Custom LRC Loaded!';
@@ -552,7 +557,6 @@
       const startPlayback = () => {
         durTimeText.innerText = formatTime(audioPlayer.duration);
         
-        // ONLY fetch online lyrics if user hasn't already uploaded a custom .elrc file
         if (!hasCustomLyricsLoaded) {
           statusText.innerText = `Fetching lyrics...`;
           fetchOnlyLyrics(title, artist === "Local MP3" ? "" : artist);
@@ -571,13 +575,13 @@
     }
 
     async function fetchOnlyLyrics(track, artist) {
-      if (hasCustomLyricsLoaded) return; // Prevent online fetch from overwriting custom lyrics
+      if (hasCustomLyricsLoaded) return;
       try {
         const query = `${track} ${artist}`.trim();
         const response = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
         const data = await response.json();
         
-        if (hasCustomLyricsLoaded) return; // Double check after await
+        if (hasCustomLyricsLoaded) return;
 
         for (let item of data) {
           if (item.syncedLyrics) {
@@ -592,7 +596,7 @@
     }
 
     searchBtn.addEventListener('click', () => {
-      hasCustomLyricsLoaded = false; // Allow manual override if they hit search
+      hasCustomLyricsLoaded = false;
       lyricOffset = 0; document.getElementById('offsetVal').innerText = '0.0s';
       fetchOnlyLyrics(trackInput.value.trim(), artistInput.value.trim());
     });
