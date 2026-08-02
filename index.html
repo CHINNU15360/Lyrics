@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Apple Music Lyrics Pro - Local Player</title>
-  <!-- jsmediatags CDN for local MP3 ID3 extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
     * {
@@ -152,10 +151,9 @@
     .line .word {
       display: inline-block;
       margin-right: 0.18em;
-      transition: color 0.15s ease-out, -webkit-text-stroke 0.15s ease-out, text-shadow 0.2s ease-out;
     }
 
-    /* === 1. APPLE STYLE === */
+    /* === 1. APPLE STYLE (Soft Glow) === */
     .lyrics-apple .line {
       font-size: clamp(2rem, 6.5vw, 3.2rem);
       font-weight: 800;
@@ -178,13 +176,14 @@
     }
     .lyrics-apple .word {
       color: rgba(255, 255, 255, 0.3);
+      transition: color 0.15s ease-out, text-shadow 0.2s ease-out;
     }
     .lyrics-apple .line.active .word.filled {
       color: #ffffff;
       text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
     }
 
-    /* === 2. REEL STYLE === */
+    /* === 2. REEL STYLE (Hollow to Solid) === */
     .lyrics-reel .line {
       font-size: clamp(2.5rem, 8vw, 4.5rem);
       font-weight: 900;
@@ -200,6 +199,9 @@
       opacity: 1;
       transform: scale(1.02);
     }
+    .lyrics-reel .word {
+      transition: color 0.15s ease-out, -webkit-text-stroke 0.15s ease-out, text-shadow 0.2s ease-out;
+    }
     .lyrics-reel .line.active .word {
       color: transparent;
       -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.7);
@@ -208,6 +210,86 @@
       color: #ffffff;
       -webkit-text-stroke: 1.5px #ffffff;
       text-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+    }
+
+    /* === 3. BOLD STROKE (CapCut Pop) === */
+    .lyrics-stroke .line {
+      font-size: clamp(2rem, 7.5vw, 4rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+    }
+    .lyrics-stroke .line.past {
+      opacity: 0.3;
+    }
+    .lyrics-stroke .line.active {
+      opacity: 1;
+    }
+    .lyrics-stroke .line.active .word {
+      color: rgba(255,255,255,0.8);
+      -webkit-text-stroke: 3px #000000;
+      text-shadow: 4px 4px 0px #000000;
+      transform: scale(0.9);
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.1s;
+    }
+    .lyrics-stroke .line.active .word.filled {
+      color: #ffffff;
+      transform: scale(1.15) rotate(-2deg);
+    }
+
+    /* === 4. NEON PHONK (Aggressive Glow) === */
+    .lyrics-neon .line {
+      font-family: "Courier New", Courier, monospace;
+      font-size: clamp(1.8rem, 6.5vw, 3.5rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.15);
+      letter-spacing: -2px;
+    }
+    .lyrics-neon .line.past {
+      opacity: 0.3;
+    }
+    .lyrics-neon .line.active {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    .lyrics-neon .word {
+      transition: color 0.05s, text-shadow 0.05s;
+    }
+    .lyrics-neon .line.active .word.filled {
+      color: #ff003c;
+      text-shadow: 3px 2px 0px #00e6ff, -2px -2px 10px rgba(255, 0, 60, 0.8);
+    }
+
+    /* === 5. CINEMATIC 3D (Movie Trailer) === */
+    .lyrics-cinematic {
+      perspective: 800px;
+    }
+    .lyrics-cinematic .line {
+      font-size: clamp(2.2rem, 7.5vw, 4rem);
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: rgba(255, 255, 255, 0.2);
+      transform: rotateX(25deg) scale(0.9);
+      transform-origin: center bottom;
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
+    }
+    .lyrics-cinematic .line.past {
+      transform: rotateX(-15deg) scale(0.95);
+      opacity: 0.1;
+    }
+    .lyrics-cinematic .line.active {
+      transform: rotateX(0deg) scale(1.05);
+      opacity: 1;
+    }
+    .lyrics-cinematic .word {
+      transition: color 0.3s ease, text-shadow 0.3s ease;
+    }
+    .lyrics-cinematic .line.active .word.filled {
+      color: #ffffff;
+      text-shadow: 0 10px 30px rgba(255,255,255,0.7);
     }
 
     .lyrics-footer {
@@ -221,6 +303,7 @@
       letter-spacing: 0.5px;
     }
 
+    /* PLAYER UI */
     .player-bar {
       position: fixed;
       bottom: 1.2rem;
@@ -264,10 +347,7 @@
       overflow-x: auto;
       scrollbar-width: none;
     }
-
-    .sync-actions::-webkit-scrollbar {
-      display: none;
-    }
+    .sync-actions::-webkit-scrollbar { display: none; }
 
     .mini-sync-btn {
       background: rgba(255, 255, 255, 0.15);
@@ -280,7 +360,6 @@
       cursor: pointer;
       white-space: nowrap;
     }
-
     .mini-sync-btn.vocal-btn {
       background: #34c759;
       color: #000000;
@@ -351,10 +430,7 @@
       border-radius: 50%;
       transition: transform 0.15s ease;
     }
-
-    .btn-icon:active {
-      transform: scale(0.92);
-    }
+    .btn-icon:active { transform: scale(0.92); }
 
     .btn-play {
       background: #ffffff;
@@ -362,18 +438,8 @@
       border: none;
       box-shadow: 0 4px 15px rgba(255,255,255,0.25);
     }
-
-    .btn-play svg {
-      fill: #000000;
-      width: 18px;
-      height: 18px;
-    }
-
-    .btn-gear svg {
-      fill: #ffffff;
-      width: 18px;
-      height: 18px;
-    }
+    .btn-play svg { fill: #000000; width: 18px; height: 18px; }
+    .btn-gear svg { fill: #ffffff; width: 18px; height: 18px; }
 
     .scrubber-box {
       width: 100%;
@@ -392,7 +458,6 @@
       outline: none;
       cursor: pointer;
     }
-
     .seek-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
@@ -412,6 +477,7 @@
       opacity: 0.55;
     }
 
+    /* MODAL & SETTINGS */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -422,10 +488,7 @@
       align-items: flex-end;
       justify-content: center;
     }
-
-    .modal-overlay.open {
-      display: flex;
-    }
+    .modal-overlay.open { display: flex; }
 
     .modal-card {
       width: 100%;
@@ -438,7 +501,6 @@
       box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
       position: relative;
     }
-
     .modal-card::-webkit-scrollbar { display: none; }
 
     .modal-close {
@@ -461,7 +523,6 @@
       margin-bottom: 1.2rem;
     }
 
-    /* Settings Groups */
     .settings-group {
       margin-bottom: 1.2rem;
     }
@@ -477,7 +538,6 @@
       display: flex;
       gap: 0.8rem;
     }
-
     .theme-circle {
       width: 34px;
       height: 34px;
@@ -487,20 +547,24 @@
       transition: transform 0.2s, border-color 0.2s;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-
     .theme-circle.active {
       border-color: #ffffff;
       transform: scale(1.15);
     }
 
+    /* Horizontally Scrollable Style Buttons */
     .style-row {
       display: flex;
       gap: 0.6rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 0.5rem;
     }
+    .style-row::-webkit-scrollbar { display: none; }
 
     .style-btn {
-      flex: 1;
-      padding: 0.65rem;
+      flex: 0 0 auto;
+      padding: 0.65rem 1rem;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.15);
       background: rgba(255,255,255,0.05);
@@ -509,18 +573,15 @@
       font-size: 0.85rem;
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
     }
-
     .style-btn.active {
       background: #ffffff;
       color: #000000;
       border-color: #ffffff;
     }
 
-    .input-group {
-      margin-bottom: 1rem;
-    }
-
+    .input-group { margin-bottom: 1rem; }
     .input-control {
       width: 100%;
       padding: 0.75rem 1rem;
@@ -587,7 +648,7 @@
       <span>⬇ Track Line</span>
     </button>
 
-    <!-- The container class swaps between 'lyrics-apple' and 'lyrics-reel' -->
+    <!-- The container class swaps between lyrics styles dynamically -->
     <div class="lyrics-panel lyrics-reel" id="lyricsDisplay">
       <div class="line">Tap ⚙️ below to choose a local MP3 & load lyrics!</div>
     </div>
@@ -654,8 +715,11 @@
       <div class="settings-group">
         <label>Lyrics Animation Style</label>
         <div class="style-row" id="styleRow">
-          <button class="style-btn" data-style="apple">Apple Style</button>
-          <button class="style-btn" data-style="reel">Reel Style</button>
+          <button class="style-btn" data-style="apple">Apple</button>
+          <button class="style-btn" data-style="reel">Reel Hollow</button>
+          <button class="style-btn" data-style="stroke">Bold Stroke</button>
+          <button class="style-btn" data-style="neon">Neon Phonk</button>
+          <button class="style-btn" data-style="cinematic">Cinematic 3D</button>
         </div>
       </div>
 
@@ -742,7 +806,7 @@
     });
     applyTheme(currentTheme);
 
-    // Lyrics Style Management
+    // Lyrics Style Management (Scrollable Row)
     const styleBtns = document.querySelectorAll('.style-btn');
     let currentStyle = localStorage.getItem('lyricStyle') || 'reel';
 
