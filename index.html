@@ -29,53 +29,43 @@
 
     .retrack-btn { position: fixed; right: 1.2rem; bottom: 13rem; z-index: 99; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; padding: 0.55rem 1rem; border-radius: 20px; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s; }
     .retrack-btn.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .lyrics-panel { flex: 1; height: 100%; overflow-y: auto; padding: 45vh 1.5rem 40vh 1.5rem; scrollbar-width: none; text-align: center; }
+    
+    /* PURE REEL CENTERED DISPLAY */
+    .lyrics-panel { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 1.5rem; overflow: hidden; position: relative; text-align: center; }
     .lyrics-panel::-webkit-scrollbar { display: none; }
     
-    .line { cursor: pointer; word-break: normal; overflow-wrap: break-word; margin-bottom: 2.5rem; line-height: 1.2; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, filter 0.4s ease; max-width: 100%; padding: 0 0.5rem; }
+    .line { position: absolute; opacity: 0; pointer-events: none; transition: transform 0.25s ease, opacity 0.25s ease; max-width: 100%; word-break: normal; overflow-wrap: break-word; line-height: 1.2; padding: 0 0.5rem; }
     .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.12s ease-out, text-shadow 0.15s ease-out, transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .line.future { opacity: 0 !important; transform: translateY(30px) scale(0.9); pointer-events: none; }
     
-    /* APPLE STYLE */
-    .lyrics-apple .line { font-size: clamp(2rem, 6.5vw, 3.2rem); font-weight: 800; color: rgba(255, 255, 255, 0.25); filter: blur(4px); opacity: 0.35; transform: scale(0.92); }
-    .lyrics-apple .line.past { color: rgba(255, 255, 255, 0.35); filter: blur(0px); opacity: 0.45; transform: scale(0.95); }
-    .lyrics-apple .line.active { opacity: 1 !important; filter: blur(0px) !important; transform: scale(1.02) translateY(0) !important; color: #ffffff; }
-    .lyrics-apple .word { color: rgba(255, 255, 255, 0.3); }
-    .lyrics-apple .line.active .word.filled, 
-    .lyrics-apple .line.active .word.active-word { color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.65); }
+    .line.active { opacity: 1 !important; position: relative !important; transform: scale(1.05); pointer-events: auto; }
+    .line.past, .line.future { opacity: 0 !important; transform: scale(0.9) translateY(10px); pointer-events: none; }
 
     /* DOOM TV STYLE */
-    .lyrics-doom .line { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.3rem, 7.5vw, 4.2rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.18); filter: blur(4px); transform: scale(0.85) rotateX(25deg); }
-    .lyrics-doom .line.past { opacity: 0.25; filter: blur(3px); transform: scale(0.9) rotateX(10deg); }
-    .lyrics-doom .line.active { opacity: 1; filter: blur(0px); transform: scale(1.12) rotateX(0deg); }
-    .lyrics-doom .line.active .word { color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
+    .lyrics-doom .line.active { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); transform: scale(1.12) rotateX(0deg); }
     .lyrics-doom .line.active .word.active-word { color: #ffcc00; transform: scale(1.2); text-shadow: 0 0 40px #ffcc00, 0 0 10px #ffffff; }
 
-    /* REEL HOLLOW */
-    .lyrics-reel .line { font-size: clamp(2.3rem, 7.5vw, 4.2rem); font-weight: 900; letter-spacing: -1px; color: rgba(255, 255, 255, 0.25); }
-    .lyrics-reel .line.past { opacity: 0.2; transform: scale(0.95); }
-    .lyrics-reel .line.active { opacity: 1; transform: scale(1.02) translateY(0); }
-    .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.6); }
-    .lyrics-reel .line.active .word.filled { color: rgba(255, 255, 255, 0.85); -webkit-text-stroke: 0px; }
+    /* REEL HOLLOW STYLE */
+    .lyrics-reel .line.active { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; }
+    .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.7); }
+    .lyrics-reel .line.active .word.filled { color: rgba(255, 255, 255, 0.9); -webkit-text-stroke: 0px; }
     .lyrics-reel .line.active .word.active-word { color: #ffffff; -webkit-text-stroke: 0px; text-shadow: 0 0 25px #ffffff; transform: scale(1.15); }
 
     /* CAPCUT POP */
-    .lyrics-capcut .line { font-family: 'Anton', sans-serif; font-size: clamp(2.2rem, 7.5vw, 4rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.3); }
-    .lyrics-capcut .line.past { opacity: 0.4; transform: scale(0.95); }
-    .lyrics-capcut .line.active { opacity: 1; transform: scale(1) translateY(0); }
+    .lyrics-capcut .line.active { font-family: 'Anton', sans-serif; font-size: clamp(2.3rem, 8vw, 4.2rem); text-transform: uppercase; }
     .lyrics-capcut .line.active .word.filled { color: #ffffff; -webkit-text-stroke: 2px #000; }
     .lyrics-capcut .line.active .word.active-word { color: #ffcc00; transform: scale(1.15) rotate(-3deg); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000; z-index: 10; position: relative; }
 
     /* CHAOTIC EDIT STYLE */
-    .lyrics-chaotic .line { font-size: clamp(2.2rem, 7vw, 3.8rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.2); }
-    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.1s; }
-    .lyrics-chaotic .line.past { opacity: 0.3; transform: scale(0.95); }
-    .lyrics-chaotic .line.active { opacity: 1; transform: scale(1.02) translateY(0); }
+    .lyrics-chaotic .line.active { font-size: clamp(2.3rem, 7.5vw, 4rem); text-transform: uppercase; }
+    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); }
     .lyrics-chaotic .line.active .word.filled { color: var(--rand-color, #ffffff); -webkit-text-stroke: 2px #000; text-shadow: 3px 3px 0 #000; }
     .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); z-index: 10; position: relative; }
     .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); z-index: 10; position: relative; }
     .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.1) translateY(-6px); z-index: 10; position: relative; }
     .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); z-index: 10; position: relative; }
+
+    /* APPLE STYLE */
+    .lyrics-apple .line.active { font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 800; color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.65); }
 
     .lyrics-footer { margin-top: 5rem; padding-top: 1.5rem; padding-bottom: 3rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
     
@@ -136,7 +126,7 @@
     <button class="retrack-btn" id="retrackBtn"><span>⬇ Track Line</span></button>
 
     <div class="lyrics-panel lyrics-doom" id="lyricsDisplay">
-      <div class="line">Tap ⚙️ below to load audio & lyrics file!</div>
+      <div class="line active">Tap ⚙️ below to load audio & lyrics file!</div>
     </div>
   </div>
 
@@ -195,6 +185,7 @@
         <label>Lyrics Animation Style</label>
         <div class="style-row">
           <button class="style-btn active" data-style="doom">Doom TV</button>
+          <button class="style-btn" data-style="reel">Reel Style</button>
           <button class="style-btn" data-style="chaotic">Chaotic Edit</button>
           <button class="style-btn" data-style="capcut">CapCut Pop</button>
           <button class="style-btn" data-style="apple">Apple Style</button>
@@ -379,11 +370,11 @@
 
     function renderLyrics() {
       display.innerHTML = '';
-      if (parsedLyrics.length === 0) return display.innerHTML = '<div class="line">No lyrics loaded.</div>';
+      if (parsedLyrics.length === 0) return display.innerHTML = '<div class="line active">No lyrics loaded.</div>';
 
       parsedLyrics.forEach((item, index) => {
         const lineEl = document.createElement('div');
-        lineEl.className = 'line future';
+        lineEl.className = 'line';
         lineEl.id = `line-${index}`;
 
         const wordList = item.words || item.text.split(' ').map(t => ({ text: t }));
@@ -422,7 +413,6 @@
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let newActiveIndex = -1;
 
-      // STRICT LINE TIMING: Keep line active until the next line actually starts
       for (let i = 0; i < parsedLyrics.length; i++) {
         if (currentTime >= parsedLyrics[i].time) {
           newActiveIndex = i;
@@ -443,13 +433,6 @@
       
       if (newActiveIndex !== activeIndex && autoScrollEnabled) {
           activeIndex = newActiveIndex;
-          const activeLineEl = document.getElementById(`line-${activeIndex}`);
-          if (activeLineEl) {
-              display.scrollTo({
-                  top: activeLineEl.offsetTop - (display.clientHeight / 2) + (activeLineEl.clientHeight / 2),
-                  behavior: 'smooth'
-              });
-          }
       }
 
       const activeLineData = parsedLyrics[newActiveIndex];
@@ -459,7 +442,7 @@
 
         if (index < newActiveIndex) {
           el.className = 'line past';
-          wordSpans.forEach(w => w.classList.add('filled'));
+          wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
         } else if (index === newActiveIndex) {
           el.className = 'line active';
 
@@ -468,7 +451,6 @@
               if (wordSpans[wIdx]) {
                 if (currentTime >= wObj.time) {
                   const nextWord = activeLineData.words[wIdx + 1];
-                  // Keep word highlighted until next word starts OR until line ends
                   if (!nextWord || currentTime < nextWord.time) {
                     wordSpans[wIdx].classList.add('filled', 'active-word');
                   } else {
@@ -506,9 +488,6 @@
     seekSlider.addEventListener('input', () => { isUserSeeking = true; currTimeText.innerText = formatTime((seekSlider.value / 100) * audioPlayer.duration); });
     seekSlider.addEventListener('change', () => { audioPlayer.currentTime = (seekSlider.value / 100) * audioPlayer.duration; isUserSeeking = false; });
 
-    display.addEventListener('wheel', () => { autoScrollEnabled = false; retrackBtn.classList.add('visible'); });
-    display.addEventListener('touchmove', () => { autoScrollEnabled = false; retrackBtn.classList.add('visible'); });
-
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -539,7 +518,7 @@
         const reader = new FileReader();
         reader.onload = function(evt) {
           parsedLyrics = parseLRC(evt.target.result);
-          hasCustomLyricsLoaded = true; // LOCK CUSTOM ELRC FILE
+          hasCustomLyricsLoaded = true;
           renderLyrics();
           modalOverlay.classList.remove('open');
           statusText.innerText = hasWordLevelTimestamps ? 'Enhanced Word-Level (.ELRC) Loaded!' : 'Custom LRC Loaded!';
@@ -591,7 +570,7 @@
             return;
           }
         }
-        display.innerHTML = '<div class="line">No timed lyrics found. Upload custom .ELRC file below!</div>';
+        display.innerHTML = '<div class="line active">No timed lyrics found. Upload custom .ELRC file below!</div>';
       } catch (err) { statusText.innerText = 'Error loading lyrics.'; }
     }
 
