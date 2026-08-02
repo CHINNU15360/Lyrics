@@ -10,10 +10,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-  <script type="module">
-    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0';
-    window.transformersPipeline = pipeline;
-  </script>
   
   <style>
     :root {
@@ -256,7 +252,6 @@
       
       <button class="btn-action" id="searchBtn">Fetch Online Lyrics</button>
       <button class="btn-action btn-elrc" id="searchElrcBtn">🔍 Search Google for .ELRC</button>
-      <button class="btn-action" id="aiSyncBtn" style="background: #9333ea; color: #fff; margin-top: 0.5rem;">✨ Generate AI Word Timestamps</button>
       
       <div class="status-text" id="statusText">Choose an audio file to start.</div>
     </div>
@@ -302,7 +297,6 @@
     let animationFrameId = null;
     let hasWordLevelTimestamps = false;
     let hasCustomLyricsLoaded = false;
-    let aiPipeline = null;
     
     const chaoticColors = ['#ffcc00', '#ff003c', '#00e6ff', '#34c759', '#ffffff'];
     const chaoticFonts = ["'Anton', sans-serif", "'Bebas Neue', sans-serif", "'Permanent Marker', cursive", "'Space Mono', monospace"];
@@ -690,17 +684,35 @@
         
         if (hasCustomLyricsLoaded) return;
 
+        // 1. Try synced lyrics first
         for (let item of data) {
           if (item.syncedLyrics) {
             parsedLyrics = parseLRC(item.syncedLyrics);
             renderLyrics();
             modalOverlay.classList.remove('open');
-            statusText.innerText = '✅ Online Lyrics Loaded!';
+            statusText.innerText = '✅ Online Synced Lyrics Loaded!';
             return;
           }
         }
-        display.innerHTML = '<div class="line active">No timed lyrics found. Upload custom .ELRC file below!</div>';
-        statusText.innerText = '⚠️ No online lyrics found. Upload .ELRC file!';
+
+        // 2. Fallback to plain text lyrics if no synced ones exist
+        for (let item of data) {
+          if (item.plainLyrics) {
+            const lines = item.plainLyrics.split('\n').filter(l => l.trim().length > 0);
+            parsedLyrics = lines.map((line, i) => ({
+              time: i * 3.5, 
+              text: line,
+              words: null
+            }));
+            renderLyrics();
+            modalOverlay.classList.remove('open');
+            statusText.innerText = '⚠️ Plain lyrics loaded (No word timestamps).';
+            return;
+          }
+        }
+
+        display.innerHTML = '<div class="line active">No online lyrics found. Upload custom .ELRC file!</div>';
+        statusText.innerText = '⚠️ No lyrics found on LRCLIB.';
       } catch (err) { statusText.innerText = 'Error loading lyrics.'; }
     }
 
@@ -724,125 +736,19 @@
       window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
     });
 
-    document.getElementById('aiSyncBtn').addEventListener('click', async () => {
-      if (!audioPlayer.src) {
-        statusText.innerText = "⚠️ Please load an audio file first!";
-        return;
-      }
-      
-      try {
-        statusText.innerText = "⏳ Loading AI Whisper Model...";
-        if (!aiPipeline) {
-          aiPipeline = await window.transformersPipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
-        }
-
-        statusText.innerText = "🎙️ AI is analyzing audio & generating word timestamps...";
-        
-        const response = await fetch(audioPlayer.src);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        const audioData = audioBuffer.getChannelData(0);
-
-        // Process long audio in 30-second chunks to prevent browser crashes
-const output = await aiPipeline(audioData, { 
-  chunk_length_s: 30, 
-  stride_length_s: 5,
-  return_timestamps: 'word' 
-});
-
-        const cleanText = output.text.replace(/\[.*?\]|\(.*?\)/g, '').trim();
-
-        parsedLyrics = [{
-          time: 0,
-          text: cleanText,
-          words: output.chunks
-            .filter(chunk => !/\[.*?\]|\(.*?\)/.test(chunk.text))
-            .map(chunk => ({
-              text: chunk.text.trim(),
-              time: chunk.timestamp[0]
-            }))
-            .filter(w => w.text.length > 0)
-        }];
-
-        hasCustomLyricsLoaded = true;
-        hasWordLevelTimestamps = true;
-        renderLyrics();
-        
-        modalOverlay.classList.remove('open');
-        statusText.innerText = "✨ AI Word-Level Sync Generated!";
-      } catch (err) {
-        console.error(err);
-        statusText.innerText = "❌ AI Generation failed. Use custom .ELRC instead.";
+    document.getElementById('tapSyncBtn').addEventListener('click', () => {
+      if (parsedLyrics.length > 0 && audioPlayer.currentTime > 0) {
+        lyricOffset = audioPlayer.currentTime - parsedLyrics[0].time;
+        document.getElementById('offsetVal').innerText = `${lyricOffset >= 0 ? '+' : ''}${lyricOffset.toFixed(1)}s`;
       }
     });
 
-            document.getElementById('aiSyncBtn').addEventListener('click', async () => {
-      if (!audioPlayer.src) {
-        statusText.innerText = "⚠️ Please load an audio file first!";
-        return;
-      }
-      
-      try {
-        statusText.innerText = "⏳ Loading AI Whisper Model...";
-        if (!aiPipeline) {
-          // You MUST include the revision: 'output_attentions' config for word timestamps to work!
-          aiPipeline = await window.transformersPipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', {
-             revision: 'output_attentions'
-          });
-        }
-
-        statusText.innerText = "🎙️ AI is analyzing audio & generating word timestamps...";
-        
-        const response = await fetch(audioPlayer.src);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        const audioData = audioBuffer.getChannelData(0);
-
-        // Tell the pipeline we specifically want 'word' timestamps
-        const output = await aiPipeline(audioData, { return_timestamps: 'word' });
-        
-        // Filter out unwanted bracket tags (like [MUSIC])
-        const cleanChunks = (output.chunks || [])
-          .filter(chunk => chunk.text && !/\[.*?\]|\(.*?\)/.test(chunk.text))
-          .map(chunk => ({
-            text: chunk.text.trim(),
-            time: chunk.timestamp ? chunk.timestamp[0] : 0
-          }))
-          .filter(w => w.text.length > 0);
-
-        if (cleanChunks.length === 0) {
-          statusText.innerText = "⚠️ AI couldn't detect vocals clearly. Keeping original lyrics.";
-          return; 
-        }
-
-        // Group words into lines of ~6 words for proper rendering
-        const newParsed = [];
-        const WORDS_PER_LINE = 6;
-        for (let i = 0; i < cleanChunks.length; i += WORDS_PER_LINE) {
-          const lineWords = cleanChunks.slice(i, i + WORDS_PER_LINE);
-          if (lineWords.length > 0) {
-            newParsed.push({
-              time: lineWords[0].time,
-              text: lineWords.map(w => w.text).join(' '),
-              words: lineWords
-            });
-          }
-        }
-
-        parsedLyrics = newParsed;
-        hasCustomLyricsLoaded = true;
-        hasWordLevelTimestamps = true;
-        renderLyrics();
-        
-        modalOverlay.classList.remove('open');
-        statusText.innerText = "✨ AI Word-Level Sync Generated!";
-      } catch (err) {
-        console.error(err);
-        statusText.innerText = "❌ AI Generation failed. Keeping current lyrics.";
-      }
-    });
+    function adjust(v) { lyricOffset+=v; document.getElementById('offsetVal').innerText = `${lyricOffset >= 0 ? '+' : ''}${lyricOffset.toFixed(1)}s`; }
+    document.getElementById('m1').addEventListener('click', () => adjust(-1));
+    document.getElementById('m01').addEventListener('click', () => adjust(-0.1));
+    document.getElementById('p01').addEventListener('click', () => adjust(0.1));
+    document.getElementById('p1').addEventListener('click', () => adjust(1));
+    document.getElementById('mReset').addEventListener('click', () => { lyricOffset=0; document.getElementById('offsetVal').innerText='0.0s'; });
 
   </script>
 </body>
