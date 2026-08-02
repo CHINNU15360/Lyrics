@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&family=VT323&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   
@@ -21,7 +21,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; background: #12091f; color: #ffffff; height: 100vh; height: 100dvh; overflow: hidden; display: flex; }
     
     /* VIBRANT AMBIENT LIGHTING ENGINE */
-    .bg-blur { position: absolute; inset: -30%; width: 160%; height: 160%; background: #1a0b2e; z-index: 1; transition: background 0.8s ease-in-out, transform 0.2s ease-out; background-size: cover; background-position: center; filter: blur(50px); opacity: 0.95; }
+    .bg-blur { position: absolute; inset: -30%; width: 160%; height: 160%; background: #1a0b2e; z-index: 1; transition: background 0.8s ease-in-out; background-size: cover; background-position: center; filter: blur(50px); opacity: 0.95; }
     .bg-rgb-overlay { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
     .ambient-glow { position: absolute; width: 80vw; height: 80vw; border-radius: 50%; filter: blur(70px); opacity: 0.85; mix-blend-mode: screen; animation: floatGlow 10s infinite alternate ease-in-out; }
     .glow-1 { top: -15%; left: -15%; background: var(--glow-1, #9333ea); }
@@ -51,39 +51,34 @@
     .lyrics-panel { flex: 1; height: 100%; overflow-y: auto; padding: calc(50vh - 60px) 1.5rem calc(50vh + 100px) 1.5rem; scrollbar-width: none; text-align: center; scroll-behavior: smooth; }
     .lyrics-panel::-webkit-scrollbar { display: none; }
     
-    .line { position: relative; word-break: normal; overflow-wrap: break-word; margin-bottom: 2.5rem; line-height: 1.2; transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease; max-width: 100%; padding: 0 0.5rem; opacity: 0.3; transform: scale(0.9); cursor: pointer; text-align: center; }
-    .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.1s ease-out, text-shadow 0.1s ease-out, transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+    .line { position: relative; word-break: normal; overflow-wrap: break-word; margin-bottom: 2rem; line-height: 1.35; transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease; max-width: 90vw; margin-left: auto; margin-right: auto; padding: 0 0.5rem; opacity: 0.3; transform: scale(0.9); cursor: pointer; text-align: center; }
+    .line .word { display: inline-block; margin-right: 0.25em; transition: color 0.1s ease-out, text-shadow 0.1s ease-out, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     
-    .line.active { opacity: 1; transform: scale(1.05); }
+    .line.active { opacity: 1; transform: scale(1); }
     .line.past { opacity: 0.3; transform: scale(0.9); }
     .line.future { opacity: 0.3; transform: scale(0.9); }
 
     /* DOOM TV STYLE */
-    .lyrics-doom .line { font-family: 'Teko', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.3); text-transform: uppercase; }
+    .lyrics-doom .line { font-family: 'Teko', sans-serif; font-size: clamp(2.2rem, 7vw, 3.8rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.3); text-transform: uppercase; }
     .lyrics-doom .line.active .word { color: rgba(255, 255, 255, 0.4); }
     .lyrics-doom .line.active .word.filled { color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
-    .lyrics-doom .line.active .word.active-word { color: var(--active-color) !important; transform: scale(1.22); text-shadow: 0 0 40px var(--active-color), 0 0 10px #ffffff; z-index: 10; position: relative; }
+    .lyrics-doom .line.active .word.active-word { color: var(--active-color) !important; transform: scale(1.15); text-shadow: 0 0 40px var(--active-color), 0 0 10px #ffffff; z-index: 10; position: relative; }
 
     /* REEL HOLLOW STYLE */
-    .lyrics-reel .line { font-family: 'Montserrat', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; text-transform: uppercase; color: rgba(255, 255, 255, 0.3); }
+    .lyrics-reel .line { font-family: 'Montserrat', sans-serif; font-size: clamp(2.2rem, 7vw, 3.8rem); font-weight: 900; letter-spacing: -1px; text-transform: uppercase; color: rgba(255, 255, 255, 0.3); }
     .lyrics-reel .line.active .word { color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.5); }
     .lyrics-reel .line.active .word.filled { color: rgba(255, 255, 255, 0.9); -webkit-text-stroke: 0px; }
-    .lyrics-reel .line.active .word.active-word { color: var(--active-color) !important; -webkit-text-stroke: 0px; text-shadow: 0 0 25px var(--active-color); transform: scale(1.18); z-index: 10; position: relative; }
+    .lyrics-reel .line.active .word.active-word { color: var(--active-color) !important; -webkit-text-stroke: 0px; text-shadow: 0 0 25px var(--active-color); transform: scale(1.12); z-index: 10; position: relative; }
 
-        /* CAPCUT / REELS EDIT STYLE (FIXED OVERFLOW) */
+    /* CAPCUT / REELS EDIT STYLE (STABLE LAYOUT) */
     .lyrics-capcut .line { 
       font-family: 'Montserrat', sans-serif; 
       font-weight: 900; 
-      font-size: clamp(1.6rem, 5.5vw, 2.5rem) !important; 
+      font-size: clamp(1.6rem, 5.5vw, 2.5rem); 
       text-transform: uppercase; 
       color: rgba(255, 255, 255, 0.45); 
       letter-spacing: -0.5px;
       line-height: 1.35;
-      max-width: 90vw;
-      margin: 0 auto 2rem auto;
-    }
-    .lyrics-capcut .line.active {
-      transform: scale(1) !important; /* Prevents whole line from blowing up */
     }
     .lyrics-capcut .line.active .word { 
       color: rgba(255, 255, 255, 0.4); 
@@ -96,7 +91,7 @@
     }
     .lyrics-capcut .line.active .word.active-word { 
       color: var(--active-color, #FFD000) !important; 
-      transform: scale(1.12) !important; /* Controlled, clean word pop */
+      transform: scale(1.12); 
       text-shadow: 0 0 20px rgba(255, 208, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 1); 
       -webkit-text-stroke: 0px;
       z-index: 10; 
@@ -104,29 +99,23 @@
     }
 
     /* CHAOTIC EDIT STYLE */
-    .lyrics-chaotic .line { font-size: clamp(2.3rem, 7.5vw, 4rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.2); }
-    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); }
+    .lyrics-chaotic .line { font-size: clamp(2.0rem, 6.5vw, 3.5rem); text-transform: uppercase; color: rgba(255, 255, 255, 0.2); }
+    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); transition: color 0.1s, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .lyrics-chaotic .line.active .word { color: rgba(255, 255, 255, 0.3); -webkit-text-stroke: 2px #000; }
     .lyrics-chaotic .line.active .word.filled { color: var(--rand-color, #ffffff); -webkit-text-stroke: 2px #000; text-shadow: 3px 3px 0 #000; }
-    .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.15) rotate(6deg); color: var(--active-color) !important; z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.15) rotate(-6deg); color: var(--active-color) !important; z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.15) translateY(-6px); color: var(--active-color) !important; z-index: 10; position: relative; }
-    .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.15) translateY(6px); color: var(--active-color) !important; z-index: 10; position: relative; }
-
-    /* CYBER GLITCH STYLE */
-    .lyrics-glitch .line { font-family: 'Space Mono', monospace; font-size: clamp(2.0rem, 7.0vw, 3.4rem); font-weight: 700; text-transform: uppercase; color: rgba(255, 255, 255, 0.25); }
-    .lyrics-glitch .line.active .word { color: rgba(255, 255, 255, 0.4); }
-    .lyrics-glitch .line.active .word.filled { color: #00e6ff; text-shadow: 0 0 10px rgba(0, 230, 255, 0.8); }
-    .lyrics-glitch .line.active .word.active-word { color: #ff0055 !important; transform: scale(1.2); text-shadow: -3px 0 #00e6ff, 3px 0 #ff0055, 0 0 20px #ff0055; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); color: var(--active-color) !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); color: var(--active-color) !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-jump.active-word { transform: scale(1.1) translateY(-6px); color: var(--active-color) !important; z-index: 10; position: relative; }
+    .lyrics-chaotic .line.active .word.anim-drop.active-word { transform: scale(1.1) translateY(6px); color: var(--active-color) !important; z-index: 10; position: relative; }
 
     /* APPLE STYLE */
-    .lyrics-apple .line { font-family: 'Inter', sans-serif; font-size: clamp(2.2rem, 7.0vw, 3.5rem); font-weight: 700; text-transform: none; letter-spacing: -0.5px; color: rgba(255, 255, 255, 0.2); filter: blur(4px); }
+    .lyrics-apple .line { font-family: 'Inter', sans-serif; font-size: clamp(1.8rem, 6.0vw, 3.0rem); font-weight: 700; text-transform: none; letter-spacing: -0.5px; color: rgba(255, 255, 255, 0.2); filter: blur(4px); }
     .lyrics-apple .line.past { filter: blur(1.5px); opacity: 0.45; }
     .lyrics-apple .line.future { filter: blur(2px); opacity: 0.3; }
     .lyrics-apple .line.active { opacity: 1; filter: blur(0px); }
     .lyrics-apple .line.active .word { color: rgba(255, 255, 255, 0.35); }
     .lyrics-apple .line.active .word.filled { color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
-    .lyrics-apple .line.active .word.active-word { color: #ffffff !important; transform: scale(1.12); text-shadow: 0 0 35px #ffffff, 0 0 10px var(--active-color); z-index: 10; position: relative; }
+    .lyrics-apple .line.active .word.active-word { color: #ffffff !important; transform: scale(1.08); text-shadow: 0 0 35px #ffffff, 0 0 10px var(--active-color); z-index: 10; position: relative; }
 
     .player-bar { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); width: calc(100% - 1.8rem); max-width: 520px; background: rgba(30, 30, 35, 0.85); backdrop-filter: blur(35px); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 28px; padding: 0.8rem 1rem; z-index: 100; display: flex; flex-direction: column; gap: 0.6rem; transition: opacity 0.3s, transform 0.3s; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
     .live-sync-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.08); padding: 0.35rem 0.5rem; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.1); }
@@ -232,7 +221,7 @@
     </div>
   </div>
 
-  <audio id="audioPlayer" crossorigin="anonymous"></audio>
+  <audio id="audioPlayer"></audio>
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
@@ -259,7 +248,6 @@
           <button class="style-btn" data-style="reel">Reel Style</button>
           <button class="style-btn" data-style="chaotic">Chaotic Edit</button>
           <button class="style-btn" data-style="capcut">CapCut Pop</button>
-          <button class="style-btn" data-style="glitch">Cyber Glitch</button>
           <button class="style-btn" data-style="apple">Apple Style</button>
         </div>
       </div>
@@ -293,6 +281,7 @@
   </div>
 
   <script>
+    // Safe PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -338,29 +327,6 @@
     let animationFrameId = null;
     let hasWordLevelTimestamps = false;
     let hasCustomLyricsLoaded = false;
-
-    // WEB AUDIO API BASS DETECTOR ENGINE
-    let audioCtx = null;
-    let analyser = null;
-    let source = null;
-    let dataArray = null;
-
-    function initAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 64;
-        try {
-          source = audioCtx.createMediaElementSource(audioPlayer);
-          source.connect(analyser);
-          analyser.connect(audioCtx.destination);
-          dataArray = new Uint8Array(analyser.frequencyBinCount);
-        } catch(e) {}
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
     
     const chaoticColors = ['#ffcc00', '#ff003c', '#00e6ff', '#34c759', '#ffffff'];
     const chaoticFonts = ["'Anton', sans-serif", "'Bebas Neue', sans-serif", "'Permanent Marker', cursive", "'Space Mono', monospace"];
@@ -435,7 +401,7 @@
     applyTheme(currentTheme);
 
     const styleBtns = document.querySelectorAll('.style-btn');
-    let currentStyle = localStorage.getItem('lyricStyle') || 'doom';
+    let currentStyle = localStorage.getItem('lyricStyle') || 'capcut';
     function applyLyricStyle(styleType) {
       styleBtns.forEach(btn => btn.classList.remove('active'));
       const targetBtn = document.querySelector(`.style-btn[data-style="${styleType}"]`);
@@ -472,11 +438,7 @@
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 
-    audioPlayer.addEventListener('play', () => { 
-      initAudioContext();
-      playBtn.innerHTML = pauseHTML; 
-      start60FpsEngine(); 
-    });
+    audioPlayer.addEventListener('play', () => { playBtn.innerHTML = pauseHTML; start60FpsEngine(); });
     audioPlayer.addEventListener('pause', () => { playBtn.innerHTML = playHTML; cancelAnimationFrame(animationFrameId); });
 
     function formatTime(secs) {
@@ -551,14 +513,6 @@
           wordSpan.style.setProperty('--rand-font', chaoticFonts[Math.floor(Math.random() * chaoticFonts.length)]);
           wordSpan.classList.add(chaoticAnims[Math.floor(Math.random() * chaoticAnims.length)]);
 
-          // EXACT WORD SEEKING
-          wordSpan.addEventListener('click', (e) => {
-            e.stopPropagation();
-            audioPlayer.currentTime = Math.max(0, w.time + lyricOffset);
-            audioPlayer.play();
-            autoScrollEnabled = true;
-          });
-
           lineEl.appendChild(wordSpan);
         });
 
@@ -575,28 +529,11 @@
       function syncLoop() {
         if (!audioPlayer.paused) {
           syncLyricsToTime();
-          applyBassBounce();
           animationFrameId = requestAnimationFrame(syncLoop);
         }
       }
       animationFrameId = requestAnimationFrame(syncLoop);
     }
-
-    function applyBassBounce() {
-        function applyBassBounce() {
-      if (!analyser || !dataArray) return;
-      analyser.getByteFrequencyData(dataArray);
-      let bassSum = dataArray[0] + dataArray[1] + dataArray[2] + dataArray[3];
-      let bassAvg = bassSum / 4; 
-
-      // Bounce the background ambient glow only, keeping lyrics crisp and stable
-      if (bassAvg > 210) {
-        bgBlur.style.transform = `scale(${1 + ((bassAvg - 210) / 4000)})`;
-      } else {
-        bgBlur.style.transform = 'scale(1)';
-      }
-    }
-
 
     function syncLyricsToTime() {
       const currentTime = audioPlayer.currentTime - lyricOffset;
@@ -789,7 +726,7 @@
           }
         }
 
-        // 2. Fallback to plain text lyrics
+        // 2. Fallback to plain text lyrics if no synced ones exist
         for (let item of data) {
           if (item.plainLyrics) {
             const lines = item.plainLyrics.split('\n').filter(l => l.trim().length > 0);
