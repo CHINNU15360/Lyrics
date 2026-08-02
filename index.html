@@ -106,6 +106,7 @@
     .input-control { width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #ffffff; font-size: 0.95rem; outline: none; margin-bottom: 1rem;}
     .file-btn { width: 100%; padding: 0.85rem; border-radius: 14px; background: rgba(255,255,255,0.08); border: 1px dashed rgba(255,255,255,0.3); color: #ffffff; font-weight: 600; cursor: pointer; text-align: center; margin-bottom: 0.8rem; display: block; }
     .btn-action { width: 100%; padding: 0.85rem; border-radius: 14px; background: #ffffff; color: #000000; font-weight: 700; border: none; cursor: pointer; font-size: 1rem; }
+    .btn-elrc { background: #34c759; color: #000000; margin-top: 0.5rem; }
     .status-text { font-size: 0.8rem; color: #34c759; margin-top: 0.6rem; text-align: center; min-height: 1.2em; }
   </style>
 </head>
@@ -195,7 +196,10 @@
 
       <input type="text" class="input-control" id="trackInput" placeholder="Song Title" />
       <input type="text" class="input-control" id="artistInput" placeholder="Artist Name" />
+      
       <button class="btn-action" id="searchBtn">Fetch Online Lyrics</button>
+      <button class="btn-action btn-elrc" id="searchElrcBtn">🔍 Search Google for .ELRC</button>
+      
       <div class="status-text" id="statusText">Choose an audio file to start.</div>
     </div>
   </div>
@@ -208,6 +212,7 @@
     const closeModalBtn = document.getElementById('closeModalBtn');
     const modalOverlay = document.getElementById('modalOverlay');
     const searchBtn = document.getElementById('searchBtn');
+    const searchElrcBtn = document.getElementById('searchElrcBtn');
     const trackInput = document.getElementById('trackInput');
     const artistInput = document.getElementById('artistInput');
     const audioFileInput = document.getElementById('audioFileInput');
@@ -408,7 +413,6 @@
       if (audioPlayer.duration && !isUserSeeking) {
         seekSlider.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         currTimeText.innerText = formatTime(audioPlayer.currentTime);
-        // FIX: Always accurately update total duration in UI
         durTimeText.innerText = formatTime(audioPlayer.duration);
       }
 
@@ -560,6 +564,18 @@
     searchBtn.addEventListener('click', () => {
       lyricOffset = 0; document.getElementById('offsetVal').innerText = '0.0s';
       fetchOnlyLyrics(trackInput.value.trim(), artistInput.value.trim());
+    });
+
+    // NEW: GOOGLE SEARCH FOR ELRC
+    searchElrcBtn.addEventListener('click', () => {
+      const track = trackInput.value.trim();
+      const artist = artistInput.value.trim();
+      if (!track) {
+        statusText.innerText = "Please enter a song title first!";
+        return;
+      }
+      const searchQuery = `"${track}" ${artist !== "Local MP3" && artist !== "" ? `"${artist}"` : ""} "enhanced" lrc OR elrc download`;
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
     });
 
     document.getElementById('tapSyncBtn').addEventListener('click', () => {
