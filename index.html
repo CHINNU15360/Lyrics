@@ -33,7 +33,7 @@
       background: radial-gradient(circle, #3a1c40 0%, #0d0d11 80%);
       filter: blur(60px);
       z-index: 1;
-      transition: background 1.2s ease-in-out;
+      transition: background 0.8s ease-in-out;
       background-size: cover;
       background-position: center;
     }
@@ -318,6 +318,11 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
+      transition: transform 0.15s ease;
+    }
+
+    .btn-icon:active {
+      transform: scale(0.92);
     }
 
     .btn-play {
@@ -419,6 +424,32 @@
       font-size: 1.2rem;
       font-weight: 700;
       margin-bottom: 1.2rem;
+    }
+
+    /* Appearance Settings */
+    .appearance-group {
+      margin-bottom: 1.2rem;
+    }
+    
+    .theme-row {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    .theme-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.15);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .theme-circle.active {
+      border-color: #ffffff;
+      transform: scale(1.15);
     }
 
     .input-group {
@@ -544,7 +575,18 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
       <button class="modal-close" id="closeModalBtn">✕</button>
-      <div class="modal-title">Local Audio Options</div>
+      <div class="modal-title">Settings</div>
+
+      <div class="appearance-group">
+        <label>Theme Color</label>
+        <div class="theme-row" id="themeRow">
+          <div class="theme-circle" data-bg="dynamic" style="background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);" title="Dynamic Art (Default)"></div>
+          <div class="theme-circle" data-bg="blue" style="background: radial-gradient(circle, #0a192f 0%, #020c1b 80%);" title="Midnight Blue"></div>
+          <div class="theme-circle" data-bg="red" style="background: radial-gradient(circle, #4a0e17 0%, #110204 80%);" title="Crimson Red"></div>
+          <div class="theme-circle" data-bg="green" style="background: radial-gradient(circle, #0f381f 0%, #041209 80%);" title="Forest Green"></div>
+          <div class="theme-circle" data-bg="black" style="background: #000000;" title="OLED Black"></div>
+        </div>
+      </div>
 
       <label class="file-btn" for="audioFileInput">
         📁 Choose Local Audio File (.mp3, .m4a)
@@ -594,6 +636,43 @@
     let autoScrollEnabled = true;
     let isUserSeeking = false;
     let activeIndex = -1;
+    
+    // Theme Management
+    const themeCircles = document.querySelectorAll('.theme-circle');
+    let currentTheme = localStorage.getItem('appTheme') || 'dynamic';
+    let currentDynamicImg = "none";
+
+    function applyTheme(themeType) {
+      themeCircles.forEach(c => c.classList.remove('active'));
+      const activeCircle = document.querySelector(`.theme-circle[data-bg="${themeType}"]`);
+      if (activeCircle) activeCircle.classList.add('active');
+
+      if (themeType === 'dynamic') {
+         bgBlur.style.background = currentDynamicImg !== "none" ? `url('${currentDynamicImg}')` : "radial-gradient(circle, #3a1c40 0%, #0d0d11 80%)";
+      } else if (themeType === 'blue') {
+         bgBlur.style.background = "radial-gradient(circle, #0a192f 0%, #020c1b 80%)";
+      } else if (themeType === 'red') {
+         bgBlur.style.background = "radial-gradient(circle, #4a0e17 0%, #110204 80%)";
+      } else if (themeType === 'green') {
+         bgBlur.style.background = "radial-gradient(circle, #0f381f 0%, #041209 80%)";
+      } else if (themeType === 'black') {
+         bgBlur.style.background = "#000000";
+      }
+      
+      bgBlur.style.backgroundSize = 'cover';
+      bgBlur.style.backgroundPosition = 'center';
+      
+      localStorage.setItem('appTheme', themeType);
+      currentTheme = themeType;
+    }
+
+    themeCircles.forEach(circle => {
+      circle.addEventListener('click', () => {
+        applyTheme(circle.getAttribute('data-bg'));
+      });
+    });
+
+    applyTheme(currentTheme);
 
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
@@ -713,7 +792,6 @@
       document.getElementById('offsetVal').innerText = '0.0s';
     }
 
-    // Fetches ONLY synced lyrics from LRCLIB
     async function fetchOnlyLyrics(track, artist) {
       if (!track) return;
       statusText.innerText = `Fetching lyrics for "${track}"...`;
@@ -746,7 +824,6 @@
       }
     }
 
-    // Manual Fetch Button Trigger
     searchBtn.addEventListener('click', () => {
       const title = trackInput.value.trim();
       const artist = artistInput.value.trim();
@@ -858,7 +935,6 @@
       reTrackToCurrentLine();
     });
 
-    // Local Audio File Picker & ID3 Extraction
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -870,7 +946,6 @@
         audioPlayer.src = fileUrl;
         audioPlayer.load();
 
-        // Clean raw filename fallback
         let rawName = file.name.replace(/\.[^/.]+$/, "");
         let cleanTitle = rawName
           .replace(/[_]/g, " ")
@@ -892,21 +967,34 @@
                 base64String += String.fromCharCode(data[i]);
               }
               const imageUrl = `data:${format};base64,${window.btoa(base64String)}`;
+              
+              currentDynamicImg = imageUrl;
               playerArt.style.backgroundImage = `url('${imageUrl}')`;
               playerArt.innerText = "";
-              bgBlur.style.backgroundImage = `url('${imageUrl}')`;
+              
+              if (currentTheme === 'dynamic') {
+                 bgBlur.style.background = `url('${imageUrl}')`;
+                 bgBlur.style.backgroundSize = 'cover';
+                 bgBlur.style.backgroundPosition = 'center';
+              }
             } else {
+              currentDynamicImg = "none";
               playerArt.style.backgroundImage = "none";
               playerArt.innerText = "🎵";
-              bgBlur.style.backgroundImage = "none";
+              if (currentTheme === 'dynamic') {
+                 bgBlur.style.background = "radial-gradient(circle, #3a1c40 0%, #0d0d11 80%)";
+              }
             }
 
             applyTrackMeta(cleanTitle, artist);
           },
           onError: function(error) {
+            currentDynamicImg = "none";
             playerArt.style.backgroundImage = "none";
             playerArt.innerText = "🎵";
-            bgBlur.style.backgroundImage = "none";
+            if (currentTheme === 'dynamic') {
+                 bgBlur.style.background = "radial-gradient(circle, #3a1c40 0%, #0d0d11 80%)";
+            }
             applyTrackMeta(cleanTitle, artist);
           }
         });
@@ -933,7 +1021,6 @@
       };
     }
 
-    // Live Sync Adjustments
     function adjustOffset(val) {
       if (val === 0) lyricOffset = 0;
       else lyricOffset += val;
