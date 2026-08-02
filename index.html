@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Apple Music Lyrics Pro</title>
+  <title>Apple Music Lyrics Pro - Local Player</title>
   <!-- jsmediatags CDN for local MP3 ID3 extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   <style>
@@ -30,10 +30,12 @@
       left: -10%;
       width: 120%;
       height: 120%;
-      background: radial-gradient(circle, #4a154b 0%, #111111 80%);
+      background: radial-gradient(circle, #3a1c40 0%, #0d0d11 80%);
       filter: blur(60px);
       z-index: 1;
-      transition: background 1.5s ease;
+      transition: background 1.2s ease-in-out;
+      background-size: cover;
+      background-position: center;
     }
 
     .app-container {
@@ -51,7 +53,7 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 999;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 800;
       letter-spacing: 0.5px;
       color: #ffffff;
@@ -85,11 +87,6 @@
       justify-content: center;
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-      transition: transform 0.15s ease;
-    }
-
-    .fullscreen-btn:active {
-      transform: scale(0.92);
     }
 
     .fullscreen-btn svg {
@@ -127,28 +124,6 @@
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0);
-    }
-
-    .hero-panel {
-      display: none;
-      flex: 1;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 2rem;
-      text-align: center;
-    }
-
-    .hero-title {
-      font-size: 2rem;
-      font-weight: 800;
-      margin-top: 1rem;
-    }
-
-    .hero-artist {
-      font-size: 1.2rem;
-      opacity: 0.7;
-      margin-top: 0.4rem;
     }
 
     .lyrics-panel {
@@ -343,11 +318,6 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      transition: transform 0.15s ease;
-    }
-
-    .btn-icon:active {
-      transform: scale(0.92);
     }
 
     .btn-play {
@@ -507,12 +477,6 @@
       text-align: center;
       min-height: 1.2em;
     }
-
-    @media (min-width: 768px) {
-      .hero-panel { display: flex; }
-      .dev-badge { top: 24px; }
-      .fullscreen-btn { top: 22px; right: 24px; }
-    }
   </style>
 </head>
 <body>
@@ -530,14 +494,8 @@
       <span>⬇ Track Line</span>
     </button>
 
-    <div class="hero-panel">
-      <div class="album-art" id="heroArt" style="width:200px; height:200px; font-size:4rem; border-radius:20px;">🎵</div>
-      <div class="hero-title" id="heroTitle">Apple Music Lyrics</div>
-      <div class="hero-artist" id="heroArtist">Search a song to start</div>
-    </div>
-
     <div class="lyrics-panel" id="lyricsDisplay">
-      <div class="line">Tap ⚙️ below to load audio & fetch lyrics!</div>
+      <div class="line">Tap ⚙️ below to choose a local MP3 & load lyrics!</div>
     </div>
   </div>
 
@@ -559,7 +517,7 @@
         <div class="album-art" id="playerArt">🎵</div>
         <div class="track-text">
           <div class="track-title" id="displayTitle">No Track Loaded</div>
-          <div class="track-artist" id="displayArtist">Tap gear to load</div>
+          <div class="track-artist" id="displayArtist">Tap gear to load file</div>
         </div>
       </div>
       <div class="controls">
@@ -586,7 +544,7 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
       <button class="modal-close" id="closeModalBtn">✕</button>
-      <div class="modal-title">Song & Lyrics Options</div>
+      <div class="modal-title">Local Audio Options</div>
 
       <label class="file-btn" for="audioFileInput">
         📁 Choose Local Audio File (.mp3, .m4a)
@@ -603,9 +561,9 @@
         <input type="text" class="input-control" id="artistInput" placeholder="e.g. The Weeknd" value="" />
       </div>
 
-      <button class="btn-action" id="searchBtn">Fetch Lyrics & Play</button>
+      <button class="btn-action" id="searchBtn">Fetch Lyrics</button>
 
-      <div class="status-text" id="statusText"></div>
+      <div class="status-text" id="statusText">Choose an audio file to start.</div>
     </div>
   </div>
 
@@ -629,6 +587,7 @@
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const fsIcon = document.getElementById('fsIcon');
     const playerArt = document.getElementById('playerArt');
+    const bgBlur = document.getElementById('bgBlur');
     
     let parsedLyrics = [];
     let lyricOffset = 0.0;
@@ -638,7 +597,6 @@
 
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-
     const expandSVG = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
     const compressSVG = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
 
@@ -672,16 +630,18 @@
     }
 
     function parseLRC(lrcText) {
+      if (!lrcText) return [];
       const lines = lrcText.split('\n');
       const result = [];
-      const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+      const timeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/;
 
       for (let line of lines) {
         const match = timeRegex.exec(line);
         if (match) {
           const minutes = parseInt(match[1], 10);
           const seconds = parseInt(match[2], 10);
-          const millis = parseInt(match[3].padEnd(3, '0'), 10);
+          const millisStr = match[3] ? match[3].padEnd(3, '0') : '000';
+          const millis = parseInt(millisStr, 10);
           const time = minutes * 60 + seconds + millis / 1000;
           const text = line.replace(timeRegex, '').trim();
 
@@ -753,71 +713,49 @@
       document.getElementById('offsetVal').innerText = '0.0s';
     }
 
-    // Fetches ONLY lyrics (used by both local and online flows)
+    // Fetches ONLY synced lyrics from LRCLIB
     async function fetchOnlyLyrics(track, artist) {
+      if (!track) return;
+      statusText.innerText = `Fetching lyrics for "${track}"...`;
+
       try {
-        const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(track + ' ' + artist)}`);
+        const query = `${track} ${artist !== "Local MP3" ? artist : ""}`.trim();
+        const lrcResp = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
         const lrcData = await lrcResp.json();
 
-        if (Array.isArray(lrcData) && lrcData[0]?.syncedLyrics) {
-          parsedLyrics = parseLRC(lrcData[0].syncedLyrics);
-          renderLyrics();
-          modalOverlay.classList.remove('open');
-          statusText.innerText = 'Ready!';
-        } else {
-          statusText.innerText = 'Audio connected, but no timed lyrics found.';
-          display.innerHTML = '<div class="line">No timed lyrics found for this track.</div>';
+        if (Array.isArray(lrcData) && lrcData.length > 0) {
+          for (let item of lrcData) {
+            if (item.syncedLyrics) {
+              const parsed = parseLRC(item.syncedLyrics);
+              if (parsed.length > 0) {
+                parsedLyrics = parsed;
+                renderLyrics();
+                modalOverlay.classList.remove('open');
+                statusText.innerText = 'Lyrics synced!';
+                return;
+              }
+            }
+          }
         }
+        statusText.innerText = 'Audio ready, but no timed lyrics found.';
+        parsedLyrics = [];
+        display.innerHTML = '<div class="line">No timed lyrics found for this track.</div>';
       } catch (err) {
         console.error("Lyrics error:", err);
         statusText.innerText = 'Error loading lyrics.';
       }
     }
 
-    // Online Search Flow: Fetches audio from listenfree AND lyrics from LRCLIB
-    async function fetchLyricsAndAudio() {
-      const track = trackInput.value.trim();
+    // Manual Fetch Button Trigger
+    searchBtn.addEventListener('click', () => {
+      const title = trackInput.value.trim();
       const artist = artistInput.value.trim();
-
-      if (!track) return;
-      statusText.innerText = "Connecting to listenfree.in...";
-      
-      resetSyncOffset();
-
-      try {
-        const searchUrl = `https://listenfree.in/api/search?q=${encodeURIComponent(track + ' ' + artist)}`;
-        const response = await fetch(searchUrl);
-        const data = await response.json();
-
-        let audioUrl = null;
-        if (data && data.url) {
-            audioUrl = data.url;
-        } else if (data && data[0] && data[0].url) {
-            audioUrl = data[0].url;
-        }
-
-        if (audioUrl) {
-          document.getElementById('displayTitle').innerText = track;
-          document.getElementById('displayArtist').innerText = artist;
-          document.getElementById('heroTitle').innerText = track;
-          document.getElementById('heroArtist').innerText = artist;
-
-          audioPlayer.src = audioUrl;
-          audioPlayer.load();
-          audioPlayer.play().catch(() => {
-            statusText.innerText = "Tap Play to start audio.";
-          });
-          statusText.innerText = "Stream connected! Loading lyrics...";
-          
-          await fetchOnlyLyrics(track, artist);
-        } else {
-            throw new Error("Invalid URL structure from listenfree");
-        }
-      } catch (e) {
-        console.error("Audio error:", e);
-        statusText.innerText = "Listenfree blocked the request. Try local MP3!";
+      if (title) {
+        resetSyncOffset();
+        fetchOnlyLyrics(title, artist);
+        if (audioPlayer.src) audioPlayer.play();
       }
-    }
+    });
 
     audioPlayer.addEventListener('timeupdate', () => {
       const currentTime = audioPlayer.currentTime - lyricOffset;
@@ -902,7 +840,6 @@
 
     gearBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-    searchBtn.addEventListener('click', fetchLyricsAndAudio);
     retrackBtn.addEventListener('click', reTrackToCurrentLine);
 
     seekSlider.addEventListener('input', () => {
@@ -921,7 +858,7 @@
       reTrackToCurrentLine();
     });
 
-    // Local ID3 Metadata Extractor & Flow
+    // Local Audio File Picker & ID3 Extraction
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -933,14 +870,20 @@
         audioPlayer.src = fileUrl;
         audioPlayer.load();
 
-        let title = file.name.replace(/\.[^/.]+$/, "");
+        // Clean raw filename fallback
+        let rawName = file.name.replace(/\.[^/.]+$/, "");
+        let cleanTitle = rawName
+          .replace(/[_]/g, " ")
+          .replace(/-/g, " ")
+          .replace(/\b(official|video|audio|lyrics|ytmp3|320kbps|hd|4k)\b/gi, "")
+          .trim();
         let artist = "Local MP3";
 
         window.jsmediatags.read(file, {
           onSuccess: function(tag) {
             const tags = tag.tags;
-            if (tags.title) title = tags.title;
-            if (tags.artist) artist = tags.artist;
+            if (tags.title) cleanTitle = tags.title.trim();
+            if (tags.artist) artist = tags.artist.trim();
 
             if (tags.picture) {
               const { data, format } = tags.picture;
@@ -951,16 +894,20 @@
               const imageUrl = `data:${format};base64,${window.btoa(base64String)}`;
               playerArt.style.backgroundImage = `url('${imageUrl}')`;
               playerArt.innerText = "";
+              bgBlur.style.backgroundImage = `url('${imageUrl}')`;
             } else {
               playerArt.style.backgroundImage = "none";
               playerArt.innerText = "🎵";
+              bgBlur.style.backgroundImage = "none";
             }
 
-            applyTrackMeta(title, artist);
+            applyTrackMeta(cleanTitle, artist);
           },
           onError: function(error) {
-            console.log("ID3 Error: ", error);
-            applyTrackMeta(title, artist);
+            playerArt.style.backgroundImage = "none";
+            playerArt.innerText = "🎵";
+            bgBlur.style.backgroundImage = "none";
+            applyTrackMeta(cleanTitle, artist);
           }
         });
       }
@@ -969,8 +916,6 @@
     function applyTrackMeta(title, artist) {
       document.getElementById('displayTitle').innerText = title;
       document.getElementById('displayArtist').innerText = artist;
-      document.getElementById('heroTitle').innerText = title;
-      document.getElementById('heroArtist').innerText = artist;
 
       trackInput.value = title;
       artistInput.value = artist !== "Local MP3" ? artist : "";
@@ -983,13 +928,12 @@
         currTimeText.innerText = '0:00';
         statusText.innerText = `Auto-detected "${title}". Fetching lyrics...`;
         
-        // Pass empty string for artist if it is just the fallback "Local MP3"
         fetchOnlyLyrics(title, artist === "Local MP3" ? "" : artist);
-        audioPlayer.play();
+        audioPlayer.play().catch(() => {});
       };
     }
 
-    // Live Sync Button Logic
+    // Live Sync Adjustments
     function adjustOffset(val) {
       if (val === 0) lyricOffset = 0;
       else lyricOffset += val;
@@ -1001,9 +945,7 @@
     tapSyncBtn.addEventListener('click', () => {
       if (parsedLyrics.length > 0 && audioPlayer.currentTime > 0) {
         const firstLyricTime = parsedLyrics[0].time;
-        const actualPlaybackTime = audioPlayer.currentTime;
-        
-        lyricOffset = actualPlaybackTime - firstLyricTime;
+        lyricOffset = audioPlayer.currentTime - firstLyricTime;
 
         const sign = lyricOffset >= 0 ? '+' : '';
         document.getElementById('offsetVal').innerText = `${sign}${lyricOffset.toFixed(1)}s`;
