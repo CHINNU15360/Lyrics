@@ -772,19 +772,62 @@
       }
     });
 
-    document.getElementById('tapSyncBtn').addEventListener('click', () => {
-      if (parsedLyrics.length > 0 && audioPlayer.currentTime > 0) {
-        lyricOffset = audioPlayer.currentTime - parsedLyrics[0].time;
-        document.getElementById('offsetVal').innerText = `${lyricOffset >= 0 ? '+' : ''}${lyricOffset.toFixed(1)}s`;
+        document.getElementById('aiSyncBtn').addEventListener('click', async () => {
+      if (!audioPlayer.src) {
+        statusText.innerText = "⚠️ Please load an audio file first!";
+        return;
+      }
+      
+      try {
+        statusText.innerText = "⏳ Loading AI Whisper Model...";
+        if (!aiPipeline) {
+          aiPipeline = await window.transformersPipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+        }
+
+        statusText.innerText = "🎙️ AI is analyzing audio & generating word timestamps...";
+        
+        const response = await fetch(audioPlayer.src);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        const audioData = audioBuffer.getChannelData(0);
+
+        const output = await aiPipeline(audioData, { return_timestamps: 'word' });
+        
+        // Filter out unwanted background noise tags like [MUSIC]
+        const cleanChunks = output.chunks
+          .filter(chunk => !/\[.*?\]|\(.*?\)/.test(chunk.text))
+          .map(chunk => ({
+            text: chunk.text.trim(),
+            time: chunk.timestamp[0]
+          }))
+          .filter(w => w.text.length > 0);
+
+        // Group words into lines of ~6 words so the UI renders them properly
+        parsedLyrics = [];
+        const WORDS_PER_LINE = 6;
+        for (let i = 0; i < cleanChunks.length; i += WORDS_PER_LINE) {
+          const lineWords = cleanChunks.slice(i, i + WORDS_PER_LINE);
+          if (lineWords.length > 0) {
+            parsedLyrics.push({
+              time: lineWords[0].time,
+              text: lineWords.map(w => w.text).join(' '),
+              words: lineWords
+            });
+          }
+        }
+
+        hasCustomLyricsLoaded = true;
+        hasWordLevelTimestamps = true;
+        renderLyrics();
+        
+        modalOverlay.classList.remove('open');
+        statusText.innerText = "✨ AI Word-Level Sync Generated!";
+      } catch (err) {
+        console.error(err);
+        statusText.innerText = "❌ AI Generation failed. Use custom .ELRC instead.";
       }
     });
-
-    function adjust(v) { lyricOffset+=v; document.getElementById('offsetVal').innerText = `${lyricOffset >= 0 ? '+' : ''}${lyricOffset.toFixed(1)}s`; }
-    document.getElementById('m1').addEventListener('click', () => adjust(-1));
-    document.getElementById('m01').addEventListener('click', () => adjust(-0.1));
-    document.getElementById('p01').addEventListener('click', () => adjust(0.1));
-    document.getElementById('p1').addEventListener('click', () => adjust(1));
-    document.getElementById('mReset').addEventListener('click', () => { lyricOffset=0; document.getElementById('offsetVal').innerText='0.0s'; });
 
   </script>
 </body>
