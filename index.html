@@ -330,7 +330,6 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // SANITIZED PARSER TO CLEAN QUOTES, UNDERSCORES, AND BROKEN CHARS
     function parseLRC(lrcText) {
       hasWordLevelTimestamps = false;
       const lines = lrcText.split('\n');
@@ -343,9 +342,6 @@
         if (match) {
           const lineTime = parseInt(match[1]) * 60 + parseInt(match[2]) + (match[3] ? parseInt(match[3].padEnd(3,'0'))/1000 : 0);
           let rawText = line.replace(lineTimeRegex, '').trim();
-
-          // Strip leftover quotes or broken markdown artifacts from external files
-          rawText = rawText.replace(/["'`]/g, '');
 
           const words = [];
           let wordMatch;
@@ -575,6 +571,7 @@
       fetchOnlyLyrics(trackInput.value.trim(), artistInput.value.trim());
     });
 
+    // FIXED: REMOVED INVERTED COMMAS FROM GOOGLE SEARCH QUERY
     searchElrcBtn.addEventListener('click', () => {
       const track = trackInput.value.trim();
       const artist = artistInput.value.trim();
@@ -582,7 +579,7 @@
         statusText.innerText = "Please enter a song title first!";
         return;
       }
-      const searchQuery = `"${track}" ${artist !== "Local MP3" && artist !== "" ? `"${artist}"` : ""} "enhanced" lrc OR elrc download`;
+      const searchQuery = `${track} ${artist !== "Local MP3" && artist !== "" ? artist : ""} enhanced lrc elrc download`;
       window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
     });
 
