@@ -1,0 +1,15 @@
+{
+  "name": "Lyrics Pro",
+  "short_name": "LyricsPro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12091f",
+  "theme_color": "#12091f",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3844/3844720.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
