@@ -7,11 +7,19 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
   
   <style>
+    /* Update Apple Style to Inter */
+.lyrics-apple .line { font-family: 'Inter', sans-serif; font-size: clamp(2.2rem, 7.0vw, 3.5rem); font-weight: 700; text-transform: none; letter-spacing: -0.5px; color: rgba(255, 255, 255, 0.2); filter: blur(4px); }
+
+/* Update Reel Style to Montserrat */
+.lyrics-reel .line { font-family: 'Montserrat', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; letter-spacing: -1px; text-transform: uppercase; color: rgba(255, 255, 255, 0.3); }
+
+/* Update Doom TV to Teko (Optional) */
+.lyrics-doom .line { font-family: 'Teko', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.3); text-transform: uppercase; }
     :root {
   --active-color: #ffcc00;
 }
