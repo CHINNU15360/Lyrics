@@ -297,46 +297,53 @@
     let currentDynamicImg = "none";
     rgbPicker.value = customRgbVal;
 
-          if (themeType === 'custom') {
-        rgbWrapper.classList.add('active');
-        const col = rgbPicker.value;
-        bgBlur.style.background = '#12091f';
-        glow1.style.background = col;
-        glow2.style.background = '#4a044e';
-        glow3.style.background = col;
-      } else if (themeType === 'random') {
-        const activeCircle = document.querySelector(`.theme-circle[data-bg="random"]`);
-        if (activeCircle) activeCircle.classList.add('active');
-        
-        bgBlur.style.background = '#12091f';
-        glow1.style.background = getRandomColor();
-        glow2.style.background = getRandomColor();
-        glow3.style.background = getRandomColor();
-      } else {
-        const activeCircle = document.querySelector(`.theme-circle[data-bg="${themeType}"]`);
-        if (activeCircle) activeCircle.classList.add('active');
+          function getRandomColor() {
+  return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
 
-        if (themeType === 'dynamic') {
-           bgBlur.style.background = currentDynamicImg !== "none" ? `url('${currentDynamicImg}')` : "#1a0b2e";
-           glow1.style.background = "#9333ea";
-           glow2.style.background = "#e11d48";
-           glow3.style.background = "#3b82f6";
-        } else if (themeType === 'blue') {
-           bgBlur.style.background = "#0b1d3a";
-           glow1.style.background = "#06b6d4";
-           glow2.style.background = "#1e3a8a";
-           glow3.style.background = "#3b82f6";
-        } else if (themeType === 'black') {
-           bgBlur.style.background = "#12091f";
-           glow1.style.background = "#4c1d95";
-           glow2.style.background = "#831843";
-           glow3.style.background = "#1e1b4b";
-        }
-      }
+function applyTheme(themeType) {
+  themeCircles.forEach(c => c.classList.remove('active'));
+  rgbWrapper.classList.remove('active');
 
-      localStorage.setItem('appTheme', themeType);
-      currentTheme = themeType;
+  if (themeType === 'custom') {
+    rgbWrapper.classList.add('active');
+    const col = rgbPicker.value;
+    bgBlur.style.background = '#12091f';
+    glow1.style.background = col;
+    glow2.style.background = '#4a044e';
+    glow3.style.background = col;
+  } else if (themeType === 'random') {
+    const activeCircle = document.querySelector(`.theme-circle[data-bg="random"]`);
+    if (activeCircle) activeCircle.classList.add('active');
+    
+    bgBlur.style.background = '#12091f';
+    glow1.style.background = getRandomColor();
+    glow2.style.background = getRandomColor();
+    glow3.style.background = getRandomColor();
+  } else {
+    const activeCircle = document.querySelector(`.theme-circle[data-bg="${themeType}"]`);
+    if (activeCircle) activeCircle.classList.add('active');
+
+    if (themeType === 'dynamic') {
+       bgBlur.style.background = currentDynamicImg !== "none" ? `url('${currentDynamicImg}')` : "#1a0b2e";
+       glow1.style.background = "#9333ea";
+       glow2.style.background = "#e11d48";
+       glow3.style.background = "#3b82f6";
+    } else if (themeType === 'blue') {
+       bgBlur.style.background = "#0b1d3a";
+       glow1.style.background = "#06b6d4";
+       glow2.style.background = "#1e3a8a";
+       glow3.style.background = "#3b82f6";
+    } else if (themeType === 'black') {
+       bgBlur.style.background = "#12091f";
+       glow1.style.background = "#4c1d95";
+       glow2.style.background = "#831843";
+       glow3.style.background = "#1e1b4b";
     }
+  }
+  localStorage.setItem('appTheme', themeType);
+  currentTheme = themeType;
+}
 
     themeCircles.forEach(circle => circle.addEventListener('click', () => applyTheme(circle.getAttribute('data-bg'))));
     rgbPicker.addEventListener('input', (e) => { customRgbVal = e.target.value; localStorage.setItem('customRgb', customRgbVal); applyTheme('custom'); });
