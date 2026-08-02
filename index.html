@@ -22,9 +22,7 @@
     .fullscreen-btn { position: absolute; top: 16px; right: 16px; z-index: 999; background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity 0.3s; }
     .fullscreen-btn svg { width: 18px; height: 18px; fill: #ffffff; }
     
-    /* FULLSCREEN MODE OVERRIDES */
-    body.is-fullscreen .player-bar,
-    body.is-fullscreen .dev-badge { display: none !important; }
+    body.is-fullscreen .player-bar, body.is-fullscreen .dev-badge { display: none !important; }
     body.is-fullscreen .app-container { padding-bottom: 0 !important; }
     body.is-fullscreen .fullscreen-btn { opacity: 0.15; }
     body.is-fullscreen .fullscreen-btn:active, body.is-fullscreen .fullscreen-btn:hover { opacity: 1; }
@@ -182,9 +180,9 @@
       <div class="settings-group">
         <label>Lyrics Animation Style</label>
         <div class="style-row">
-          <button class="style-btn active" data-style="reel">Reel Style</button>
+          <button class="style-btn" data-style="reel">Reel Style</button>
           <button class="style-btn" data-style="capcut">CapCut Pop</button>
-          <button class="style-btn" data-style="chaotic">Chaotic Edit</button>
+          <button class="style-btn active" data-style="chaotic">Chaotic Edit</button>
           <button class="style-btn" data-style="apple">Apple Style</button>
         </div>
       </div>
@@ -289,17 +287,13 @@
     styleBtns.forEach(btn => btn.addEventListener('click', () => applyLyricStyle(btn.getAttribute('data-style'))));
     applyLyricStyle(currentStyle);
 
-    const expandSVG = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
-    const compressSVG = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
-    
-    // FULLSCREEN LISTENER LOGIC
     function toggleFullscreenUI() {
       if (document.fullscreenElement || document.webkitFullscreenElement) {
         document.body.classList.add('is-fullscreen');
-        fsIcon.innerHTML = compressSVG;
+        fsIcon.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
       } else {
         document.body.classList.remove('is-fullscreen');
-        fsIcon.innerHTML = expandSVG;
+        fsIcon.innerHTML = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
       }
     }
     
@@ -367,7 +361,7 @@
 
       parsedLyrics.forEach((item, index) => {
         const lineEl = document.createElement('div');
-        lineEl.className = 'line future'; // Hidden by default
+        lineEl.className = 'line future';
         lineEl.id = `line-${index}`;
 
         const wordList = item.words || item.text.split(' ').map(t => ({ text: t }));
@@ -414,6 +408,8 @@
       if (audioPlayer.duration && !isUserSeeking) {
         seekSlider.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         currTimeText.innerText = formatTime(audioPlayer.currentTime);
+        // FIX: Always accurately update total duration in UI
+        durTimeText.innerText = formatTime(audioPlayer.duration);
       }
 
       if (newActiveIndex === -1) return;
@@ -530,12 +526,18 @@
       trackInput.value = title; artistInput.value = artist !== "Local MP3" ? artist : "";
       lyricOffset = 0; document.getElementById('offsetVal').innerText = '0.0s';
       
-      audioPlayer.onloadedmetadata = () => {
+      const startPlayback = () => {
         durTimeText.innerText = formatTime(audioPlayer.duration);
         statusText.innerText = `Fetching lyrics...`;
         fetchOnlyLyrics(title, artist === "Local MP3" ? "" : artist);
         audioPlayer.play().catch(()=>{});
       };
+
+      if (audioPlayer.readyState >= 1) {
+        startPlayback();
+      } else {
+        audioPlayer.onloadedmetadata = startPlayback;
+      }
     }
 
     async function fetchOnlyLyrics(track, artist) {
