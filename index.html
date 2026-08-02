@@ -207,6 +207,7 @@
       <div class="settings-group">
         <label>Theme Background & Corner Glow</label>
         <div class="theme-row">
+          <div class="theme-circle" data-bg="random" style="background: conic-gradient(cyan, magenta, yellow, cyan);" title="Random Colors"></div>
           <div class="theme-circle" data-bg="dynamic" style="background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);" title="Dynamic Art"></div>
           <div class="theme-circle" data-bg="blue" style="background: radial-gradient(circle, #0a192f 0%, #020c1b 80%);" title="Midnight Blue"></div>
           <div class="theme-circle" data-bg="black" style="background: #12091f;" title="OLED Black"></div>
@@ -296,17 +297,21 @@
     let currentDynamicImg = "none";
     rgbPicker.value = customRgbVal;
 
-    function applyTheme(themeType) {
-      themeCircles.forEach(c => c.classList.remove('active'));
-      rgbWrapper.classList.remove('active');
-
-      if (themeType === 'custom') {
+          if (themeType === 'custom') {
         rgbWrapper.classList.add('active');
         const col = rgbPicker.value;
         bgBlur.style.background = '#12091f';
         glow1.style.background = col;
         glow2.style.background = '#4a044e';
         glow3.style.background = col;
+      } else if (themeType === 'random') {
+        const activeCircle = document.querySelector(`.theme-circle[data-bg="random"]`);
+        if (activeCircle) activeCircle.classList.add('active');
+        
+        bgBlur.style.background = '#12091f';
+        glow1.style.background = getRandomColor();
+        glow2.style.background = getRandomColor();
+        glow3.style.background = getRandomColor();
       } else {
         const activeCircle = document.querySelector(`.theme-circle[data-bg="${themeType}"]`);
         if (activeCircle) activeCircle.classList.add('active');
@@ -328,6 +333,7 @@
            glow3.style.background = "#1e1b4b";
         }
       }
+
       localStorage.setItem('appTheme', themeType);
       currentTheme = themeType;
     }
@@ -698,6 +704,10 @@
     document.getElementById('p01').addEventListener('click', () => adjust(0.1));
     document.getElementById('p1').addEventListener('click', () => adjust(1));
     document.getElementById('mReset').addEventListener('click', () => { lyricOffset=0; document.getElementById('offsetVal').innerText='0.0s'; });
+    
+function getRandomColor() {
+  return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
 
   </script>
 </body>
