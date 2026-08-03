@@ -572,7 +572,7 @@
       animationFrameId = requestAnimationFrame(syncLoop);
     }
 
-    function syncLyricsToTime() {
+        function syncLyricsToTime() {
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let newActiveIndex = -1;
 
@@ -614,6 +614,48 @@
           wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
         } else if (index === newActiveIndex) {
           el.className = 'line active';
+
+          // TRUE ELRC: Precision word-by-word highlights
+          if (activeLineData.words && hasWordLevelTimestamps) {
+            el.classList.remove('sweep-mode');
+            let activeTime = -1;
+            activeLineData.words.forEach(w => { if (currentTime >= w.time) activeTime = w.time; });
+
+            wordSpans.forEach((wSpan, wIdx) => {
+              let wObj = activeLineData.words[wIdx];
+              if (currentTime >= wObj.time) {
+                if (wObj.time === activeTime) {
+                  wSpan.classList.add('filled', 'active-word');
+                } else {
+                  wSpan.classList.add('filled');
+                  wSpan.classList.remove('active-word');
+                }
+              } else {
+                wSpan.classList.remove('filled', 'active-word');
+              }
+            });
+          } else {
+            // STANDARD LRC: SWEEP ONLY WHEN VOCALS ACTUALLY START
+            el.classList.add('sweep-mode');
+            const nextLineTime = parsedLyrics[newActiveIndex + 1] ? parsedLyrics[newActiveIndex + 1].time : activeLineData.time + 4.0;
+            const duration = Math.max(1.0, nextLineTime - activeLineData.time);
+
+            // If time hasn't reached line start time yet, keep sweep at 0%
+            let progress = 0;
+            if (currentTime >= activeLineData.time) {
+              progress = Math.min(Math.max((currentTime - activeLineData.time) / duration, 0), 1) * 100;
+            }
+
+            el.style.setProperty('--sweep-progress', `${progress}%`);
+          }
+        } else {
+          el.className = 'line future';
+          el.classList.remove('sweep-mode');
+          el.style.removeProperty('--sweep-progress');
+          wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
+        }
+      });
+    }
 
           // TRUE ELRC: Precision word-by-word highlights
           if (activeLineData.words && hasWordLevelTimestamps) {
