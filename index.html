@@ -655,7 +655,8 @@
                 groupedLines.push(currentLine);
               }
 
-              return groupedLines;
+                    return { lines: groupedLines, count: syltWords.length };
+              
             }
           } catch (e) {
             console.warn("Failed to parse SYLT:", e);
@@ -825,15 +826,15 @@
       currentDynamicImg = "none";
       if (currentTheme === 'dynamic') applyTheme('dynamic');
 
-      const reader = new FileReader();
+                  const reader = new FileReader();
       reader.onload = function(evt) {
-        const embeddedSyltLyrics = parseEmbeddedSYLT(evt.target.result);
-        if (embeddedSyltLyrics && embeddedSyltLyrics.length > 0) {
-          parsedLyrics = embeddedSyltLyrics;
+        const syltData = parseEmbeddedSYLT(evt.target.result);
+        if (syltData && syltData.lines && syltData.lines.length > 0) {
+          parsedLyrics = syltData.lines;
           hasWordLevelTimestamps = true;
           hasCustomLyricsLoaded = true;
           renderLyrics();
-          statusText.innerText = '🔥 Embedded Synced Lyrics (SYLT) extracted directly from MP3!';
+          statusText.innerText = `🔥 Found ${syltData.count} synced words directly inside this MP3!`;
         }
       };
       reader.readAsArrayBuffer(file.slice(0, 131072));
