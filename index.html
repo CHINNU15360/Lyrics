@@ -24,10 +24,20 @@
     /* DESKTOP & MOBILE AMBIENT LIGHTING */
     .bg-blur { position: fixed; inset: 0; width: 100vw; height: 100vh; background: #1a0b2e; z-index: 1; transition: background 0.8s ease-in-out; background-size: cover; background-position: center; filter: blur(60px); opacity: 0.95; pointer-events: none; }
     .bg-rgb-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; overflow: hidden; }
+    <canvas id="visualizerCanvas"></canvas>
     .ambient-glow { position: absolute; width: 60vw; height: 60vw; max-width: 800px; max-height: 800px; border-radius: 50%; filter: blur(80px); opacity: 0.85; mix-blend-mode: screen; animation: floatGlow 10s infinite alternate ease-in-out; pointer-events: none; }
     .glow-1 { top: -10%; left: -10%; background: var(--glow-1, #9333ea); }
     .glow-2 { bottom: -10%; right: -10%; background: var(--glow-2, #e11d48); animation-delay: -3s; }
     .glow-3 { top: 30%; left: 30%; width: 50vw; height: 50vw; background: var(--glow-3, #3b82f6); opacity: 0.7; animation-delay: -6s; }
+    
+     #visualizerCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+      pointer-events: none;
+    }
 
     @keyframes floatGlow {
       0% { transform: scale(1) translate(0, 0); }
@@ -982,6 +992,76 @@
     document.getElementById('p01').addEventListener('click', () => adjust(0.1));
     document.getElementById('p1').addEventListener('click', () => adjust(1));
     document.getElementById('mReset').addEventListener('click', () => { lyricOffset=0; document.getElementById('offsetVal').innerText='0.0s'; });
+const canvas = document.getElementById('visualizerCanvas');
+const ctx = canvas.getContext('2d');
+
+let audioCtx, analyser, srcNode, dataArray;
+let isVisualizerInit = false;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function initAudioContext() {
+  if (isVisualizerInit) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  
+  // High detail FFT bin resolution
+  analyser.fftSize = 128; 
+  
+  srcNode = audioCtx.createMediaElementSource(audioPlayer);
+  srcNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+  isVisualizerInit = true;
+}
+
+// Draw Loop for Spectrum Bars
+function drawVisualizer() {
+  requestAnimationFrame(drawVisualizer);
+  
+  if (!isVisualizerInit || audioPlayer.paused) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  analyser.getByteFrequencyData(dataArray);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const bufferLength = dataArray.length;
+  const barWidth = (canvas.width / bufferLength) * 1.5;
+  let x = 0;
+
+  for (let i = 0; i < bufferLength; i++) {
+    const barHeight = (dataArray[i] / 255) * (canvas.height * 0.35);
+    
+    // Dynamic color gradient reacting to frequency height
+    const red = Math.min(255, dataArray[i] + 100);
+    const green = 50;
+    const blue = 200;
+
+    ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, 0.45)`;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = `rgba(${red}, ${green}, ${blue}, 0.8)`;
+
+    // Mirror bars at bottom of screen
+    ctx.fillRect(x, canvas.height - barHeight, barWidth - 4, barHeight);
+
+    x += barWidth;
+  }
+}
+
+// Start audio context on first play interaction (Browser Security Requirement)
+audioPlayer.addEventListener('play', () => {
+  initAudioContext();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  drawVisualizer();
+});
 
   </script>
 </body>
