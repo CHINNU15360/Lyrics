@@ -120,17 +120,41 @@
       text-shadow: 0 0 20px rgba(255, 208, 0, 0.7), 0 4px 20px rgba(0, 0, 0, 1); 
     }
 
-    /* CHAOTIC EDIT STYLE */
+    /* FULLY CHAOTIC HIGH-ENERGY EDIT STYLE */
     .lyrics-chaotic .line { 
-      font-size: clamp(1.8rem, 6vw, 3.0rem); 
+      font-size: clamp(2.0rem, 7vw, 3.5rem); 
       text-transform: uppercase; 
-      color: rgba(255, 255, 255, 0.25); 
+      color: rgba(255, 255, 255, 0.2); 
     }
-    .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); }
-    .lyrics-chaotic .line.active .word { color: rgba(255, 255, 255, 0.3); }
-    .lyrics-chaotic .line.active .word.filled { color: var(--rand-color, #ffffff); -webkit-text-stroke: 2px #000; text-shadow: 3px 3px 0 #000; }
-    .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); color: var(--active-color) !important; }
-    .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); color: var(--active-color) !important; }
+    .lyrics-chaotic .word { 
+      font-family: var(--rand-font, 'Anton'); 
+      transition: all 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.4); 
+    }
+    .lyrics-chaotic .line.active .word { 
+      color: rgba(255, 255, 255, 0.25); 
+      -webkit-text-stroke: 1px rgba(0,0,0,0.5); 
+    }
+    .lyrics-chaotic .line.active .word.filled { 
+      color: var(--rand-color, #ffffff); 
+      -webkit-text-stroke: 2px #000; 
+      text-shadow: 3px 3px 0 #000, 0 0 15px var(--rand-color, #ffffff); 
+    }
+    
+    /* ANIMATIONS FOR ACTIVE WORDS IN CHAOTIC MODE */
+    @keyframes chaoticPop {
+      0% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.35) rotate(var(--rand-deg, 12deg)) translateY(-8px); }
+      100% { transform: scale(1.25) rotate(var(--rand-deg, 8deg)) translateY(-4px); }
+    }
+
+    .lyrics-chaotic .line.active .word.active-word { 
+      animation: chaoticPop 0.22s forwards ease-out;
+      color: var(--active-color) !important; 
+      -webkit-text-stroke: 2px #000;
+      text-shadow: 4px 4px 0 #000, 0 0 25px var(--active-color);
+      z-index: 20; 
+      position: relative; 
+    }
 
     /* APPLE STYLE */
     .lyrics-apple .line { 
@@ -358,9 +382,8 @@
     let hasWordLevelTimestamps = false;
     let hasCustomLyricsLoaded = false;
     
-    const chaoticColors = ['#ffcc00', '#ff003c', '#00e6ff', '#34c759', '#ffffff'];
+    const chaoticColors = ['#ffcc00', '#ff003c', '#00e6ff', '#34c759', '#ff00ff', '#00ffff'];
     const chaoticFonts = ["'Anton', sans-serif", "'Bebas Neue', sans-serif", "'Permanent Marker', cursive", "'Space Mono', monospace"];
-    const chaoticAnims = ['anim-tilt-right', 'anim-tilt-left', 'anim-jump', 'anim-drop'];
 
     const themeCircles = document.querySelectorAll('.theme-circle');
     let currentTheme = localStorage.getItem('appTheme') || 'dynamic';
@@ -431,7 +454,7 @@
     applyTheme(currentTheme);
 
     const styleBtns = document.querySelectorAll('.style-btn');
-    let currentStyle = localStorage.getItem('lyricStyle') || 'capcut';
+    let currentStyle = localStorage.getItem('lyricStyle') || 'chaotic';
     function applyLyricStyle(styleType) {
       styleBtns.forEach(btn => btn.classList.remove('active'));
       const targetBtn = document.querySelector(`.style-btn[data-style="${styleType}"]`);
@@ -557,9 +580,13 @@
           wordSpan.className = 'word';
           wordSpan.innerText = w.text;
           
-          wordSpan.style.setProperty('--rand-color', chaoticColors[Math.floor(Math.random() * chaoticColors.length)]);
-          wordSpan.style.setProperty('--rand-font', chaoticFonts[Math.floor(Math.random() * chaoticFonts.length)]);
-          wordSpan.classList.add(chaoticAnims[Math.floor(Math.random() * chaoticAnims.length)]);
+          const randColor = chaoticColors[Math.floor(Math.random() * chaoticColors.length)];
+          const randFont = chaoticFonts[Math.floor(Math.random() * chaoticFonts.length)];
+          const randDeg = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 12) + 6); // Random tilt angle 6deg - 18deg
+
+          wordSpan.style.setProperty('--rand-color', randColor);
+          wordSpan.style.setProperty('--rand-font', randFont);
+          wordSpan.style.setProperty('--rand-deg', `${randDeg}deg`);
 
           lineEl.appendChild(wordSpan);
         });
