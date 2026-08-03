@@ -21,15 +21,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; background: #12091f; color: #ffffff; height: 100vh; height: 100dvh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; }
     
-    #visualizerCanvas {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 2;
-      pointer-events: none;
-    }
-
     .bg-blur { position: fixed; inset: 0; width: 100vw; height: 100vh; background: #12091f; z-index: 1; transition: background 0.8s ease-in-out; background-size: cover; background-position: center; filter: blur(60px); opacity: 0.95; pointer-events: none; }
     .bg-rgb-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; overflow: hidden; }
     .ambient-glow { 
@@ -169,8 +160,6 @@
   </style>
 </head>
 <body>
-
-  <canvas id="visualizerCanvas"></canvas>
 
   <div class="bg-blur" id="bgBlur"></div>
   <div class="bg-rgb-overlay" id="rgbOverlay">
@@ -409,27 +398,15 @@
     document.documentElement.style.setProperty('--active-color', customWordColor);
     document.documentElement.style.setProperty('--text-align', currentTextAlign);
 
-    // WEB AUDIO API CHAIN (VISUALIZER + EQ + 3D SPATIAL HRTF)
-    const canvas = document.getElementById('visualizerCanvas');
-    const ctx = canvas.getContext('2d');
-    let audioCtx, analyser, srcNode, dataArray;
+    // WEB AUDIO API CHAIN (EQ + 3D SPATIAL HRTF)
+    let audioCtx, srcNode;
     let bassFilter, pannerNode, spatialNode, eqBands = {};
     let isAudioEngineInit = false;
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
 
     function initAudioEngine() {
       if (isAudioEngineInit) return;
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 128;
-
         srcNode = audioCtx.createMediaElementSource(audioPlayer);
 
         // 1. Bass Boost Node
@@ -472,38 +449,10 @@
         }
 
         previousNode.connect(spatialNode);
-        spatialNode.connect(analyser);
-        analyser.connect(audioCtx.destination);
+        spatialNode.connect(audioCtx.destination);
 
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
         isAudioEngineInit = true;
       } catch (e) { console.warn("Audio Context init:", e); }
-    }
-
-    function drawVisualizer() {
-      requestAnimationFrame(drawVisualizer);
-      if (!isAudioEngineInit || audioPlayer.paused) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        return;
-      }
-
-      analyser.getByteFrequencyData(dataArray);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const bufferLength = dataArray.length;
-      const barWidth = (canvas.width / bufferLength) * 1.4;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (dataArray[i] / 255) * (canvas.height * 0.32);
-
-        ctx.fillStyle = `rgba(255, 204, 0, 0.4)`;
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = `rgba(255, 204, 0, 0.8)`;
-
-        ctx.fillRect(x, canvas.height - barHeight, barWidth - 4, barHeight);
-        x += barWidth;
-      }
     }
 
     const alignBtns = document.querySelectorAll('.align-btn');
@@ -605,7 +554,6 @@
       playBtn.innerHTML = pauseHTML; 
       initAudioEngine();
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      drawVisualizer();
       start60FpsEngine(); 
     });
     audioPlayer.addEventListener('pause', () => { playBtn.innerHTML = playHTML; cancelAnimationFrame(animationFrameId); });
@@ -885,8 +833,7 @@
 
     removeLrcBtn.addEventListener('click', () => {
       hasCustomLyricsLoaded = false;
-      lrcFileInput.value = '';
-      lrcBtnLabel.innerText = '📄 Upload Custom .ELRC';
+      lrcFileInput.value = ''; lrcBtnLabel.innerText = '📄 Upload Custom .ELRC';
       removeLrcBtn.style.display = 'none';
       statusText.innerText = '🗑️ Custom lyrics cleared.';
       fetchOnlyLyrics(trackInput.value.trim(), artistInput.value.trim());
