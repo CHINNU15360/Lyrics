@@ -72,21 +72,9 @@
     .line .word { 
       display: inline-block; 
       margin: 0 0.15em; 
-      transition: color 0.15s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+      transition: color 0.15s ease, transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
     }
 
-    /* CONTINUOUS GRADIENT LIGHT SWEEP ANIMATION FOR STANDARD LRC */
-    .line.sweep-mode {
-      background: linear-gradient(90deg, #ffffff var(--sweep-progress, 0%), rgba(255, 255, 255, 0.3) var(--sweep-progress, 0%));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      transition: none;
-    }
-
-    .line.sweep-mode .word {
-      color: inherit !important;
-    }
-    
     .line.active { 
       opacity: 1; 
       transform: scale(1.05); 
@@ -102,6 +90,7 @@
 
     /* DOOM TV STYLE */
     .lyrics-doom .line { font-family: 'Teko', sans-serif; font-size: clamp(2.0rem, 7vw, 3.5rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.3); text-transform: uppercase; }
+    .lyrics-doom .line.active .word { color: rgba(255, 255, 255, 0.4); }
     .lyrics-doom .line.active .word.filled { color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.8); }
     .lyrics-doom .line.active .word.active-word { color: var(--active-color) !important; transform: scale(1.15); text-shadow: 0 0 35px var(--active-color), 0 0 10px #ffffff; }
 
@@ -120,6 +109,7 @@
       color: rgba(255, 255, 255, 0.3); 
       letter-spacing: -0.5px;
     }
+    .lyrics-capcut .line.active .word { color: rgba(255, 255, 255, 0.4); }
     .lyrics-capcut .line.active .word.filled { 
       color: #ffffff; 
       text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 255, 255, 0.6); 
@@ -137,6 +127,7 @@
       color: rgba(255, 255, 255, 0.25); 
     }
     .lyrics-chaotic .word { font-family: var(--rand-font, 'Anton'); }
+    .lyrics-chaotic .line.active .word { color: rgba(255, 255, 255, 0.3); }
     .lyrics-chaotic .line.active .word.filled { color: var(--rand-color, #ffffff); -webkit-text-stroke: 2px #000; text-shadow: 3px 3px 0 #000; }
     .lyrics-chaotic .line.active .word.anim-tilt-right.active-word { transform: scale(1.1) rotate(6deg); color: var(--active-color) !important; }
     .lyrics-chaotic .line.active .word.anim-tilt-left.active-word { transform: scale(1.1) rotate(-6deg); color: var(--active-color) !important; }
@@ -154,6 +145,7 @@
     .lyrics-apple .line.past { filter: blur(1.5px); opacity: 0.3; }
     .lyrics-apple .line.future { filter: blur(2px); opacity: 0.3; }
     .lyrics-apple .line.active { opacity: 1; filter: blur(0px); }
+    .lyrics-apple .line.active .word { color: rgba(255, 255, 255, 0.35); }
     .lyrics-apple .line.active .word.filled { color: #ffffff; text-shadow: 0 0 25px rgba(255, 255, 255, 0.9); }
     .lyrics-apple .line.active .word.active-word { color: #ffffff !important; transform: scale(1.08); text-shadow: 0 0 35px #ffffff, 0 0 10px var(--active-color); }
 
@@ -489,7 +481,7 @@
     function parseLRC(lrcText) {
       hasWordLevelTimestamps = false;
       const lines = lrcText.split('\n');
-      const result = [];
+      const rawResult = [];
       const lineTimeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/;
 
       for (let line of lines) {
@@ -522,14 +514,33 @@
             }
 
             if (allWords.length > 0) {
-              result.push({ time: lineTime, text: allWords.map(w=>w.text).join(' '), words: allWords });
+              rawResult.push({ time: lineTime, text: allWords.map(w=>w.text).join(' '), words: allWords });
             }
           } else {
-            result.push({ time: lineTime, text: rawText, words: null });
+            rawResult.push({ time: lineTime, text: rawText, words: null });
           }
         }
       }
-      return result.sort((a, b) => a.time - b.time);
+
+      rawResult.sort((a, b) => a.time - b.time);
+
+      // SPREAD ESTIMATED WORD TIMESTAMPS FOR STANDARD LRC FILES
+      for (let i = 0; i < rawResult.length; i++) {
+        let item = rawResult[i];
+        if (!item.words) {
+          const nextTime = rawResult[i + 1] ? rawResult[i + 1].time : item.time + 3.0;
+          const lineDuration = Math.min(2.8, Math.max(1.0, nextTime - item.time));
+          const wordArray = item.text.split(/\s+/);
+          const step = lineDuration / wordArray.length;
+
+          item.words = wordArray.map((w, idx) => ({
+            text: w,
+            time: item.time + (idx * step)
+          }));
+        }
+      }
+
+      return rawResult;
     }
 
     function renderLyrics() {
@@ -541,8 +552,7 @@
         lineEl.className = 'line';
         lineEl.id = `line-${index}`;
 
-        const wordList = item.words || item.text.split(' ').map(t => ({ text: t, time: item.time }));
-        wordList.forEach((w) => {
+        item.words.forEach((w) => {
           const wordSpan = document.createElement('span');
           wordSpan.className = 'word';
           wordSpan.innerText = w.text;
@@ -610,48 +620,28 @@
 
         if (index < newActiveIndex) {
           el.className = 'line past';
-          el.classList.remove('sweep-mode');
-          el.style.removeProperty('--sweep-progress');
           wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
         } else if (index === newActiveIndex) {
           el.className = 'line active';
 
-          // TRUE ELRC: Precision word-by-word highlights
-          if (activeLineData.words && hasWordLevelTimestamps) {
-            el.classList.remove('sweep-mode');
-            let activeTime = -1;
-            activeLineData.words.forEach(w => { if (currentTime >= w.time) activeTime = w.time; });
+          let activeTime = -1;
+          activeLineData.words.forEach(w => { if (currentTime >= w.time) activeTime = w.time; });
 
-            wordSpans.forEach((wSpan, wIdx) => {
-              let wObj = activeLineData.words[wIdx];
-              if (currentTime >= wObj.time) {
-                if (wObj.time === activeTime) {
-                  wSpan.classList.add('filled', 'active-word');
-                } else {
-                  wSpan.classList.add('filled');
-                  wSpan.classList.remove('active-word');
-                }
+          wordSpans.forEach((wSpan, wIdx) => {
+            let wObj = activeLineData.words[wIdx];
+            if (currentTime >= wObj.time) {
+              if (wObj.time === activeTime) {
+                wSpan.classList.add('filled', 'active-word');
               } else {
-                wSpan.classList.remove('filled', 'active-word');
+                wSpan.classList.add('filled');
+                wSpan.classList.remove('active-word');
               }
-            });
-          } else {
-            // STANDARD LRC: SWEEP ONLY WHEN VOCALS ACTUALLY START
-            el.classList.add('sweep-mode');
-            const nextLineTime = parsedLyrics[newActiveIndex + 1] ? parsedLyrics[newActiveIndex + 1].time : activeLineData.time + 4.0;
-            const duration = Math.max(1.0, nextLineTime - activeLineData.time);
-
-            let progress = 0;
-            if (currentTime >= activeLineData.time) {
-              progress = Math.min(Math.max((currentTime - activeLineData.time) / duration, 0), 1) * 100;
+            } else {
+              wSpan.classList.remove('filled', 'active-word');
             }
-
-            el.style.setProperty('--sweep-progress', `${progress}%`);
-          }
+          });
         } else {
           el.className = 'line future';
-          el.classList.remove('sweep-mode');
-          el.style.removeProperty('--sweep-progress');
           wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
         }
       });
