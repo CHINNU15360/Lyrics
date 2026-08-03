@@ -109,39 +109,34 @@
     }
 
     /* FULLY CHAOTIC EDIT STYLE */
+        /* BALANCED CHAOTIC EDIT STYLE */
     .lyrics-chaotic .line { 
-      font-size: clamp(2.2rem, 5.5vw, 3.8rem); 
+      font-size: clamp(1.8rem, 5.2vw, 3.2rem); 
       text-transform: uppercase; 
       color: rgba(255, 255, 255, 0.25); 
     }
     .lyrics-chaotic .word { 
       font-family: var(--rand-font, 'Anton'); 
-      transition: all 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.4); 
+      transition: color 0.15s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
     }
     .lyrics-chaotic .line.active .word { 
-      color: rgba(255, 255, 255, 0.25); 
-      -webkit-text-stroke: 1px rgba(0,0,0,0.5); 
+      color: rgba(255, 255, 255, 0.3); 
+      -webkit-text-stroke: 1px rgba(0,0,0,0.6); 
     }
     .lyrics-chaotic .line.active .word.filled { 
       color: var(--rand-color, #ffffff); 
-      -webkit-text-stroke: 2px #000; 
-      text-shadow: 3px 3px 0 #000, 0 0 15px var(--rand-color, #ffffff); 
+      -webkit-text-stroke: 1.5px #000; 
+      text-shadow: 2px 2px 0 #000, 0 0 12px var(--rand-color, #ffffff); 
     }
-
-    @keyframes chaoticPop {
-      0% { transform: scale(1) rotate(0deg); }
-      50% { transform: scale(1.35) rotate(var(--rand-deg, 12deg)) translateY(-8px); }
-      100% { transform: scale(1.25) rotate(var(--rand-deg, 8deg)) translateY(-4px); }
-    }
-
     .lyrics-chaotic .line.active .word.active-word { 
-      animation: chaoticPop 0.22s forwards ease-out;
+      transform: scale(1.15) rotate(var(--rand-deg, 4deg));
       color: var(--active-color) !important; 
       -webkit-text-stroke: 2px #000;
-      text-shadow: 4px 4px 0 #000, 0 0 25px var(--active-color);
-      z-index: 20; 
+      text-shadow: 3px 3px 0 #000, 0 0 20px var(--active-color);
+      z-index: 10; 
       position: relative; 
     }
+
 
     /* APPLE STYLE */
     .lyrics-apple .line { 
@@ -598,7 +593,8 @@
           
           const randColor = chaoticColors[Math.floor(Math.random() * chaoticColors.length)];
           const randFont = chaoticFonts[Math.floor(Math.random() * chaoticFonts.length)];
-          const randDeg = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 12) + 6);
+                    // Soft tilt between -5deg and +5deg for balanced chaos
+          const randDeg = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 6) + 2);
 
           wordSpan.style.setProperty('--rand-color', randColor);
           wordSpan.style.setProperty('--rand-font', randFont);
