@@ -535,7 +535,7 @@
       animationFrameId = requestAnimationFrame(syncLoop);
     }
 
-    function syncLyricsToTime() {
+        function syncLyricsToTime() {
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let newActiveIndex = -1;
 
@@ -576,7 +576,8 @@
         } else if (index === newActiveIndex) {
           el.className = 'line active';
 
-          if (activeLineData.words) {
+          // IF TRUE ELRC: Highlight word-by-word with precise micro-timestamps
+          if (activeLineData.words && hasWordLevelTimestamps) {
             let activeTime = -1;
             activeLineData.words.forEach(w => { if (currentTime >= w.time) activeTime = w.time; });
 
@@ -594,14 +595,10 @@
               }
             });
           } else {
-            const nextLineTime = parsedLyrics[newActiveIndex + 1] ? parsedLyrics[newActiveIndex + 1].time : activeLineData.time + 4.0;
-            const progress = Math.min(Math.max((currentTime - activeLineData.time) / (nextLineTime - activeLineData.time), 0), 1);
-            const wordsToFill = Math.floor(progress * wordSpans.length);
-
-            wordSpans.forEach((wSpan, wIdx) => {
-              wSpan.classList.remove('filled', 'active-word');
-              if (wIdx < wordsToFill) wSpan.classList.add('filled');
-              else if (wIdx === wordsToFill) wSpan.classList.add('filled', 'active-word');
+            // STANDARD LRC: Highlight the ENTIRE line immediately!
+            wordSpans.forEach((wSpan) => {
+              wSpan.classList.add('filled');
+              wSpan.classList.remove('active-word');
             });
           }
         } else {
