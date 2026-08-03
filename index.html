@@ -562,8 +562,8 @@
         let item = rawResult[i];
         if (!item.words) {
           const nextTime = rawResult[i + 1] ? rawResult[i + 1].time : item.time + 4.0;
-          const lineDuration = Math.max(1.5, nextTime - item.time);
-          const wordArray = item.text.split(/\s+/);
+          const lineDuration = Math.min(2.2, Math.max(1.0, nextTime - item.time));
+           const wordArray = item.text.split(/\s+/);
           const step = lineDuration / wordArray.length;
 
           item.words = wordArray.map((w, idx) => ({
