@@ -21,47 +21,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; background: #12091f; color: #ffffff; height: 100vh; height: 100dvh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; }
     
-    /* DESKTOP & MOBILE AMBIENT LIGHTING */
-    /* Ensure ambient background covers entire viewport smoothly */
-.bg-blur { 
-  position: fixed; 
-  inset: 0; 
-  width: 100vw; 
-  height: 100vh; 
-  background: #12091f; 
-  z-index: 1; 
-  background-size: cover; 
-  background-position: center; 
-  filter: blur(60px); 
-  opacity: 0.95; 
-  pointer-events: none; 
-}
-
-/* Fix glow elements so they render as soft circles without square borders */
-.ambient-glow { 
-  position: absolute; 
-  width: 70vw; 
-  height: 70vw; 
-  max-width: 600px; 
-  max-height: 600px; 
-  border-radius: 50% !important; 
-  filter: blur(80px) !important; 
-  opacity: 0.6; 
-  mix-blend-mode: screen; 
-  pointer-events: none; 
-}
-
-.glow-1 { top: -20%; left: -20%; background: var(--glow-1, #3b82f6); }
-.glow-2 { bottom: -20%; right: -20%; background: var(--glow-2, #e11d48); }
-.glow-3 { top: 25%; left: 25%; background: var(--glow-3, #9333ea); }
-.bg-rgb-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; overflow: hidden; }
-    <canvas id="visualizerCanvas"></canvas>
-    .ambient-glow { position: absolute; width: 60vw; height: 60vw; max-width: 800px; max-height: 800px; border-radius: 50%; filter: blur(80px); opacity: 0.85; mix-blend-mode: screen; animation: floatGlow 10s infinite alternate ease-in-out; pointer-events: none; }
-    .glow-1 { top: -10%; left: -10%; background: var(--glow-1, #9333ea); }
-    .glow-2 { bottom: -10%; right: -10%; background: var(--glow-2, #e11d48); animation-delay: -3s; }
-    .glow-3 { top: 30%; left: 30%; width: 50vw; height: 50vw; background: var(--glow-3, #3b82f6); opacity: 0.7; animation-delay: -6s; }
-    
-     #visualizerCanvas {
+    /* AUDIO VISUALIZER CANVAS */
+    #visualizerCanvas {
       position: fixed;
       inset: 0;
       width: 100vw;
@@ -69,6 +30,25 @@
       z-index: 2;
       pointer-events: none;
     }
+
+    /* DESKTOP & MOBILE AMBIENT LIGHTING */
+    .bg-blur { position: fixed; inset: 0; width: 100vw; height: 100vh; background: #12091f; z-index: 1; transition: background 0.8s ease-in-out; background-size: cover; background-position: center; filter: blur(60px); opacity: 0.95; pointer-events: none; }
+    .bg-rgb-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; overflow: hidden; }
+    .ambient-glow { 
+      position: absolute; 
+      width: 70vw; 
+      height: 70vw; 
+      max-width: 600px; 
+      max-height: 600px; 
+      border-radius: 50% !important; 
+      filter: blur(80px) !important; 
+      opacity: 0.6; 
+      mix-blend-mode: screen; 
+      pointer-events: none; 
+    }
+    .glow-1 { top: -20%; left: -20%; background: var(--glow-1, #3b82f6); }
+    .glow-2 { bottom: -20%; right: -20%; background: var(--glow-2, #e11d48); }
+    .glow-3 { top: 25%; left: 25%; background: var(--glow-3, #9333ea); }
 
     @keyframes floatGlow {
       0% { transform: scale(1) translate(0, 0); }
@@ -208,7 +188,7 @@
     .track-title { font-weight: 700; font-size: 0.95rem; }
     .track-artist { font-size: 0.8rem; opacity: 0.65; }
     .controls { display: flex; align-items: center; gap: 0.6rem; }
-    .btn-icon { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
+    .btn-icon { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; font-size: 1rem; }
     .btn-play { background: #ffffff; color: #000000; border: none; }
     .btn-play svg { fill: #000000; width: 18px; height: 18px; pointer-events: none; }
     .btn-gear svg { fill: #ffffff; width: 18px; height: 18px; pointer-events: none; }
@@ -238,6 +218,37 @@
     .align-btn { flex: 1; padding: 0.6rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #ffffff; font-weight: 700; cursor: pointer; text-align: center; font-size: 0.9rem; }
     .align-btn.active { background: #ffffff; color: #000000; border-color: #ffffff; }
 
+    /* EQUALIZER MODAL STYLING */
+    .eq-band-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 1.2rem 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 1rem;
+    }
+
+    .eq-band {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    .eq-slider {
+      -webkit-appearance: slider-vertical;
+      width: 8px;
+      height: 110px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
     .input-control { width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #ffffff; font-size: 0.95rem; outline: none; margin-bottom: 1rem;}
     
     .file-btn { width: 100%; padding: 0.85rem; border-radius: 14px; background: rgba(255,255,255,0.08); border: 1px dashed rgba(255,255,255,0.3); color: #ffffff; font-weight: 600; cursor: pointer; text-align: center; margin-bottom: 0.8rem; display: block; }
@@ -252,6 +263,8 @@
   </style>
 </head>
 <body>
+
+  <canvas id="visualizerCanvas"></canvas>
 
   <div class="bg-blur" id="bgBlur"></div>
   <div class="bg-rgb-overlay" id="rgbOverlay">
@@ -294,6 +307,7 @@
         </div>
       </div>
       <div class="controls">
+        <button class="btn-icon" id="eqBtn" title="Graphic Equalizer">🎛️</button>
         <button class="btn-icon btn-play" id="playBtn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
         <button class="btn-icon btn-gear" id="gearBtn"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg></button>
       </div>
@@ -306,8 +320,9 @@
 
   <audio id="audioPlayer"></audio>
 
+  <!-- MAIN SETTINGS MODAL -->
   <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-card">
+    <div class="modal-card" id="settingsCard">
       <button class="modal-close" id="closeModalBtn">✕</button>
       <div class="modal-title">Settings</div>
 
@@ -370,6 +385,41 @@
       
       <div class="status-text" id="statusText">Choose an audio file to start.</div>
     </div>
+
+    <!-- EQUALIZER CARD -->
+    <div class="modal-card" id="eqCard" style="display: none;">
+      <button class="modal-close" id="closeEqBtn">✕</button>
+      <div class="modal-title">Graphic Equalizer & Sound FX</div>
+
+      <div class="settings-group">
+        <label>Bass Boost</label>
+        <input type="range" class="seek-slider" id="bassBoostSlider" min="0" max="15" value="0" step="0.5" />
+      </div>
+
+      <div class="eq-band-container">
+        <div class="eq-band">
+          <input type="range" class="eq-slider" id="eq60" min="-12" max="12" value="0" step="0.5" />
+          <span>60Hz</span>
+        </div>
+        <div class="eq-band">
+          <input type="range" class="eq-slider" id="eq250" min="-12" max="12" value="0" step="0.5" />
+          <span>250Hz</span>
+        </div>
+        <div class="eq-band">
+          <input type="range" class="eq-slider" id="eq1k" min="-12" max="12" value="0" step="0.5" />
+          <span>1kHz</span>
+        </div>
+        <div class="eq-band">
+          <input type="range" class="eq-slider" id="eq4k" min="-12" max="12" value="0" step="0.5" />
+          <span>4kHz</span>
+        </div>
+        <div class="eq-band">
+          <input type="range" class="eq-slider" id="eq12k" min="-12" max="12" value="0" step="0.5" />
+          <span>12kHz</span>
+        </div>
+      </div>
+      <button class="btn-action" id="resetEqBtn">Reset Equalizer</button>
+    </div>
   </div>
 
   <script>
@@ -383,8 +433,12 @@
     const display = document.getElementById('lyricsDisplay');
     const playBtn = document.getElementById('playBtn');
     const gearBtn = document.getElementById('gearBtn');
+    const eqBtn = document.getElementById('eqBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
+    const closeEqBtn = document.getElementById('closeEqBtn');
     const modalOverlay = document.getElementById('modalOverlay');
+    const settingsCard = document.getElementById('settingsCard');
+    const eqCard = document.getElementById('eqCard');
     const searchBtn = document.getElementById('searchBtn');
     const searchElrcBtn = document.getElementById('searchElrcBtn');
     const trackInput = document.getElementById('trackInput');
@@ -433,6 +487,86 @@
     wordColorPicker.value = customWordColor;
     document.documentElement.style.setProperty('--active-color', customWordColor);
     document.documentElement.style.setProperty('--text-align', currentTextAlign);
+
+    // WEB AUDIO API & SPECTRUM VISUALIZER ENGINE
+    const canvas = document.getElementById('visualizerCanvas');
+    const ctx = canvas.getContext('2d');
+    let audioCtx, analyser, srcNode, dataArray;
+    let bassFilter, eqBands = {};
+    let isAudioEngineInit = false;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function initAudioEngine() {
+      if (isAudioEngineInit) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128;
+
+        srcNode = audioCtx.createMediaElementSource(audioPlayer);
+
+        bassFilter = audioCtx.createBiquadFilter();
+        bassFilter.type = "lowshelf";
+        bassFilter.frequency.value = 150;
+        bassFilter.gain.value = 0;
+
+        const freqs = [60, 250, 1000, 4000, 12000];
+        let previousNode = srcNode;
+
+        previousNode.connect(bassFilter);
+        previousNode = bassFilter;
+
+        freqs.forEach(freq => {
+          const eq = audioCtx.createBiquadFilter();
+          eq.type = "peaking";
+          eq.frequency.value = freq;
+          eq.Q.value = 1.0;
+          eq.gain.value = 0;
+
+          previousNode.connect(eq);
+          previousNode = eq;
+          eqBands[freq] = eq;
+        });
+
+        previousNode.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        isAudioEngineInit = true;
+      } catch (e) { console.warn("Audio Context init error:", e); }
+    }
+
+    function drawVisualizer() {
+      requestAnimationFrame(drawVisualizer);
+      if (!isAudioEngineInit || audioPlayer.paused) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      analyser.getByteFrequencyData(dataArray);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const bufferLength = dataArray.length;
+      const barWidth = (canvas.width / bufferLength) * 1.4;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * (canvas.height * 0.32);
+
+        ctx.fillStyle = `rgba(255, 204, 0, 0.4)`;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = `rgba(255, 204, 0, 0.8)`;
+
+        ctx.fillRect(x, canvas.height - barHeight, barWidth - 4, barHeight);
+        x += barWidth;
+      }
+    }
 
     const alignBtns = document.querySelectorAll('.align-btn');
     function applyTextAlign(alignVal) {
@@ -542,7 +676,13 @@
     const playHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     const pauseHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 
-    audioPlayer.addEventListener('play', () => { playBtn.innerHTML = pauseHTML; start60FpsEngine(); });
+    audioPlayer.addEventListener('play', () => { 
+      playBtn.innerHTML = pauseHTML; 
+      initAudioEngine();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      drawVisualizer();
+      start60FpsEngine(); 
+    });
     audioPlayer.addEventListener('pause', () => { playBtn.innerHTML = playHTML; cancelAnimationFrame(animationFrameId); });
 
     function formatTime(secs) {
@@ -598,13 +738,13 @@
 
       rawResult.sort((a, b) => a.time - b.time);
 
-      // NATURAL ACCURATE WORD TIMING FOR STANDARD LRC
+      // NATURAL ACCURATE WORD TIMING FOR STANDARD LRC (CAP AT 2.2 SECONDS)
       for (let i = 0; i < rawResult.length; i++) {
         let item = rawResult[i];
         if (!item.words) {
           const nextTime = rawResult[i + 1] ? rawResult[i + 1].time : item.time + 4.0;
           const lineDuration = Math.min(2.2, Math.max(1.0, nextTime - item.time));
-           const wordArray = item.text.split(/\s+/);
+          const wordArray = item.text.split(/\s+/);
           const step = lineDuration / wordArray.length;
 
           item.words = wordArray.map((w, idx) => ({
@@ -653,7 +793,7 @@
         if (frameId === "SYLT") {
           try {
             let p = offset + 10;
-            p += 6; // Skip encoding, lang, format, type
+            p += 6;
 
             while (p < offset + 10 + frameSize) {
               let charCode = view.getUint8(p); p++;
@@ -696,8 +836,7 @@
                 groupedLines.push(currentLine);
               }
 
-                    return { lines: groupedLines, count: syltWords.length };
-              
+              return { lines: groupedLines, count: syltWords.length };
             }
           } catch (e) {
             console.warn("Failed to parse SYLT:", e);
@@ -821,6 +960,8 @@
         if (audioPlayer.src) {
           audioPlayer.play();
         } else {
+          settingsCard.style.display = 'block';
+          eqCard.style.display = 'none';
           modalOverlay.classList.add('open');
         }
       } else {
@@ -828,8 +969,20 @@
       }
     });
 
-    gearBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
+    gearBtn.addEventListener('click', () => {
+      settingsCard.style.display = 'block';
+      eqCard.style.display = 'none';
+      modalOverlay.classList.add('open');
+    });
+
+    eqBtn.addEventListener('click', () => {
+      settingsCard.style.display = 'none';
+      eqCard.style.display = 'block';
+      modalOverlay.classList.add('open');
+    });
+
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
+    closeEqBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     
     display.addEventListener('wheel', () => { autoScrollEnabled = false; retrackBtn.classList.add('visible'); });
     display.addEventListener('touchmove', () => { autoScrollEnabled = false; retrackBtn.classList.add('visible'); });
@@ -867,7 +1020,7 @@
       currentDynamicImg = "none";
       if (currentTheme === 'dynamic') applyTheme('dynamic');
 
-                  const reader = new FileReader();
+      const reader = new FileReader();
       reader.onload = function(evt) {
         const syltData = parseEmbeddedSYLT(evt.target.result);
         if (syltData && syltData.lines && syltData.lines.length > 0) {
@@ -1023,76 +1176,30 @@
     document.getElementById('p01').addEventListener('click', () => adjust(0.1));
     document.getElementById('p1').addEventListener('click', () => adjust(1));
     document.getElementById('mReset').addEventListener('click', () => { lyricOffset=0; document.getElementById('offsetVal').innerText='0.0s'; });
-const canvas = document.getElementById('visualizerCanvas');
-const ctx = canvas.getContext('2d');
 
-let audioCtx, analyser, srcNode, dataArray;
-let isVisualizerInit = false;
+    // EQUALIZER CONTROLS & EVENT LISTENERS
+    document.getElementById('bassBoostSlider').addEventListener('input', (e) => {
+      if (bassFilter) bassFilter.gain.value = parseFloat(e.target.value);
+    });
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+    const bandMap = { eq60: 60, eq250: 250, eq1k: 1000, eq4k: 4000, eq12k: 12000 };
+    Object.keys(bandMap).forEach(id => {
+      document.getElementById(id).addEventListener('input', (e) => {
+        const freq = bandMap[id];
+        if (eqBands[freq]) eqBands[freq].gain.value = parseFloat(e.target.value);
+      });
+    });
 
-function initAudioContext() {
-  if (isVisualizerInit) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  analyser = audioCtx.createAnalyser();
-  
-  // High detail FFT bin resolution
-  analyser.fftSize = 128; 
-  
-  srcNode = audioCtx.createMediaElementSource(audioPlayer);
-  srcNode.connect(analyser);
-  analyser.connect(audioCtx.destination);
-  
-  dataArray = new Uint8Array(analyser.frequencyBinCount);
-  isVisualizerInit = true;
-}
+    document.getElementById('resetEqBtn').addEventListener('click', () => {
+      document.getElementById('bassBoostSlider').value = 0;
+      if (bassFilter) bassFilter.gain.value = 0;
 
-// Draw Loop for Spectrum Bars
-function drawVisualizer() {
-  requestAnimationFrame(drawVisualizer);
-  
-  if (!isVisualizerInit || audioPlayer.paused) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    return;
-  }
-
-  analyser.getByteFrequencyData(dataArray);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const bufferLength = dataArray.length;
-  const barWidth = (canvas.width / bufferLength) * 1.5;
-  let x = 0;
-
-  for (let i = 0; i < bufferLength; i++) {
-    const barHeight = (dataArray[i] / 255) * (canvas.height * 0.35);
-    
-    // Dynamic color gradient reacting to frequency height
-    const red = Math.min(255, dataArray[i] + 100);
-    const green = 50;
-    const blue = 200;
-
-    ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, 0.45)`;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = `rgba(${red}, ${green}, ${blue}, 0.8)`;
-
-    // Mirror bars at bottom of screen
-    ctx.fillRect(x, canvas.height - barHeight, barWidth - 4, barHeight);
-
-    x += barWidth;
-  }
-}
-
-// Start audio context on first play interaction (Browser Security Requirement)
-audioPlayer.addEventListener('play', () => {
-  initAudioContext();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  drawVisualizer();
-});
+      Object.keys(bandMap).forEach(id => {
+        document.getElementById(id).value = 0;
+        const freq = bandMap[id];
+        if (eqBands[freq]) eqBands[freq].gain.value = 0;
+      });
+    });
 
   </script>
 </body>
