@@ -22,8 +22,39 @@
     body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; background: #12091f; color: #ffffff; height: 100vh; height: 100dvh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; }
     
     /* DESKTOP & MOBILE AMBIENT LIGHTING */
-    .bg-blur { position: fixed; inset: 0; width: 100vw; height: 100vh; background: #1a0b2e; z-index: 1; transition: background 0.8s ease-in-out; background-size: cover; background-position: center; filter: blur(60px); opacity: 0.95; pointer-events: none; }
-    .bg-rgb-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; overflow: hidden; }
+    /* Ensure ambient background covers entire viewport smoothly */
+.bg-blur { 
+  position: fixed; 
+  inset: 0; 
+  width: 100vw; 
+  height: 100vh; 
+  background: #12091f; 
+  z-index: 1; 
+  background-size: cover; 
+  background-position: center; 
+  filter: blur(60px); 
+  opacity: 0.95; 
+  pointer-events: none; 
+}
+
+/* Fix glow elements so they render as soft circles without square borders */
+.ambient-glow { 
+  position: absolute; 
+  width: 70vw; 
+  height: 70vw; 
+  max-width: 600px; 
+  max-height: 600px; 
+  border-radius: 50% !important; 
+  filter: blur(80px) !important; 
+  opacity: 0.6; 
+  mix-blend-mode: screen; 
+  pointer-events: none; 
+}
+
+.glow-1 { top: -20%; left: -20%; background: var(--glow-1, #3b82f6); }
+.glow-2 { bottom: -20%; right: -20%; background: var(--glow-2, #e11d48); }
+.glow-3 { top: 25%; left: 25%; background: var(--glow-3, #9333ea); }
+.bg-rgb-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; overflow: hidden; }
     <canvas id="visualizerCanvas"></canvas>
     .ambient-glow { position: absolute; width: 60vw; height: 60vw; max-width: 800px; max-height: 800px; border-radius: 50%; filter: blur(80px); opacity: 0.85; mix-blend-mode: screen; animation: floatGlow 10s infinite alternate ease-in-out; pointer-events: none; }
     .glow-1 { top: -10%; left: -10%; background: var(--glow-1, #9333ea); }
