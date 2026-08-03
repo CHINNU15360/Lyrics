@@ -108,8 +108,7 @@
       text-shadow: 0 0 20px rgba(255, 208, 0, 0.7), 0 4px 20px rgba(0, 0, 0, 1); 
     }
 
-    /* FULLY CHAOTIC EDIT STYLE */
-        /* BALANCED CHAOTIC EDIT STYLE */
+    /* BALANCED CHAOTIC EDIT STYLE */
     .lyrics-chaotic .line { 
       font-size: clamp(1.8rem, 5.2vw, 3.2rem); 
       text-transform: uppercase; 
@@ -136,7 +135,6 @@
       z-index: 10; 
       position: relative; 
     }
-
 
     /* APPLE STYLE */
     .lyrics-apple .line { 
@@ -559,11 +557,12 @@
 
       rawResult.sort((a, b) => a.time - b.time);
 
+      // NATURAL ACCURATE WORD TIMING FOR STANDARD LRC
       for (let i = 0; i < rawResult.length; i++) {
         let item = rawResult[i];
         if (!item.words) {
-          const nextTime = rawResult[i + 1] ? rawResult[i + 1].time : item.time + 3.0;
-          const lineDuration = Math.min(2.8, Math.max(1.0, nextTime - item.time));
+          const nextTime = rawResult[i + 1] ? rawResult[i + 1].time : item.time + 4.0;
+          const lineDuration = Math.max(1.5, nextTime - item.time);
           const wordArray = item.text.split(/\s+/);
           const step = lineDuration / wordArray.length;
 
@@ -575,6 +574,96 @@
       }
 
       return rawResult;
+    }
+
+    function parseEmbeddedSYLT(arrayBuffer) {
+      const view = new DataView(arrayBuffer);
+      if (view.byteLength < 10) return null;
+
+      if (String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2)) !== 'ID3') {
+        return null;
+      }
+
+      const version = view.getUint8(3);
+      let offset = 10;
+      const totalSize = ((view.getUint8(6) & 0x7f) << 21) |
+                        ((view.getUint8(7) & 0x7f) << 14) |
+                        ((view.getUint8(8) & 0x7f) << 7)  |
+                         (view.getUint8(9) & 0x7f);
+
+      while (offset < totalSize + 10 && offset + 10 < view.byteLength) {
+        let frameId = "";
+        for (let i = 0; i < 4; i++) {
+          frameId += String.fromCharCode(view.getUint8(offset + i));
+        }
+
+        let frameSize = 0;
+        if (version === 4) {
+          frameSize = ((view.getUint8(offset + 4) & 0x7f) << 21) |
+                      ((view.getUint8(offset + 5) & 0x7f) << 14) |
+                      ((view.getUint8(offset + 6) & 0x7f) << 7)  |
+                       (view.getUint8(offset + 7) & 0x7f);
+        } else {
+          frameSize = view.getUint32(offset + 4, false);
+        }
+
+        if (!frameId.trim() || frameSize <= 0) break;
+
+        if (frameId === "SYLT") {
+          try {
+            let p = offset + 10;
+            p += 6; // Skip encoding, lang, format, type
+
+            while (p < offset + 10 + frameSize) {
+              let charCode = view.getUint8(p); p++;
+              if (charCode === 0) break;
+            }
+
+            const syltWords = [];
+            while (p < offset + 10 + frameSize - 4) {
+              let textChunk = "";
+              while (p < offset + 10 + frameSize - 4) {
+                let b = view.getUint8(p); p++;
+                if (b === 0 || b === 0x0A || b === 0x0D) break;
+                if (b >= 32) textChunk += String.fromCharCode(b);
+              }
+
+              textChunk = textChunk.trim();
+              const timeMs = view.getUint32(p, false); p += 4;
+
+              if (textChunk && !isNaN(timeMs)) {
+                syltWords.push({ text: textChunk, time: timeMs / 1000.0 });
+              }
+            }
+
+            if (syltWords.length > 0) {
+              syltWords.sort((a, b) => a.time - b.time);
+              const groupedLines = [];
+              let currentLine = { time: syltWords[0].time, text: "", words: [] };
+
+              syltWords.forEach((w) => {
+                if (currentLine.words.length > 0 && (w.time - currentLine.words[currentLine.words.length - 1].time > 2.5)) {
+                  currentLine.text = currentLine.words.map(item => item.text).join(" ");
+                  groupedLines.push(currentLine);
+                  currentLine = { time: w.time, text: "", words: [] };
+                }
+                currentLine.words.push(w);
+              });
+
+              if (currentLine.words.length > 0) {
+                currentLine.text = currentLine.words.map(item => item.text).join(" ");
+                groupedLines.push(currentLine);
+              }
+
+              return groupedLines;
+            }
+          } catch (e) {
+            console.warn("Failed to parse SYLT:", e);
+          }
+        }
+        offset += 10 + frameSize;
+      }
+      return null;
     }
 
     function renderLyrics() {
@@ -593,7 +682,6 @@
           
           const randColor = chaoticColors[Math.floor(Math.random() * chaoticColors.length)];
           const randFont = chaoticFonts[Math.floor(Math.random() * chaoticFonts.length)];
-                    // Soft tilt between -5deg and +5deg for balanced chaos
           const randDeg = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 6) + 2);
 
           wordSpan.style.setProperty('--rand-color', randColor);
@@ -717,7 +805,6 @@
       fetchOnlyLyrics(trackInput.value.trim(), artistInput.value.trim());
     });
 
-    // FIXED MP3 ALBUM ART / POSTER EXTRACTOR
     audioFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -733,11 +820,23 @@
       
       let rawName = file.name.replace(/\.[^/.]+$/, "").replace(/[_]/g, " ").replace(/-/g, " ");
 
-      // Clear previous art
       playerArt.style.backgroundImage = 'none';
       playerArt.innerText = '🎵';
       currentDynamicImg = "none";
       if (currentTheme === 'dynamic') applyTheme('dynamic');
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const embeddedSyltLyrics = parseEmbeddedSYLT(evt.target.result);
+        if (embeddedSyltLyrics && embeddedSyltLyrics.length > 0) {
+          parsedLyrics = embeddedSyltLyrics;
+          hasWordLevelTimestamps = true;
+          hasCustomLyricsLoaded = true;
+          renderLyrics();
+          statusText.innerText = '🔥 Embedded Synced Lyrics (SYLT) extracted directly from MP3!';
+        }
+      };
+      reader.readAsArrayBuffer(file.slice(0, 131072));
 
       if (window.jsmediatags) {
         window.jsmediatags.read(file, {
