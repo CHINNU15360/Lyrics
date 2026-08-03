@@ -403,28 +403,27 @@
     let bassFilter, pannerNode, spatialNode, eqBands = {};
     let isAudioEngineInit = false;
 
+        // FIXED AUDIO FX ENGINE WITH GAIN COMPENSATION
     function initAudioEngine() {
       if (isAudioEngineInit) return;
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         srcNode = audioCtx.createMediaElementSource(audioPlayer);
 
-        // 1. Bass Boost Node
+        // 1. Bass Boost Filter
         bassFilter = audioCtx.createBiquadFilter();
         bassFilter.type = "lowshelf";
         bassFilter.frequency.value = 150;
         bassFilter.gain.value = 0;
 
-        // 2. 3D Spatial HRTF Panner Node
-        spatialNode = audioCtx.createPanner();
-        spatialNode.panningModel = 'HRTF';
-        spatialNode.distanceModel = 'inverse';
-        spatialNode.positionZ.value = 0;
-
-        // 3. Stereo Panner Node
+        // 2. Stereo Panner Node
         pannerNode = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
 
-        // 4. EQ Nodes
+        // 3. Stereo Widener Delay (Haas Effect for Spatial Sound without Volume Loss)
+        spatialNode = audioCtx.createDelay();
+        spatialNode.delayTime.value = 0; // 0ms to 0.03ms delay for spatial depth
+
+        // 4. 5-Band EQ Nodes
         const freqs = [60, 250, 1000, 4000, 12000];
         let previousNode = srcNode;
 
@@ -454,6 +453,13 @@
         isAudioEngineInit = true;
       } catch (e) { console.warn("Audio Context init:", e); }
     }
+
+    // UPDATED SPATIAL SLIDER (Haas Effect Delay)
+    document.getElementById('spatialSlider').addEventListener('input', (e) => {
+      // Maps slider (0-10) to a subtle stereo delay (0s - 0.025s) for spatial dimension without volume loss
+      if (spatialNode) spatialNode.delayTime.value = (parseFloat(e.target.value) / 10) * 0.025;
+    });
+
 
     const alignBtns = document.querySelectorAll('.align-btn');
     function applyTextAlign(alignVal) {
