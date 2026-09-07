@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@indic-transliteration/sanscript@1.2.0/dist/umd/sanscript.min.js"></script>
 
   <style>
     /* ============================================
@@ -742,6 +743,19 @@
       <input type="text" class="input-control" id="trackInput" placeholder="Song Title" />
       <input type="text" class="input-control" id="artistInput" placeholder="Artist Name" />
 
+      <!-- Romanize toggle -->
+      <div class="settings-group" style="margin-bottom: 0.8rem;">
+        <label>Script Conversion (Romanize)</label>
+        <div style="display:flex; gap:0.6rem; align-items:center;">
+          <button class="style-btn" id="romanizeBtn" style="flex:1; text-align:center;">
+            🔤 Romanize: <span id="romanizeStatus">Off</span>
+          </button>
+        </div>
+        <div style="font-size:0.72rem; opacity:0.6; margin-top:0.4rem;">
+          Converts Hindi, Tamil, Telugu, Arabic, Chinese & more to Latin letters.
+        </div>
+      </div>
+
       <!-- Search lyrics online -->
       <button class="btn-action" id="searchBtn">🔍 Search Online Lyrics</button>
       <button class="btn-action btn-elrc" id="searchElrcBtn">🔍 Search Google for .ELRC</button>
@@ -819,6 +833,8 @@
     const searchBtn      = document.getElementById('searchBtn');
     const searchElrcBtn  = document.getElementById('searchElrcBtn');
     const searchResults  = document.getElementById('searchResults');
+    const romanizeBtn    = document.getElementById('romanizeBtn');
+    const romanizeStatus = document.getElementById('romanizeStatus');
     const trackInput     = document.getElementById('trackInput');
     const artistInput    = document.getElementById('artistInput');
     const audioFileInput = document.getElementById('audioFileInput');
@@ -857,6 +873,7 @@
     let animationFrameId     = null;
     let hasWordLevelTimestamps = false;
     let hasCustomLyricsLoaded  = false;
+    let isRomanizeEnabled    = localStorage.getItem('romanize') === 'true';
     let isPlaying            = false;
 
     // Theme/style state (from localStorage)
@@ -1252,58 +1269,110 @@
     }
 
     // ============================================
-    // ROMANIZATION (Google Translate)
+    // ROMANIZATION (script -> Latin letters)
     // ============================================
-    async function fetchTranslationsForLyrics() {
-      const foreignCharRegex = /[^ -]/;
-      const needsTranslation = parsedLyrics.some(item => foreignCharRegex.test(item.text));
-      if (!needsTranslation) return;
 
-      statusText.textContent = '🌐 Converting script to Romanized text...';
+    // Detect which script family a string uses
+    function detectScriptFamily(text) {
+      for (const char of text) {
+        const code = char.codePointAt(0);
+        if (code >= 0x0900 && code <= 0x097F) return 'devanagari';  // Hindi
+        if (code >= 0x0980 && code <= 0x09FF) return 'bengali';
+        if (code >= 0x0B80 && code <= 0x0BFF) return 'tamil';
+        if (code >= 0x0C00 && code <= 0x0C7F) return 'telugu';
+        if (code >= 0x0C80 && code <= 0x0CFF) return 'kannada';
+        if (code >= 0x0D00 && code <= 0x0D7F) return 'malayalam';
+        if (code >= 0x0A00 && code <= 0x0A7F) return 'gujarati';
+        if (code >= 0x0A80 && code <= 0x0AFF) return 'gurmukhi';   // Punjabi
+        if (code >= 0x0B00 && code <= 0x0B7F) return 'odia';
+        if (code >= 0x0600 && code <= 0x06FF) return 'arabic';
+        if (code >= 0x0400 && code <= 0x04FF) return 'cyrillic';
+        if (code >= 0x4E00 && code <= 0x9FFF) return 'chinese';
+        if (code >= 0x3040 && code <= 0x30FF) return 'japanese';
+        if (code >= 0xAC00 && code <= 0xD7AF) return 'korean';
+        if (code >= 0x0370 && code <= 0x03FF) return 'greek';
+        if (code >= 0x0590 && code <= 0x05FF) return 'hebrew';
+        if (code >= 0x0E00 && code <= 0x0E7F) return 'thai';
+      }
+      return null;
+    }
 
-      const translationPromises = parsedLyrics.map(async item => {
-        if (!item.text.trim()) return;
+    // Romanize text using the best available method
+    async function romanizeText(text) {
+      const script = detectScriptFamily(text);
+      if (!script) return text;
+
+      // Indic + Latin-script families: use Sanscript (local, fast, accurate)
+      const sanscriptSchemes = {
+        devanagari: 'devanagari', bengali: 'bengali', tamil: 'tamil',
+        telugu: 'telugu', kannada: 'kannada', malayalam: 'malayalam',
+        gujarati: 'gujarati', gurmukhi: 'gurmukhi', odia: 'oriya',
+        arabic: 'arabic', cyrillic: 'cyrillic', greek: 'greek',
+        hebrew: 'hebrew', thai: 'thai'
+      };
+      if (typeof Sanscript !== 'undefined' && sanscriptSchemes[script]) {
         try {
-          const res = await fetch(
-            `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=rm&q=${encodeURIComponent(item.text)}`
-          );
-          const data = await res.json();
-
-          let romanText = '';
-          if (data?.[0]?.[0]?.[2]) {
-            romanText = data[0][0][2];
-          } else if (data?.[0]?.[1]?.[2]) {
-            romanText = data[0][1][2];
-          }
-
-          if (romanText) {
-            romanText = romanText.trim();
-            const romanWords = romanText.split(/\s+/);
-
-            if (item.words && item.words.length === romanWords.length) {
-              item.words.forEach((w, idx) => { w.text = romanWords[idx]; });
-            } else {
-              const start = item.words?.[0]?.time ?? item.time;
-              const end   = item.words?.length > 0
-                ? item.words[item.words.length - 1].time + 1.0
-                : item.time + 2.5;
-              const step   = (end - start) / Math.max(romanWords.length, 1);
-
-              item.words = romanWords.map((rw, idx) => ({
-                text: rw,
-                time: start + (idx * step)
-              }));
-            }
-            item.text = romanText;
-          }
+          return Sanscript.t(text, sanscriptSchemes[script], 'iso');
         } catch (e) {
-          console.warn('Romanization skipped for:', item.text);
+          console.warn('Sanscript failed, falling back to Google:', e);
         }
-      });
+      }
 
-      await Promise.all(translationPromises);
-      renderLyrics();
-      statusText.textContent = '✅ Converted lyrics to English characters!';
+      // Chinese / Japanese / Korean: use Google Translate romanization
+      try {
+        const res = await fetch(
+          'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=rm&q=' + encodeURIComponent(text)
+        );
+        const data = await res.json();
+        let romanText = '';
+        if (data && data[0] && data[0][0] && data[0][0][2]) {
+          romanText = data[0][0][2];
+        } else if (data && data[0] && data[0][1] && data[0][1][2]) {
+          romanText = data[0][1][2];
+        }
+        return (romanText || text).trim();
+      } catch (e) {
+        return text;
+      }
+    }
+
+    // Apply romanization to a single lyric item
+    async function romanizeLyricItem(item) {
+      if (!item.text.trim()) return;
+      const romanText = await romanizeText(item.text);
+      if (romanText === item.text) return;
+
+      const romanWords = romanText.split(/\s+/);
+
+      if (item.words && item.words.length === romanWords.length) {
+        item.words.forEach((w, idx) => { w.text = romanWords[idx]; });
+      } else {
+        const start = (item.words && item.words[0]) ? item.words[0].time : item.time;
+        const end   = (item.words && item.words.length > 0)
+          ? item.words[item.words.length - 1].time + 1.0
+          : item.time + 2.5;
+        const step  = (end - start) / Math.max(romanWords.length, 1);
+        item.words  = romanWords.map((rw, idx) => ({ text: rw, time: start + (idx * step) }));
+      }
+      item.text = romanText;
+    }
+
+    // Apply romanization to all loaded lyrics
+    async function fetchTranslationsForLyrics() {
+      if (!isRomanizeEnabled) return;
+      const needsConversion = parsedLyrics.some(item => detectScriptFamily(item.text));
+      if (!needsConversion) return;
+
+      statusText.textContent = '🌐 Romanizing lyrics...';
+
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < parsedLyrics.length; i += BATCH_SIZE) {
+        const batch = parsedLyrics.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(romanizeLyricItem));
+        renderLyrics();
+      }
+
+      statusText.textContent = '✅ Lyrics Romanized!';
     }
 
     // ============================================
@@ -1778,6 +1847,25 @@
       localStorage.setItem('customRgb', customRgbVal);
       applyTheme('custom');
     });
+
+    // Romanize toggle
+    function updateRomanizeBtn() {
+      romanizeStatus.textContent = isRomanizeEnabled ? 'On' : 'Off';
+      romanizeBtn.classList.toggle('active', isRomanizeEnabled);
+    }
+    romanizeBtn.addEventListener('click', async () => {
+      isRomanizeEnabled = !isRomanizeEnabled;
+      localStorage.setItem('romanize', String(isRomanizeEnabled));
+      updateRomanizeBtn();
+      if (isRomanizeEnabled && parsedLyrics.length > 0) {
+        statusText.textContent = '🌐 Romanizing current lyrics...';
+        await fetchTranslationsForLyrics();
+        if (statusText.textContent === '🌐 Romanizing current lyrics...') {
+          statusText.textContent = 'No non-Latin scripts detected.';
+        }
+      }
+    });
+    updateRomanizeBtn();
 
     // ============================================
     // THEME / STYLE / ALIGN BUTTON LISTENERS
