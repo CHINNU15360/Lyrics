@@ -60,6 +60,23 @@
     .line.active { opacity: 1; transform: scale(1.05); }
     .line.past, .line.future { opacity: 0.25; transform: scale(0.92); }
 
+    /* TRANSLATION & SUBTITLE STYLING */
+    .line-translation {
+      display: block;
+      font-size: 0.55em;
+      opacity: 0.7;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-top: 0.4rem;
+      text-transform: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .line.active .line-translation {
+      opacity: 0.95;
+      color: #ffffff;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    }
+
     /* DOOM TV STYLE */
     .lyrics-doom .line { font-family: 'Teko', sans-serif; font-size: clamp(2.2rem, 5.5vw, 3.8rem); letter-spacing: 1px; color: rgba(255, 255, 255, 0.3); text-transform: uppercase; }
     .lyrics-doom .line.active .word { color: rgba(255, 255, 255, 0.4); }
@@ -286,10 +303,10 @@
     <!-- EQUALIZER & SPATIAL SOUND CARD -->
     <div class="modal-card" id="eqCard" style="display: none;">
       <button class="modal-close" id="closeEqBtn">✕</button>
-      <div class="modal-title">Audio FX & 3D Spatial Sound</div>
+      <div class="modal-title">Audio FX & Stereo Widener</div>
 
       <div class="fx-card-row">
-        <span class="fx-title">3D Spatial Sound (Atmos HRTF)</span>
+        <span class="fx-title">3D Spatial Width (Haas Delay)</span>
         <input type="range" class="seek-slider fx-slider" id="spatialSlider" min="0" max="10" value="0" step="0.5" />
       </div>
 
@@ -398,32 +415,27 @@
     document.documentElement.style.setProperty('--active-color', customWordColor);
     document.documentElement.style.setProperty('--text-align', currentTextAlign);
 
-    // WEB AUDIO API CHAIN (EQ + 3D SPATIAL HRTF)
+    // WEB AUDIO API CHAIN (HAAS STEREO DELAY + EQ + BASS BOOST)
     let audioCtx, srcNode;
     let bassFilter, pannerNode, spatialNode, eqBands = {};
     let isAudioEngineInit = false;
 
-        // FIXED AUDIO FX ENGINE WITH GAIN COMPENSATION
     function initAudioEngine() {
       if (isAudioEngineInit) return;
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         srcNode = audioCtx.createMediaElementSource(audioPlayer);
 
-        // 1. Bass Boost Filter
         bassFilter = audioCtx.createBiquadFilter();
         bassFilter.type = "lowshelf";
         bassFilter.frequency.value = 150;
         bassFilter.gain.value = 0;
 
-        // 2. Stereo Panner Node
+        spatialNode = audioCtx.createDelay();
+        spatialNode.delayTime.value = 0;
+
         pannerNode = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
 
-        // 3. Stereo Widener Delay (Haas Effect for Spatial Sound without Volume Loss)
-        spatialNode = audioCtx.createDelay();
-        spatialNode.delayTime.value = 0; // 0ms to 0.03ms delay for spatial depth
-
-        // 4. 5-Band EQ Nodes
         const freqs = [60, 250, 1000, 4000, 12000];
         let previousNode = srcNode;
 
@@ -451,15 +463,8 @@
         spatialNode.connect(audioCtx.destination);
 
         isAudioEngineInit = true;
-      } catch (e) { console.warn("Audio Context init:", e); }
+      } catch (e) { console.warn("Audio Context init error:", e); }
     }
-
-    // UPDATED SPATIAL SLIDER (Haas Effect Delay)
-    document.getElementById('spatialSlider').addEventListener('input', (e) => {
-      // Maps slider (0-10) to a subtle stereo delay (0s - 0.025s) for spatial dimension without volume loss
-      if (spatialNode) spatialNode.delayTime.value = (parseFloat(e.target.value) / 10) * 0.025;
-    });
-
 
     const alignBtns = document.querySelectorAll('.align-btn');
     function applyTextAlign(alignVal) {
@@ -569,6 +574,39 @@
       const m = Math.floor(secs / 60);
       const s = Math.floor(secs % 60);
       return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // AUTOMATIC TRANSLATION & ROMANIZATION ENGINE
+    async function fetchTranslationsForLyrics() {
+      const nonLatinRegex = /[^\u0000-\u007F]/;
+      const needsTranslation = parsedLyrics.some(item => nonLatinRegex.test(item.text));
+
+      if (!needsTranslation) return;
+
+      statusText.innerText = "🌐 Fetching translation / Romanized text...";
+
+      const textToTranslate = parsedLyrics.map(item => item.text).join('\n');
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(textToTranslate)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data && data[0]) {
+          const translatedText = data[0].map(segment => segment[0]).join('');
+          const translatedLines = translatedText.split('\n');
+
+          parsedLyrics.forEach((item, idx) => {
+            if (translatedLines[idx]) {
+              item.translation = translatedLines[idx].trim();
+            }
+          });
+
+          renderLyrics();
+          statusText.innerText = "✅ Lyrics & translation loaded!";
+        }
+      } catch (err) {
+        console.warn("Translation failed:", err);
+      }
     }
 
     function parseLRC(lrcText) {
@@ -712,6 +750,9 @@
         lineEl.className = 'line';
         lineEl.id = `line-${index}`;
 
+        const mainTextWrap = document.createElement('div');
+        mainTextWrap.className = 'main-text';
+
         item.words.forEach((w) => {
           const wordSpan = document.createElement('span');
           wordSpan.className = 'word';
@@ -725,8 +766,17 @@
           wordSpan.style.setProperty('--rand-font', randFont);
           wordSpan.style.setProperty('--rand-deg', `${randDeg}deg`);
 
-          lineEl.appendChild(wordSpan);
+          mainTextWrap.appendChild(wordSpan);
         });
+
+        lineEl.appendChild(mainTextWrap);
+
+        if (item.translation) {
+          const transEl = document.createElement('div');
+          transEl.className = 'line-translation';
+          transEl.innerText = item.translation;
+          lineEl.appendChild(transEl);
+        }
 
         lineEl.addEventListener('click', () => {
           audioPlayer.currentTime = Math.max(0, item.time + lyricOffset);
@@ -873,6 +923,7 @@
           hasWordLevelTimestamps = true;
           hasCustomLyricsLoaded = true;
           renderLyrics();
+          fetchTranslationsForLyrics();
           statusText.innerText = `🔥 Found ${syltData.count} synced words directly inside this MP3!`;
         }
       };
@@ -908,6 +959,7 @@
           hasCustomLyricsLoaded = true;
           removeLrcBtn.style.display = 'block';
           renderLyrics();
+          fetchTranslationsForLyrics();
           
           lrcBtnLabel.innerText = `✅ Loaded: ${file.name}`;
           statusText.innerText = hasWordLevelTimestamps ? '✅ Enhanced Word-Level (.ELRC) Loaded & Locked!' : '✅ Custom LRC Loaded & Locked!';
@@ -948,6 +1000,7 @@
           if (item.syncedLyrics) {
             parsedLyrics = parseLRC(item.syncedLyrics);
             renderLyrics();
+            fetchTranslationsForLyrics();
             modalOverlay.classList.remove('open');
             statusText.innerText = '✅ Online Synced Lyrics Loaded!';
             return;
@@ -959,6 +1012,7 @@
             const lines = item.plainLyrics.split('\n').filter(l => l.trim().length > 0);
             parsedLyrics = lines.map((line, i) => ({ time: i * 3.5, text: line, words: null }));
             renderLyrics();
+            fetchTranslationsForLyrics();
             modalOverlay.classList.remove('open');
             statusText.innerText = '⚠️ Plain lyrics loaded (No word timestamps).';
             return;
@@ -1000,9 +1054,9 @@
     document.getElementById('p1').addEventListener('click', () => adjust(1));
     document.getElementById('mReset').addEventListener('click', () => { lyricOffset=0; document.getElementById('offsetVal').innerText='0.0s'; });
 
-    // SOUND FX & SPATIAL AUDIO LISTENERS
+    // SOUND FX LISTENERS (HAAS STEREO DELAY + PANNER + BASS BOOST)
     document.getElementById('spatialSlider').addEventListener('input', (e) => {
-      if (spatialNode) spatialNode.positionZ.value = -parseFloat(e.target.value);
+      if (spatialNode) spatialNode.delayTime.value = (parseFloat(e.target.value) / 10) * 0.025;
     });
 
     document.getElementById('pannerSlider').addEventListener('input', (e) => {
@@ -1026,7 +1080,7 @@
       document.getElementById('spatialSlider').value = 0;
       document.getElementById('pannerSlider').value = 0;
       if (bassFilter) bassFilter.gain.value = 0;
-      if (spatialNode) spatialNode.positionZ.value = 0;
+      if (spatialNode) spatialNode.delayTime.value = 0;
       if (pannerNode && pannerNode.pan) pannerNode.pan.value = 0;
 
       Object.keys(bandMap).forEach(id => {
