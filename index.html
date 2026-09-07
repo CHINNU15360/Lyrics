@@ -576,37 +576,33 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // AUTOMATIC TRANSLATION & ROMANIZATION ENGINE
+    // AUTOMATIC TRANSLATION ENGINE (MYMEMORY API)
     async function fetchTranslationsForLyrics() {
-      const nonLatinRegex = /[^\u0000-\u007F]/;
-      const needsTranslation = parsedLyrics.some(item => nonLatinRegex.test(item.text));
+      const foreignCharRegex = /[^\u0000-\u007F]/;
+      const needsTranslation = parsedLyrics.some(item => foreignCharRegex.test(item.text));
 
       if (!needsTranslation) return;
 
-      statusText.innerText = "🌐 Fetching translation / Romanized text...";
+      statusText.innerText = "🌐 Fetching line translations...";
 
-      const textToTranslate = parsedLyrics.map(item => item.text).join('\n');
-      try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(textToTranslate)}`;
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (data && data[0]) {
-          const translatedText = data[0].map(segment => segment[0]).join('');
-          const translatedLines = translatedText.split('\n');
-
-          parsedLyrics.forEach((item, idx) => {
-            if (translatedLines[idx]) {
-              item.translation = translatedLines[idx].trim();
+      const translationPromises = parsedLyrics.map(async (item) => {
+        if (!item.text.trim()) return;
+        try {
+          const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(item.text)}&langpair=autodetect|en`);
+          const data = await res.json();
+          if (data && data.responseData && data.responseData.translatedText) {
+            if (data.responseData.translatedText.toLowerCase() !== item.text.toLowerCase()) {
+              item.translation = data.responseData.translatedText;
             }
-          });
-
-          renderLyrics();
-          statusText.innerText = "✅ Lyrics & translation loaded!";
+          }
+        } catch (e) {
+          console.warn("Translation skipped for line:", item.text);
         }
-      } catch (err) {
-        console.warn("Translation failed:", err);
-      }
+      });
+
+      await Promise.all(translationPromises);
+      renderLyrics();
+      statusText.innerText = "✅ English translations loaded!";
     }
 
     function parseLRC(lrcText) {
@@ -745,10 +741,18 @@
       display.innerHTML = '';
       if (parsedLyrics.length === 0) return display.innerHTML = '<div class="line active">No lyrics loaded.</div>';
 
+      const isRtlOrNonLatin = (str) => /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(str);
+
       parsedLyrics.forEach((item, index) => {
         const lineEl = document.createElement('div');
         lineEl.className = 'line';
         lineEl.id = `line-${index}`;
+
+        const isRTL = isRtlOrNonLatin(item.text);
+        if (isRTL) {
+          lineEl.style.direction = "rtl";
+          lineEl.style.fontFamily = "'Segoe UI', Tahoma, Arial, sans-serif";
+        }
 
         const mainTextWrap = document.createElement('div');
         mainTextWrap.className = 'main-text';
@@ -759,8 +763,8 @@
           wordSpan.innerText = w.text;
           
           const randColor = chaoticColors[Math.floor(Math.random() * chaoticColors.length)];
-          const randFont = chaoticFonts[Math.floor(Math.random() * chaoticFonts.length)];
-          const randDeg = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 6) + 2);
+          const randFont = isRTL ? 'inherit' : chaoticFonts[Math.floor(Math.random() * chaoticFonts.length)];
+          const randDeg = isRTL ? 0 : (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 6) + 2);
 
           wordSpan.style.setProperty('--rand-color', randColor);
           wordSpan.style.setProperty('--rand-font', randFont);
@@ -775,6 +779,7 @@
           const transEl = document.createElement('div');
           transEl.className = 'line-translation';
           transEl.innerText = item.translation;
+          transEl.style.direction = "ltr";
           lineEl.appendChild(transEl);
         }
 
