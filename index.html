@@ -869,7 +869,6 @@
     let autoScrollEnabled    = true;
     let isUserSeeking       = false;
     let activeIndex          = -1;
-    let animationFrameId     = null;
     let hasWordLevelTimestamps = false;
     let hasCustomLyricsLoaded  = false;
     let isRomanizeEnabled    = localStorage.getItem('romanize') === 'true';
@@ -982,32 +981,12 @@
     }
 
     // ============================================
-    // VISIBILITY GUARD — saves CPU when tab is hidden
+    // SYNC ENGINE — driven by the audio element's native
+    // `timeupdate` event (~4-6 Hz) instead of a 60 fps
+    // requestAnimationFrame loop. The RAF loop was the
+    // source of the lyric lag: it hammered the DOM every
+    // frame even when nothing needed updating.
     // ============================================
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
-          animationFrameId = null;
-        }
-      } else {
-        if (isPlaying) start60FpsEngine();
-      }
-    });
-
-    // ============================================
-    // SYNC ENGINE
-    // ============================================
-    function start60FpsEngine() {
-      function syncLoop() {
-        if (!audioPlayer.paused && !document.hidden) {
-          syncLyricsToTime();
-          animationFrameId = requestAnimationFrame(syncLoop);
-        }
-      }
-      animationFrameId = requestAnimationFrame(syncLoop);
-    }
-
     function syncLyricsToTime() {
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let newActiveIndex = -1;
@@ -1301,7 +1280,11 @@
       const script = detectScriptFamily(text);
       if (!script) return text;
 
-      // Try Sanscript first (if loaded)
+      // 1. Built-in transliteration (works fully offline — no network needed)
+      const builtin = transliterateBuiltIn(text, script);
+      if (builtin && builtin !== text) return builtin;
+
+      // 2. Sanscript (if loaded) for scripts it covers well
       const sanscriptSchemes = {
         devanagari: 'devanagari', bengali: 'bengali', tamil: 'tamil',
         telugu: 'telugu', kannada: 'kannada', malayalam: 'malayalam',
@@ -1315,7 +1298,7 @@
         } catch (e) { /* fall through */ }
       }
 
-      // Fall back to Google Translate romanization
+      // 3. Google Translate romanization (optional, may be blocked)
       try {
         const res = await fetch(
           'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=rm&q=' + encodeURIComponent(text)
@@ -1332,148 +1315,119 @@
         }
       } catch (e) { /* Google blocked — fall through to built-in */ }
 
-      // Last resort: built-in Hindi->Latin transliteration
-      return transliterateHindi(text);
+      return text;
     }
 
-    // Self-contained Hindi/Urdu Devanagari -> Latin transliteration
-    // No external library needed — covers all common Hindi characters
-    function transliterateHindi(text) {
-      const DEVAREP = /[ा-ॿ]/g;
-      if (!DEVAREP.test(text)) return text;
+    // ============================================
+    // BUILT-IN TRANSLITERATION (no network required)
+    // ============================================
 
-      // Two-char sequences (must be checked first, before single chars)
+    // Arabic / Urdu → Latin (covers the Arabic-script lyrics shown in the app)
+    function transliterateArabic(text) {
+      const map = {
+        'ء': "'", 'آ': "aa", 'أ': "a", 'ؤ': "w",
+        'إ': "i", 'ئ': "y", 'ا': "aa", 'ب': "b",
+        'ة': "t", 'ت': "t", 'ث': "th", 'ج': "j",
+        'ح': "H", 'خ': "kh", 'د': "d", 'ذ': "dh",
+        'ر': "r", 'ز': "z", 'س': "s", 'ش': "sh",
+        'ص': "S", 'ض': "D", 'ط': "T", 'ظ': "Z",
+        'ع': "'", 'غ': "gh", 'ـ': "", 'ف': "f",
+        'ق': "q", 'ك': "k", 'ل': "l", 'م': "m",
+        'ن': "n", 'ه': "h", 'و': "w", 'ى': "a",
+        'ي': "y",
+        // Urdu extensions (beyond standard Arabic)
+        'ٰ': "a", 'ٺ': "t", 'پ': "p", 'ڈ': "d",
+        'ڑ': "r", 'ھ': "h", 'ہ': "h", 'ۂ': "a",
+        'ی': "y", 'ے': "e",
+        // Diacritics (vowel marks)
+        'ً': "an", 'ٌ': "in", 'ٍ': "un",
+        'َ': "a", 'ُ': "i", 'ِ': "u",
+        'ّ': "", 'ْ': "", 'ٓ': "", 'ٔ': "'",
+        'ٕ': "'", 'ٖ': "", 'ٗ': "", '٘': "",
+        'ٙ': "", 'ٚ': "", 'ٛ': "", 'ٜ': "",
+        'ٝ': "", 'ٞ': "", 'ٟ': "",
+        // Arabic-Indic digits
+        '٠': "0", '١': "1", '٢': "2", '٣': "3",
+        '٤': "4", '٥': "5", '٦': "6", '٧': "7",
+        '٨': "8", '٩': "9"
+      };
+      let out = '';
+      for (const ch of text) out += (map[ch] !== undefined) ? map[ch] : ch;
+      return out;
+    }
+
+    // Devanagari (Hindi) → Latin
+    function transliterateDevanagari(text) {
       const PAIRS = {
-        'ाऽ': 'aa’', // ा'
-        'ा’': 'aa’',
-        'िऽ': 'i’',
-        'ि’': 'i’',
-        'ीऽ': 'ee’',
-        'ी’': 'ee’',
-        'ुऽ': 'u’',
-        'ु’': 'u’',
-        'ूऽ': 'oo’',
-        'ू’': 'oo’',
-        'र्व': 'rvi',
-        'र्वा': 'rvaa',
-        'क्ष': 'ksh',
-        'श्र': 'shr',
-        'ज्ञ': 'jny',
-        'त्र': 'tr',
-        'द्र': 'dr',
-        'ध्र': 'dhri',
-        'ध्व': 'dhv',
-        'य्य': 'yy',
-        'ग्न': 'gn',
-        'ह्न': 'hn',
-        'क्ष': 'ksh',
-        'ञ्ज': 'nyj',
-        'ंज': 'nj',
-        'ंब': 'nb',
-        'ंम': 'nm',
-        'ंय': 'ny',
-        'ंर': 'nr',
-        'ंल': 'nl',
-        'ंव': 'nv',
-        'ंश': 'nsh',
+        'क्ष': 'ksh', 'श्र': 'shr', 'ज्ञ': 'jny', 'त्र': 'tr',
+        'द्र': 'dr', 'ध्र': 'dhri', 'ध्व': 'dhv', 'य्य': 'yy',
+        'ग्न': 'gn', 'ह्न': 'hn', 'ञ्ज': 'nyj', 'र्व': 'rvi',
+        'र्वा': 'rvaa'
       };
-
-      // Single-character mapping (matras AFTER consonants)
       const VOWELS = {
-        'ा': 'aa', 'ि': 'i',  'ी': 'ee',
-        'ु': 'u',  'ू': 'oo', 'ृ': 'ri',
-        'ॄ': 'Rii', 'ो': 'o', 'ौ': 'au',
+        'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo',
+        'ऋ': 'ri', 'ॄ': 'Rii', 'ऌ': 'Lri', 'ए': 'e', 'ऐ': 'ai',
+        'ऑ': 'o', 'ऒ': 'au'
       };
-      const MATRAS = { 'ा': 'aa', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'ृ': 'ri', 'ॄ': 'Rii', 'ो': 'o', 'ौ': 'au' };
-
-      // Vowels (standalone)
-      const INDEPVOW = {
-        'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee',
-        'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri', 'ऌ': 'Lri',
-        'ए': 'e', 'ऐ': 'ai', 'ऑ': 'o', 'ऒ': 'au',
+      const MATRAS = {
+        'ा': 'aa', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo',
+        'ृ': 'ri', 'ॄ': 'Rii', 'ो': 'o', 'ौ': 'au'
       };
-      // Consonants
       const CONS = {
-        'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh',
-        'ङ': 'ng',
+        'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
         'च': 'ch', 'छ': 'Ch', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
-        'ट': 'T',  'ठ': 'Th', 'ड': 'D', 'ढ': 'Dh', 'ण': 'N',
-        'त': 't',  'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
-        'प': 'p',  'फ': 'f',  'ब': 'b', 'भ': 'bh', 'म': 'm',
-        'य': 'y',
-        'र': 'r', 'ल': 'l',
-        'ळ': 'L',  'व': 'v', 'श': 'sh', 'ष': 'Sh',
-        'स': 's',  'ह': 'h',
-        'ऽ': '’', '‘': '’', '’': '’',
+        'ट': 'T', 'ठ': 'Th', 'ड': 'D', 'ढ': 'Dh', 'ण': 'N',
+        'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+        'प': 'p', 'फ': 'f', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+        'य': 'y', 'र': 'r', 'ल': 'l', 'ळ': 'L', 'व': 'v',
+        'श': 'sh', 'ष': 'Sh', 'स': 's', 'ह': 'h', 'ऽ': "'",
+        '‘': "'", '’': "'"
       };
-      const VIRAMA  = '्';
       const ANUSWAR = 'ं';
       const VISARG  = 'ः';
       const CHANDR  = 'ँ';
       const NUKTA   = '़';
       const HALANT  = '्';
 
-      // Process the string char by char
       let result = '';
       let i = 0;
       while (i < text.length) {
-        // Check for two-char sequence
         let matchedPair = null;
         for (const seq of Object.keys(PAIRS)) {
-          if (text.startsWith(seq, i)) {
-            matchedPair = PAIRS[seq];
-            break;
-          }
+          if (text.startsWith(seq, i)) { matchedPair = PAIRS[seq]; break; }
         }
-        if (matchedPair) {
-          result += matchedPair;
-          i += 2;
-          continue;
-        }
+        if (matchedPair) { result += matchedPair; i += 2; continue; }
 
         const ch = text[i];
         const next = text[i + 1];
 
-        // Standalone vowel
-        if (INDEPVOW[ch]) {
-          result += INDEPVOW[ch];
-          i++; continue;
-        }
-        // Matra (vowel sign after consonant)
-        if (MATRAS[ch]) {
-          result += MATRAS[ch];
-          i++; continue;
-        }
-        // Anuswar -> n
-        if (ch === ANUSWAR)  { result += 'n';  i++; continue; }
-        // Visarg
-        if (ch === VISARG)   { result += 'h';  i++; continue; }
-        // Chandrabindu -> ~n
-        if (ch === CHANDR)   { result += 'n';  i++; continue; }
-        // Consonant
+        if (VOWELS[ch]) { result += VOWELS[ch]; i++; continue; }
+        if (MATRAS[ch]) { result += MATRAS[ch]; i++; continue; }
+        if (ch === ANUSWAR) { result += 'n'; i++; continue; }
+        if (ch === VISARG)  { result += 'h'; i++; continue; }
+        if (ch === CHANDR)  { result += 'n'; i++; continue; }
+
         if (CONS[ch]) {
-          // Check for nukta + consonant combo (e.g. ख़ = ख + ़)
-          if (next === NUKTA) {
-            result += CONS[ch] + '’'; // kha -> kha (with aspiration marker)
-            i += 2; continue;
-          }
-          // Check for virama (halant) — consonant cluster or no vowel
-          if (next === HALANT) {
-            result += CONS[ch];
-            i += 2; continue;
-          }
-          // Normal consonant — add vowel marker if matra follows, else 'a'
+          if (next === NUKTA) { result += CONS[ch] + "'"; i += 2; continue; }
+          if (next === HALANT) { result += CONS[ch]; i += 2; continue; }
           const matra = (next && MATRAS[next]) ? MATRAS[next] : 'a';
           result += CONS[ch] + matra;
-          if (next && MATRAS[next]) i += 2;
-          else i++;
+          i += (next && MATRAS[next]) ? 2 : 1;
           continue;
         }
-        // Normal character (punctuation, space, etc.) — pass through
         result += ch;
         i++;
       }
       return result;
+    }
+
+    // Dispatcher: pick the right built-in transliterator per script
+    function transliterateBuiltIn(text, script) {
+      switch (script) {
+        case 'arabic':    return transliterateArabic(text);
+        case 'devanagari': return transliterateDevanagari(text);
+        default: return null;
+      }
     }
 
     // Apply romanization to a single lyric item
@@ -1711,14 +1665,17 @@
       playBtn.innerHTML = pauseSVG;
       initAudioEngine();
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      start60FpsEngine();
+      syncLyricsToTime(); // snap to position immediately on play
     });
 
     audioPlayer.addEventListener('pause', () => {
       isPlaying = false;
       playBtn.innerHTML = playSVG;
-      cancelAnimationFrame(animationFrameId);
     });
+
+    // Native timeupdate event (~4-6 Hz) replaces the 60 fps RAF loop
+    audioPlayer.addEventListener('timeupdate', syncLyricsToTime);
+    audioPlayer.addEventListener('seeked', syncLyricsToTime);
 
     // Play button
     playBtn.addEventListener('click', () => {
