@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -829,20 +829,11 @@
         </div>
       </div>
 
-      <!-- Lyric source -->
-      <div class="settings-group">
-        <label>Lyrics Source</label>
-        <div class="source-row">
-          <button class="source-btn active" data-src="lrclib">LRCLIB</button>
-          <button class="source-btn" data-src="vagalume">Vagalume</button>
-          <button class="source-btn" data-src="musixmatch">Musixmatch</button>
-        </div>
-        <div style="font-size:0.72rem; opacity:0.6; margin-top:0.4rem;">
-          LRCLIB = synced word timing. Vagalume = plain text (free). Musixmatch = plain text (needs API key).
-        </div>
+      <!-- Musixmatch API key (optional - for additional source) -->
+      <input type="text" class="input-control" id="musixmatchKey" placeholder="Musixmatch API key (optional - for extra source)" />
+      <div style="font-size:0.72rem; opacity:0.6; margin-bottom:1rem;">
+        Lyrics are fetched automatically from LRCLIB, Vagalume & Musixmatch. Add your Musixmatch API key for better coverage.
       </div>
-
-      <input type="text" class="input-control" id="musixmatchKey" placeholder="Musixmatch API key (optional)" />
 
       <!-- Search lyrics online -->
       <button class="btn-action" id="searchBtn">🔍 Search Online Lyrics</button>
@@ -989,7 +980,6 @@
     const themeCircles = document.querySelectorAll('.theme-circle');
     const styleBtns    = document.querySelectorAll('.style-btn');
     const alignBtns    = document.querySelectorAll('.align-btn');
-    const sourceBtns   = document.querySelectorAll('.source-btn');
 
     // ============================================
     // SVG STRINGS (declared early so event listeners can use them)
@@ -1015,9 +1005,6 @@
     let playlistIndex      = -1;
     let autoAdvance        = true;
     let visualizerEnabled  = localStorage.getItem('visualizer') === 'true';
-
-    // Lyrics source preference
-    let lyricsSource       = localStorage.getItem('lyricsSource') || 'lrclib';
 
     // Theme/style state (from localStorage)
     let currentTheme    = localStorage.getItem('appTheme')    || 'dynamic';
@@ -1255,34 +1242,55 @@
     }
 
     // ============================================
-    // SYNC ENGINE — driven by the audio element's native
-    // `timeupdate` event (~4-6 Hz) instead of a 60 fps
-    // requestAnimationFrame loop. The RAF loop was the
-    // source of the lyric lag: it hammered the DOM every
-    // frame even when nothing needed updating.
+    // SYNC ENGINE — uses requestAnimationFrame for smooth 60fps
+    // timing but only updates DOM when state actually changes
     // ============================================
+    let lastActiveIndex = -1;
+    let lastActiveWordTime = -1;
+    let rafId = null;
+
     function syncLyricsToTime() {
       const currentTime = audioPlayer.currentTime - lyricOffset;
       let newActiveIndex = -1;
 
+      // Find active line
       for (let i = 0; i < parsedLyrics.length; i++) {
         if (currentTime >= parsedLyrics[i].time) newActiveIndex = i;
         else break;
       }
 
-      // Update scrubber + time labels
+      // Update scrubber + time labels (throttled to avoid excessive updates)
       if (audioPlayer.duration && !isUserSeeking) {
-        seekSlider.value   = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        currTimeText.textContent = formatTime(audioPlayer.currentTime);
-        durTimeText.textContent = formatTime(audioPlayer.duration);
+        const newSliderValue = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        if (Math.abs(parseFloat(seekSlider.value) - newSliderValue) > 0.1) {
+          seekSlider.value = newSliderValue;
+          currTimeText.textContent = formatTime(audioPlayer.currentTime);
+          durTimeText.textContent = formatTime(audioPlayer.duration);
+        }
       }
 
       if (newActiveIndex === -1) return;
 
-      // Auto-scroll to active line
-      if (newActiveIndex !== activeIndex && autoScrollEnabled) {
+      const activeLineData = parsedLyrics[newActiveIndex];
+
+      // Find current active word time
+      let activeWordTime = -1;
+      if (activeLineData && activeLineData.words) {
+        activeLineData.words.forEach(w => {
+          if (currentTime >= w.time) activeWordTime = w.time;
+        });
+      }
+
+      // Only update DOM if line changed or word changed
+      const lineChanged = newActiveIndex !== lastActiveIndex;
+      const wordChanged = activeWordTime !== lastActiveWordTime;
+
+      if (!lineChanged && !wordChanged) return;
+
+      // Auto-scroll to active line (only when line changes)
+      if (lineChanged && autoScrollEnabled) {
         activeIndex = newActiveIndex;
-        const activeLineEl = document.getElementById(`line-${activeIndex}`);
+        const activeLineEl = document.getElementById(`line-${newActiveIndex}`);
         if (activeLineEl) {
           display.scrollTo({
             top: activeLineEl.offsetTop - (display.clientHeight / 2) + (activeLineEl.clientHeight / 2)
@@ -1290,43 +1298,59 @@
         }
       }
 
-      // Highlight words on active line
+      // Update line and word highlighting
       const allLines = display.querySelectorAll('.line');
-      const activeLineData = parsedLyrics[newActiveIndex];
 
       allLines.forEach((el, index) => {
         const wordSpans = el.querySelectorAll('.word');
 
         if (index < newActiveIndex) {
-          el.className = 'line past';
-          wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
+          if (el.className !== 'line past') {
+            el.className = 'line past';
+            wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
+          }
         } else if (index === newActiveIndex) {
-          el.className = 'line active';
+          if (el.className !== 'line active') el.className = 'line active';
 
-          let activeTime = -1;
-          activeLineData.words.forEach(w => {
-            if (currentTime >= w.time) activeTime = w.time;
-          });
+          // Update words only if word changed
+          if (wordChanged || lineChanged) {
+            wordSpans.forEach((wSpan, wIdx) => {
+              const wObj = activeLineData.words[wIdx];
+              if (!wObj) return;
 
-          wordSpans.forEach((wSpan, wIdx) => {
-            const wObj = activeLineData.words[wIdx];
-            if (!wObj) return;
-            if (currentTime >= wObj.time) {
-              if (wObj.time === activeTime) {
-                wSpan.classList.add('filled', 'active-word');
+              const shouldBeFilled = currentTime >= wObj.time;
+              const shouldBeActive = wObj.time === activeWordTime;
+
+              if (shouldBeFilled) {
+                if (!wSpan.classList.contains('filled')) wSpan.classList.add('filled');
+                if (shouldBeActive) {
+                  if (!wSpan.classList.contains('active-word')) wSpan.classList.add('active-word');
+                } else {
+                  if (wSpan.classList.contains('active-word')) wSpan.classList.remove('active-word');
+                }
               } else {
-                wSpan.classList.add('filled');
-                wSpan.classList.remove('active-word');
+                wSpan.classList.remove('filled', 'active-word');
               }
-            } else {
-              wSpan.classList.remove('filled', 'active-word');
-            }
-          });
+            });
+          }
         } else {
-          el.className = 'line future';
-          wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
+          if (el.className !== 'line future') {
+            el.className = 'line future';
+            wordSpans.forEach(w => w.classList.remove('filled', 'active-word'));
+          }
         }
       });
+
+      lastActiveIndex = newActiveIndex;
+      lastActiveWordTime = activeWordTime;
+    }
+
+    // RAF loop - only runs while playing
+    function syncLoop() {
+      if (isPlaying && !audioPlayer.paused) {
+        syncLyricsToTime();
+        rafId = requestAnimationFrame(syncLoop);
+      }
     }
 
     // ============================================
@@ -1748,127 +1772,146 @@
     }
 
     // ============================================
-    // ONLINE LYRICS SEARCH (MULTI-SOURCE)
+    // ONLINE LYRICS SEARCH (AUTO - tries all sources)
     // ============================================
     async function fetchOnlyLyrics(track, artist) {
       if (hasCustomLyricsLoaded) return;
 
-      if (lyricsSource === 'vagalume') return fetchVagalumeLyrics(track, artist);
-      if (lyricsSource === 'musixmatch') return fetchMusixmatchLyrics(track, artist);
+      const query = `${track} ${artist}`.trim();
+      if (!query) return;
 
-      // Default: LRCLIB
+      statusText.textContent = '🔍 Searching all sources for best lyrics...';
+
+      // Try all sources in parallel
+      const results = await Promise.allSettled([
+        fetchFromLRCLIB(query),
+        fetchFromVagalume(query),
+        fetchFromMusixmatch(query)
+      ]);
+
+      // Priority: synced lyrics > plain lyrics
+      let bestSynced = null;
+      let bestPlain = null;
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled' && result.value) {
+          if (result.value.type === 'synced') {
+            if (!bestSynced || result.value.wordCount > (bestSynced.wordCount || 0)) {
+              bestSynced = result.value;
+            }
+          } else if (result.value.type === 'plain') {
+            if (!bestPlain) bestPlain = result.value;
+          }
+        }
+      });
+
+      if (hasCustomLyricsLoaded) return; // User uploaded while we were searching
+
+      if (bestSynced) {
+        parsedLyrics = bestSynced.lyrics;
+        renderLyrics();
+        fetchTranslationsForLyrics();
+        modalOverlay.classList.remove('open');
+        statusText.textContent = `✅ Synced lyrics from ${bestSynced.source}!`;
+        return;
+      }
+
+      if (bestPlain) {
+        parsedLyrics = bestPlain.lyrics;
+        renderLyrics();
+        fetchTranslationsForLyrics();
+        modalOverlay.classList.remove('open');
+        statusText.textContent = `⚠️ Plain lyrics from ${bestPlain.source} (no timing).`;
+        return;
+      }
+
+      display.innerHTML = '<div class="line active">No lyrics found online. Upload custom .ELRC!</div>';
+      statusText.textContent = '⚠️ No lyrics found from any source.';
+    }
+
+    // LRCLIB - best for synced word-level lyrics
+    async function fetchFromLRCLIB(query) {
       try {
-        const query   = `${track} ${artist}`.trim();
-        statusText.textContent = 'Searching LRCLIB...';
-
         const response = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
-        if (!response.ok) throw new Error('Search failed');
-
+        if (!response.ok) return null;
         const data = await response.json();
-        if (hasCustomLyricsLoaded) return;
 
         // Prefer synced lyrics
         for (const item of data) {
           if (item.syncedLyrics) {
-            parsedLyrics = parseLRC(item.syncedLyrics);
-            renderLyrics();
-            fetchTranslationsForLyrics();
-            modalOverlay.classList.remove('open');
-            statusText.textContent = '✅ Online Synced Lyrics Loaded!';
-            return;
+            const parsed = parseLRC(item.syncedLyrics);
+            const wordCount = parsed.reduce((sum, line) => sum + (line.words?.length || 0), 0);
+            return { type: 'synced', lyrics: parsed, source: 'LRCLIB', wordCount };
           }
         }
 
-        // Fall back to plain lyrics
+        // Fall back to plain
         for (const item of data) {
           if (item.plainLyrics) {
             const lines = item.plainLyrics.split('\n').filter(l => l.trim().length > 0);
-            parsedLyrics = lines.map((line, i) => ({ time: i * 3.5, text: line, words: null }));
-            renderLyrics();
-            fetchTranslationsForLyrics();
-            modalOverlay.classList.remove('open');
-            statusText.textContent = '⚠️ Plain lyrics loaded (no word timestamps).';
-            return;
+            const parsed = lines.map((line, i) => ({ time: i * 3.5, text: line, words: null }));
+            return { type: 'plain', lyrics: parsed, source: 'LRCLIB' };
           }
         }
-
-        display.innerHTML = '<div class="line active">No online lyrics found. Upload custom .ELRC!</div>';
-        statusText.textContent = '⚠️ No lyrics found on LRCLIB.';
       } catch (err) {
-        console.warn('fetchOnlyLyrics error:', err);
-        statusText.textContent = 'Error loading lyrics from LRCLIB.';
+        console.warn('LRCLIB error:', err);
       }
+      return null;
     }
 
-    // Free source: Vagalume (no API key required)
-    async function fetchVagalumeLyrics(track, artist) {
+    // Vagalume - free, no API key needed
+    async function fetchFromVagalume(query) {
       try {
-        const query = `${track} ${artist}`.trim();
-        statusText.textContent = 'Searching Vagalume...';
-        const res = await fetch(`https://api.vagalume.com/api/song.php?q=${encodeURIComponent(query)}&include=lyrics`);
+        const res = await fetch(`https://api.vagalume.com.br/search.php?q=${encodeURIComponent(query)}`);
         const data = await res.json();
+
         let song = null;
         if (data.response) {
-          if (data.response.song) song = data.response.song;
-          else if (data.response.songs) {
-            const arr = Object.values(data.response.songs);
-            if (arr.length) song = arr[0];
+          if (data.response.docs && data.response.docs[0]) {
+            song = data.response.docs[0];
           }
         }
+
         if (song && song.text) {
           const lines = song.text.split('\n').filter(l => l.trim().length > 0);
-          parsedLyrics = lines.map((line, i) => ({ time: i * 3.5, text: line, words: null }));
-          renderLyrics();
-          fetchTranslationsForLyrics();
-          modalOverlay.classList.remove('open');
-          statusText.textContent = '✅ Vagalume lyrics loaded (no timestamps).';
-        } else {
-          display.innerHTML = '<div class="line active">No lyrics found on Vagalume.</div>';
-          statusText.textContent = '⚠️ No lyrics found on Vagalume.';
+          const parsed = lines.map((line, i) => ({ time: i * 3.5, text: line, words: null }));
+          return { type: 'plain', lyrics: parsed, source: 'Vagalume' };
         }
       } catch (err) {
         console.warn('Vagalume error:', err);
-        statusText.textContent = 'Error loading lyrics from Vagalume.';
       }
+      return null;
     }
 
-    // Musixmatch (requires a free API key)
-    async function fetchMusixmatchLyrics(track, artist) {
+    // Musixmatch - needs API key (optional)
+    async function fetchFromMusixmatch(query) {
       const key = localStorage.getItem('musixmatchKey') || '';
-      if (!key) {
-        statusText.textContent = '⚠️ Enter a Musixmatch API key in settings.';
-        return;
-      }
+      if (!key) return null; // Skip if no API key
+
       try {
-        const query = `${track} ${artist}`.trim();
-        statusText.textContent = 'Searching Musixmatch...';
-        const searchRes = await fetch(`https://api.musixmatch.com/ws/1.1/track.search?q=${encodeURIComponent(query)}&page_size=5&s_track_rating=desc&apikey=${encodeURIComponent(key)}`);
+        const searchRes = await fetch(
+          `https://api.musixmatch.com/ws/1.1/track.search?q=${encodeURIComponent(query)}&page_size=1&s_track_rating=desc&apikey=${encodeURIComponent(key)}`
+        );
         const searchData = await searchRes.json();
         const tracks = searchData.message?.body?.track_list || [];
-        if (!tracks.length) {
-          display.innerHTML = '<div class="line active">No lyrics found on Musixmatch.</div>';
-          statusText.textContent = '⚠️ No lyrics found on Musixmatch.';
-          return;
-        }
+        if (!tracks.length) return null;
+
         const trackId = tracks[0].track.track_id;
-        const lyrRes = await fetch(`https://api.musixmatch.com/ws/1.1/track.lyrics.get?track_id=${trackId}&apikey=${encodeURIComponent(key)}`);
+        const lyrRes = await fetch(
+          `https://api.musixmatch.com/ws/1.1/track.lyrics.get?track_id=${trackId}&apikey=${encodeURIComponent(key)}`
+        );
         const lyrData = await lyrRes.json();
-        const body = lyrData.message?.body?.lyrics;
-        if (body) {
-          const lines = body.split('\n').filter(l => l.trim().length > 0);
-          parsedLyrics = lines.map((line, i) => ({ time: i * 3.5, text: line, words: null }));
-          renderLyrics();
-          fetchTranslationsForLyrics();
-          modalOverlay.classList.remove('open');
-          statusText.textContent = '✅ Musixmatch lyrics loaded (no timestamps).';
-        } else {
-          display.innerHTML = '<div class="line active">No lyrics found on Musixmatch.</div>';
-          statusText.textContent = '⚠️ No lyrics found on Musixmatch.';
+        const lyricsBody = lyrData.message?.body?.lyrics?.lyrics_body;
+
+        if (lyricsBody) {
+          const lines = lyricsBody.split('\n').filter(l => l.trim().length > 0 && !l.includes('****'));
+          const parsed = lines.map((line, i) => ({ time: i * 3.5, text: line, words: null }));
+          return { type: 'plain', lyrics: parsed, source: 'Musixmatch' };
         }
       } catch (err) {
         console.warn('Musixmatch error:', err);
-        statusText.textContent = 'Error loading lyrics from Musixmatch.';
       }
+      return null;
     }
 
     // ============================================
@@ -2015,16 +2058,24 @@
       initAudioEngine();
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       syncLyricsToTime(); // snap to position immediately on play
+      syncLoop(); // start the RAF loop
     });
 
     audioPlayer.addEventListener('pause', () => {
       isPlaying = false;
       playBtn.innerHTML = playSVG;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
     });
 
-    // Native timeupdate event (~4-6 Hz) replaces the 60 fps RAF loop
-    audioPlayer.addEventListener('timeupdate', syncLyricsToTime);
-    audioPlayer.addEventListener('seeked', syncLyricsToTime);
+    // Update on seek
+    audioPlayer.addEventListener('seeked', () => {
+      lastActiveIndex = -1;
+      lastActiveWordTime = -1;
+      syncLyricsToTime();
+    });
 
     // Play button
     playBtn.addEventListener('click', () => {
@@ -2344,17 +2395,8 @@
     });
 
     // ============================================
-    // LYRICS SOURCE SELECTOR
+    // MUSIXMATCH API KEY (OPTIONAL)
     // ============================================
-    sourceBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        sourceBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        lyricsSource = btn.getAttribute('data-src');
-        localStorage.setItem('lyricsSource', lyricsSource);
-      });
-    });
-
     const musixmatchKeyInput = document.getElementById('musixmatchKey');
     musixmatchKeyInput.value = localStorage.getItem('musixmatchKey') || '';
     musixmatchKeyInput.addEventListener('input', e => {
@@ -2400,10 +2442,9 @@
         customRgb: customRgbVal,
         wordColor: customWordColor,
         romanize: isRomanizeEnabled,
-        lyricsSource: lyricsSource,
         visualizer: visualizerEnabled,
         autoAdvance: autoAdvance,
-        version: 1
+        version: 2
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -2432,7 +2473,6 @@
           if (data.customRgb) { customRgbVal = data.customRgb; rgbPicker.value = customRgbVal; localStorage.setItem('customRgb', customRgbVal); }
           if (data.wordColor) { customWordColor = data.wordColor; wordColorPicker.value = customWordColor; document.documentElement.style.setProperty('--active-color', customWordColor); localStorage.setItem('wordColor', customWordColor); }
           if (data.romanize !== undefined) { isRomanizeEnabled = data.romanize; localStorage.setItem('romanize', String(isRomanizeEnabled)); updateRomanizeBtn(); }
-          if (data.lyricsSource) { lyricsSource = data.lyricsSource; localStorage.setItem('lyricsSource', lyricsSource); sourceBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-src') === lyricsSource)); }
           if (data.visualizer !== undefined) { document.getElementById('visualizerToggle').checked = data.visualizer; setVisualizer(data.visualizer); }
           if (data.autoAdvance !== undefined) { autoAdvance = data.autoAdvance; updateAutoAdvanceBtn(); }
           statusText.textContent = '✅ Settings imported!';
@@ -2519,7 +2559,6 @@
     applyTheme(currentTheme);
     applyLyricStyle(currentStyle);
     applyTextAlign(currentTextAlign);
-    sourceBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-src') === lyricsSource));
     updateAutoAdvanceBtn();
 
   </script>
