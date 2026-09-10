@@ -834,6 +834,10 @@
       <label class="file-btn" for="audioFileInput" id="audioBtnLabel">📁 Choose Local Audio File (.mp3, .m4a)</label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
+      <!-- Online audio URL -->
+      <input type="url" class="input-control" id="audioUrlInput" placeholder="🌐 Or paste online audio URL (direct MP3/M4A link)" />
+      <button class="btn-action" id="loadUrlBtn">🎵 Load from URL</button>
+
       <!-- LRC / ELRC file -->
       <div class="file-group">
         <label class="file-btn" for="lrcFileInput" id="lrcBtnLabel">📄 Upload Custom .ELRC</label>
@@ -981,6 +985,8 @@
     const trackInput     = document.getElementById('trackInput');
     const artistInput    = document.getElementById('artistInput');
     const audioFileInput = document.getElementById('audioFileInput');
+    const audioUrlInput  = document.getElementById('audioUrlInput');
+    const loadUrlBtn     = document.getElementById('loadUrlBtn');
     const lrcFileInput   = document.getElementById('lrcFileInput');
     const removeLrcBtn   = document.getElementById('removeLrcBtn');
     const audioBtnLabel  = document.getElementById('audioBtnLabel');
@@ -2347,6 +2353,39 @@
       } else {
         applyTrackMeta(rawName, 'Local MP3');
       }
+    });
+
+    // Load audio from URL
+    loadUrlBtn.addEventListener('click', async () => {
+      const url = audioUrlInput.value.trim();
+      if (!url) {
+        statusText.textContent = '⚠️ Please enter a valid audio URL';
+        return;
+      }
+
+      hasCustomLyricsLoaded = false;
+      lrcFileInput.value = '';
+      lrcBtnLabel.textContent = '📄 Upload Custom .ELRC';
+      removeLrcBtn.style.display = 'none';
+
+      audioPlayer.src = url;
+      audioBtnLabel.textContent = `✅ Audio Loaded: ${url.split('/').pop() || 'Online Stream'}`;
+      statusText.textContent = '✅ Online audio loaded successfully! Ready.';
+
+      clearAlbumArt();
+      if (playerArtEmoji) playerArtEmoji.textContent = '🎵';
+      currentDynamicImg = 'none';
+      if (currentTheme === 'dynamic') applyTheme('dynamic');
+
+      // Try to extract title from URL or use input fields
+      const fileName = decodeURIComponent(url.split('/').pop() || 'Online Song').replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      const title = trackInput.value.trim() || fileName;
+      const artist = artistInput.value.trim() || 'Online Stream';
+
+      // Try to fetch online cover art
+      const artFetched = await fetchOnlineArt(title, artist);
+
+      applyTrackMeta(title, artist);
     });
 
     // LRC / ELRC file input
