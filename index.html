@@ -772,60 +772,61 @@
       <!-- Text alignment -->
       <div class="settings-group">
         <label>Text Alignment</label>
-        <div class="align-row">
-          <button class="align-btn" data-align="left">Left ⬅</button>
-          <button class="align-btn active" data-align="center">Center ⏹</button>
-          <button class="align-btn" data-align="right">Right ➡</button>
-        </div>
+        <select class="input-control" id="textAlignSelect">
+          <option value="left">⬅ Left</option>
+          <option value="center" selected>⏹ Center</option>
+          <option value="right">➡ Right</option>
+        </select>
       </div>
 
       <!-- Theme background -->
       <div class="settings-group">
         <label>Theme Background</label>
-        <div class="theme-row">
-          <div class="theme-circle" data-bg="dynamic" style="background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);" title="Dynamic Art"></div>
-          <div class="theme-circle" data-bg="blue" style="background: radial-gradient(circle, #0a192f 0%, #020c1b 80%);" title="Midnight Blue"></div>
-          <div class="theme-circle" data-bg="black" style="background: #12091f;" title="OLED Black"></div>
-          <div class="theme-circle" data-bg="random" style="background: conic-gradient(cyan, magenta, yellow, cyan);" title="Random Colors"></div>
-          <div class="color-picker-wrapper" id="rgbWrapper" title="Custom RGB Color">
-            <input type="color" id="rgbPicker" value="#ff0044" />
-          </div>
+        <select class="input-control" id="themeSelect">
+          <option value="dynamic">🎨 Dynamic (Album Art)</option>
+          <option value="blue">🌊 Midnight Blue</option>
+          <option value="black">⚫ OLED Black</option>
+          <option value="random">🌈 Random Colors</option>
+          <option value="custom">🎨 Custom RGB</option>
+        </select>
+        <div class="color-picker-wrapper" id="rgbWrapper" style="margin-top: 0.5rem; display: none;">
+          <input type="color" id="rgbPicker" value="#ff0044" style="width: 100%; height: 50px; border-radius: 8px; cursor: pointer;" />
         </div>
       </div>
 
       <!-- Lyrics animation style -->
       <div class="settings-group">
         <label>Lyrics Animation Style</label>
-        <div class="style-row">
-          <button class="style-btn" data-style="doom">Doom TV</button>
-          <button class="style-btn" data-style="reel">Reel Style</button>
-          <button class="style-btn active" data-style="chaotic">Chaotic Edit</button>
-          <button class="style-btn" data-style="capcut">CapCut Pop</button>
-          <button class="style-btn" data-style="apple">Apple Style</button>
-        </div>
+        <select class="input-control" id="lyricStyleSelect">
+          <option value="doom">📺 Doom TV</option>
+          <option value="reel">🎬 Reel Style</option>
+          <option value="chaotic" selected>✨ Chaotic Edit</option>
+          <option value="capcut">🎞️ CapCut Pop</option>
+          <option value="apple">🍎 Apple Style</option>
+        </select>
       </div>
 
       <!-- Lyrics Font -->
       <div class="settings-group">
         <label>Lyrics Font</label>
-        <div class="style-row">
-          <button class="style-btn" data-font="anton">Anton</button>
-          <button class="style-btn" data-font="bebas">Bebas Neue</button>
-          <button class="style-btn" data-font="inter">Inter</button>
-          <button class="style-btn" data-font="montserrat">Montserrat</button>
-          <button class="style-btn" data-font="teko">Teko</button>
-          <button class="style-btn" data-font="permanent">Permanent Marker</button>
-          <button class="style-btn" data-font="space">Space Mono</button>
-          <button class="style-btn" data-font="system">System Default</button>
-        </div>
+        <select class="input-control" id="lyricFontSelect">
+          <option value="system" selected>System Default</option>
+          <option value="anton">Anton</option>
+          <option value="bebas">Bebas Neue</option>
+          <option value="inter">Inter</option>
+          <option value="montserrat">Montserrat</option>
+          <option value="teko">Teko</option>
+          <option value="permanent">Permanent Marker</option>
+          <option value="space">Space Mono</option>
+        </select>
       </div>
 
       <!-- Active word color -->
       <div class="settings-group">
         <label>Active Word Highlight Color</label>
-        <div class="theme-row">
-          <div class="color-picker-wrapper" title="Pick Accent Color" style="background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);">
-            <input type="color" id="wordColorPicker" value="#ffcc00" />
+        <div style="width: 100%;">
+          <input type="color" id="wordColorPicker" value="#ffcc00" style="width: 100%; height: 50px; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);" />
+        </div>
           </div>
         </div>
       </div>
@@ -833,10 +834,6 @@
       <!-- Audio file -->
       <label class="file-btn" for="audioFileInput" id="audioBtnLabel">📁 Choose Local Audio File (.mp3, .m4a)</label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
-
-      <!-- Online audio URL -->
-      <input type="url" class="input-control" id="audioUrlInput" placeholder="🌐 Or paste online audio URL (direct MP3/M4A link)" />
-      <button class="btn-action" id="loadUrlBtn">🎵 Load from URL</button>
 
       <!-- LRC / ELRC file -->
       <div class="file-group">
@@ -985,8 +982,6 @@
     const trackInput     = document.getElementById('trackInput');
     const artistInput    = document.getElementById('artistInput');
     const audioFileInput = document.getElementById('audioFileInput');
-    const audioUrlInput  = document.getElementById('audioUrlInput');
-    const loadUrlBtn     = document.getElementById('loadUrlBtn');
     const lrcFileInput   = document.getElementById('lrcFileInput');
     const removeLrcBtn   = document.getElementById('removeLrcBtn');
     const audioBtnLabel  = document.getElementById('audioBtnLabel');
@@ -1013,10 +1008,11 @@
     const displayTitle  = document.getElementById('displayTitle');
     const displayArtist = document.getElementById('displayArtist');
 
-    // Queried once at startup; used in applyTheme / applyLyricStyle / applyTextAlign
-    const themeCircles = document.querySelectorAll('.theme-circle');
-    const styleBtns    = document.querySelectorAll('.style-btn');
-    const alignBtns    = document.querySelectorAll('.align-btn');
+    // Dropdown selects for settings
+    const textAlignSelect = document.getElementById('textAlignSelect');
+    const themeSelect = document.getElementById('themeSelect');
+    const lyricStyleSelect = document.getElementById('lyricStyleSelect');
+    const lyricFontSelect = document.getElementById('lyricFontSelect');
 
     // ============================================
     // SVG STRINGS (declared early so event listeners can use them)
@@ -2111,16 +2107,24 @@
     // ============================================
     // THEME SYSTEM
     // ============================================
+    // THEME SYSTEM
+    // ============================================
     function applyTheme(themeType) {
-      themeCircles.forEach(c => c.classList.remove('active'));
-      rgbWrapper.classList.remove('active');
+      themeSelect.value = themeType;
+
+      // Show/hide custom color picker
+      if (themeType === 'custom') {
+        rgbWrapper.style.display = 'block';
+      } else {
+        rgbWrapper.style.display = 'none';
+      }
 
       const themeMap = {
-        custom:  () => { rgbWrapper.classList.add('active'); const col = rgbPicker.value; bgBlur.style.background = '#12091f'; glow1.style.background = col; glow2.style.background = '#4a044e'; glow3.style.background = col; },
-        random:  () => { document.querySelector('.theme-circle[data-bg="random"]')?.classList.add('active'); bgBlur.style.background = '#12091f'; glow1.style.background = getRandomColor(); glow2.style.background = getRandomColor(); glow3.style.background = getRandomColor(); },
-        dynamic: () => { document.querySelector('.theme-circle[data-bg="dynamic"]')?.classList.add('active'); bgBlur.style.background = currentDynamicImg !== 'none' ? `url('${currentDynamicImg}')` : '#1a0b2e'; glow1.style.background = '#9333ea'; glow2.style.background = '#e11d48'; glow3.style.background = '#3b82f6'; },
-        blue:    () => { document.querySelector('.theme-circle[data-bg="blue"]')?.classList.add('active'); bgBlur.style.background = '#0b1d3a'; glow1.style.background = '#06b6d4'; glow2.style.background = '#1e3a8a'; glow3.style.background = '#3b82f6'; },
-        black:   () => { document.querySelector('.theme-circle[data-bg="black"]')?.classList.add('active'); bgBlur.style.background = '#12091f'; glow1.style.background = '#4c1d95'; glow2.style.background = '#831843'; glow3.style.background = '#1e1b4b'; }
+        custom:  () => { const col = rgbPicker.value; bgBlur.style.background = '#12091f'; glow1.style.background = col; glow2.style.background = '#4a044e'; glow3.style.background = col; },
+        random:  () => { bgBlur.style.background = '#12091f'; glow1.style.background = getRandomColor(); glow2.style.background = getRandomColor(); glow3.style.background = getRandomColor(); },
+        dynamic: () => { bgBlur.style.background = currentDynamicImg !== 'none' ? `url('${currentDynamicImg}')` : '#1a0b2e'; glow1.style.background = '#9333ea'; glow2.style.background = '#e11d48'; glow3.style.background = '#3b82f6'; },
+        blue:    () => { bgBlur.style.background = '#0b1d3a'; glow1.style.background = '#06b6d4'; glow2.style.background = '#1e3a8a'; glow3.style.background = '#3b82f6'; },
+        black:   () => { bgBlur.style.background = '#12091f'; glow1.style.background = '#4c1d95'; glow2.style.background = '#831843'; glow3.style.background = '#1e1b4b'; }
       };
 
       (themeMap[themeType] || themeMap.dynamic)();
@@ -2132,8 +2136,7 @@
     // LYRIC STYLE SYSTEM
     // ============================================
     function applyLyricStyle(styleType) {
-      styleBtns.forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.style-btn[data-style="${styleType}"]`)?.classList.add('active');
+      lyricStyleSelect.value = styleType;
       display.className = `lyrics-panel lyrics-${styleType}`;
       localStorage.setItem('lyricStyle', styleType);
       currentStyle = styleType;
@@ -2143,8 +2146,7 @@
     // TEXT ALIGNMENT
     // ============================================
     function applyTextAlign(alignVal) {
-      alignBtns.forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.align-btn[data-align="${alignVal}"]`)?.classList.add('active');
+      textAlignSelect.value = alignVal;
       document.documentElement.style.setProperty('--text-align', alignVal);
       localStorage.setItem('textAlign', alignVal);
       currentTextAlign = alignVal;
@@ -2153,11 +2155,8 @@
     // ============================================
     // LYRICS FONT
     // ============================================
-    const fontBtns = document.querySelectorAll('.style-btn[data-font]');
-
     function applyLyricFont(fontKey) {
-      fontBtns.forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.style-btn[data-font="${fontKey}"]`)?.classList.add('active');
+      lyricFontSelect.value = fontKey;
 
       let fontFamily = '';
       switch (fontKey) {
@@ -2355,39 +2354,6 @@
       }
     });
 
-    // Load audio from URL
-    loadUrlBtn.addEventListener('click', async () => {
-      const url = audioUrlInput.value.trim();
-      if (!url) {
-        statusText.textContent = '⚠️ Please enter a valid audio URL';
-        return;
-      }
-
-      hasCustomLyricsLoaded = false;
-      lrcFileInput.value = '';
-      lrcBtnLabel.textContent = '📄 Upload Custom .ELRC';
-      removeLrcBtn.style.display = 'none';
-
-      audioPlayer.src = url;
-      audioBtnLabel.textContent = `✅ Audio Loaded: ${url.split('/').pop() || 'Online Stream'}`;
-      statusText.textContent = '✅ Online audio loaded successfully! Ready.';
-
-      clearAlbumArt();
-      if (playerArtEmoji) playerArtEmoji.textContent = '🎵';
-      currentDynamicImg = 'none';
-      if (currentTheme === 'dynamic') applyTheme('dynamic');
-
-      // Try to extract title from URL or use input fields
-      const fileName = decodeURIComponent(url.split('/').pop() || 'Online Song').replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-      const title = trackInput.value.trim() || fileName;
-      const artist = artistInput.value.trim() || 'Online Stream';
-
-      // Try to fetch online cover art
-      const artFetched = await fetchOnlineArt(title, artist);
-
-      applyTrackMeta(title, artist);
-    });
-
     // LRC / ELRC file input
     lrcFileInput.addEventListener('change', e => {
       const file = e.target.files[0];
@@ -2553,25 +2519,12 @@
     updateRomanizeBtn();
 
     // ============================================
-    // THEME / STYLE / ALIGN BUTTON LISTENERS
-    // (bound once at startup)
+    // DROPDOWN SELECT LISTENERS
     // ============================================
-    themeCircles.forEach(circle => {
-      circle.addEventListener('click', () => applyTheme(circle.getAttribute('data-bg')));
-    });
-
-    styleBtns.forEach(btn => {
-      btn.addEventListener('click', () => applyLyricStyle(btn.getAttribute('data-style')));
-    });
-
-    alignBtns.forEach(btn => {
-      btn.addEventListener('click', () => applyTextAlign(btn.getAttribute('data-align')));
-    });
-
-    // Font buttons
-    fontBtns.forEach(btn => {
-      btn.addEventListener('click', () => applyLyricFont(btn.getAttribute('data-font')));
-    });
+    textAlignSelect.addEventListener('change', () => applyTextAlign(textAlignSelect.value));
+    themeSelect.addEventListener('change', () => applyTheme(themeSelect.value));
+    lyricStyleSelect.addEventListener('change', () => applyLyricStyle(lyricStyleSelect.value));
+    lyricFontSelect.addEventListener('change', () => applyLyricFont(lyricFontSelect.value));
 
     // ============================================
     // MUSIXMATCH API KEY (OPTIONAL)
