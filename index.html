@@ -320,7 +320,17 @@
       background-size: cover; background-position: center;
       border: 1px solid rgba(255,255,255,0.15);
       transition: border-color 0.3s;
+      overflow: hidden;
+      position: relative;
     }
+    .album-art img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+      display: none;
+    }
+    .album-art img.loaded { display: block; }
+    .album-art .art-emoji { pointer-events: none; }
 
     .track-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .track-title { font-weight: 700; font-size: 0.95rem; }
@@ -721,7 +731,10 @@
 
     <div class="player-info">
       <div class="track-meta">
-        <div class="album-art" id="playerArt">🎵</div>
+        <div class="album-art" id="playerArt">
+          <img id="playerArtImg" alt="cover" />
+          <span class="art-emoji" id="playerArtEmoji">🎵</span>
+        </div>
         <div class="track-text">
           <div class="track-title" id="displayTitle">No Track Loaded</div>
           <div class="track-artist" id="displayArtist">Tap gear to load file</div>
@@ -976,6 +989,8 @@
     const seekSlider    = document.getElementById('seekSlider');
     const currTimeText  = document.getElementById('currTime');
     const durTimeText   = document.getElementById('durTime');
+    const playerArtImg = document.getElementById('playerArtImg');
+    const playerArtEmoji = document.getElementById('playerArtEmoji');
     const retrackBtn    = document.getElementById('retrackBtn');
     const playerArt     = document.getElementById('playerArt');
     const bgBlur        = document.getElementById('bgBlur');
@@ -1192,9 +1207,9 @@
       lrcFileInput.value = '';
       removeLrcBtn.style.display = 'none';
       audioPlayer.src = item.url;
-      playerArt.style.backgroundImage = 'none';
-      playerArt.textContent = '🎵';
+      clearAlbumArt();
       currentDynamicImg = 'none';
+      if (playerArtEmoji) playerArtEmoji.textContent = '🎵';
       if (currentTheme === 'dynamic') applyTheme('dynamic');
       renderPlaylist();
       applyTrackMeta(item.title, item.artist);
@@ -1640,27 +1655,38 @@
     // Arabic / Urdu → Latin (covers the Arabic-script lyrics shown in the app)
     function transliterateArabic(text) {
       const map = {
-        'ء': "'", 'آ': "aa", 'أ': "a", 'ؤ': "w",
-        'إ': "i", 'ئ': "y", 'ا': "aa", 'ب': "b",
-        'ة': "t", 'ت': "t", 'ث': "th", 'ج': "j",
-        'ح': "H", 'خ': "kh", 'د': "d", 'ذ': "dh",
+        // Basic Arabic letters
+        'ء': "'", 'آ': "aa", 'أ': "a", 'ؤ': "o",
+        'إ': "i", 'ئ': "e", 'ا': "a", 'ب': "b",
+        'ة': "h", 'ت': "t", 'ث': "th", 'ج': "j",
+        'ح': "h", 'خ': "kh", 'د': "d", 'ذ': "z",
         'ر': "r", 'ز': "z", 'س': "s", 'ش': "sh",
-        'ص': "S", 'ض': "D", 'ط': "T", 'ظ': "Z",
-        'ع': "'", 'غ': "gh", 'ـ': "", 'ف': "f",
+        'ص': "s", 'ض': "z", 'ط': "t", 'ظ': "z",
+        'ع': "a", 'غ': "gh", 'ـ': "", 'ف': "f",
         'ق': "q", 'ك': "k", 'ل': "l", 'م': "m",
-        'ن': "n", 'ه': "h", 'و': "w", 'ى': "a",
-        'ي': "y",
-        // Urdu extensions (beyond standard Arabic)
-        'ٰ': "a", 'ٺ': "t", 'پ': "p", 'ڈ': "d",
-        'ڑ': "r", 'ھ': "h", 'ہ': "h", 'ۂ': "a",
-        'ی': "y", 'ے': "e",
-        // Diacritics (vowel marks)
-        'ً': "an", 'ٌ': "in", 'ٍ': "un",
-        'َ': "a", 'ُ': "i", 'ِ': "u",
-        'ّ': "", 'ْ': "", 'ٓ': "", 'ٔ': "'",
-        'ٕ': "'", 'ٖ': "", 'ٗ': "", '٘': "",
-        'ٙ': "", 'ٚ': "", 'ٛ': "", 'ٜ': "",
-        'ٝ': "", 'ٞ': "", 'ٟ': "",
+        'ن': "n", 'ه': "h", 'و': "o", 'ى': "a",
+        'ي': "i",
+        // Urdu-specific letters
+        'ٹ': "t", 'ٺ': "t", 'پ': "p", 'ٿ': "th",
+        'ڀ': "bh", 'ڃ': "ny", 'ڄ': "j", 'چ': "ch",
+        'ڇ': "chh", 'ڈ': "d", 'ڊ': "d", 'ڌ': "dh",
+        'ڍ': "ddh", 'ڎ': "d", 'ڏ': "d", 'ڑ': "r",
+        'ژ': "zh", 'ڙ': "r", 'ڛ': "s", 'ڜ': "s",
+        'ک': "k", 'ڪ': "k", 'ګ': "g", 'ڬ': "g",
+        'ڭ': "ng", 'ڮ': "ng", 'گ': "g", 'ڰ': "g",
+        'ڱ': "ng", 'ڳ': "g", 'ں': "n", 'ڻ': "n",
+        'ڼ': "n", 'ڽ': "n", 'ھ': "h", 'ہ': "h",
+        'ۂ': "h", 'ۃ': "h", 'ۆ': "o", 'ۇ': "u",
+        'ۈ': "u", 'ۉ': "yu", 'ۊ': "o", 'ۋ': "v",
+        'ی': "i", 'ے': "e", 'ۓ': "e",
+        // Diacritics (vowel marks) - mostly silent or contextual
+        'ً': "", 'ٌ': "", 'ٍ': "", 'َ': "a", 'ُ': "u", 'ِ': "i",
+        'ّ': "", 'ْ': "", 'ٓ': "", 'ٔ': "", 'ٕ': "",
+        'ٖ': "", 'ٗ': "", '٘': "", 'ٙ': "", 'ٚ': "",
+        'ٛ': "", 'ٜ': "", 'ٝ': "", 'ٞ': "", 'ٟ': "",
+        'ٰ': "a", 'ۭ': "", 'ؠ': "", 'ۥ': "", 'ۦ': "",
+        // Additional marks
+        'ٔ': "", 'ۢ': "", 'ۣ': "", 'ۤ': "", '۟': "",
         // Arabic-Indic digits
         '٠': "0", '١': "1", '٢': "2", '٣': "3",
         '٤': "4", '٥': "5", '٦': "6", '٧': "7",
@@ -1986,6 +2012,71 @@
     const debouncedSearch = debounce(showSearchResults, 400);
 
     // ============================================
+    // ALBUM ART HELPERS
+    // ============================================
+    function setAlbumArt(src) {
+      if (playerArtImg && src) {
+        playerArtImg.src = src;
+        playerArtImg.classList.add('loaded');
+        playerArtImg.onload = () => {
+          playerArtImg.classList.add('loaded');
+          if (playerArtEmoji) playerArtEmoji.style.display = 'none';
+        };
+        playerArtImg.onerror = () => clearAlbumArt();
+        playerArt.style.backgroundImage = 'none';
+      } else {
+        playerArt.style.backgroundImage = src ? `url('${src}')` : 'none';
+        if (playerArtEmoji) playerArtEmoji.style.display = src ? 'none' : 'flex';
+      }
+    }
+
+    function clearAlbumArt() {
+      currentDynamicImg = 'none';
+      if (playerArtImg) {
+        playerArtImg.removeAttribute('src');
+        playerArtImg.classList.remove('loaded');
+        playerArtImg.onload = null;
+        playerArtImg.onerror = null;
+      }
+      if (playerArtEmoji) playerArtEmoji.style.display = 'flex';
+      playerArt.style.backgroundImage = 'none';
+    }
+
+    // Safe async base64 for mobile: use FileReader instead of loops + btoa
+    function pictureToDataUrl(picture, done) {
+      if (picture && picture.data) {
+        const blob = new Blob([new Uint8Array(picture.data)], { type: picture.format || 'image/jpeg' });
+        const reader = new FileReader();
+        reader.onload = ev => done(ev.target.result);
+        reader.onerror = () => done(null);
+        reader.readAsDataURL(blob);
+      } else {
+        done(null);
+      }
+    }
+
+    // Online fallback: free iTunes Search API, no key needed
+    async function fetchOnlineArt(title, artist) {
+      try {
+        const term = `${title || ''} ${artist || ''}`.trim().replace(/\s+/g, '+');
+        if (!term) return;
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=1`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const item = data.results && data.results[0];
+        if (item && item.artworkUrl100) {
+          const art = item.artworkUrl100.replace('100x100', '300x300');
+          currentDynamicImg = art;
+          setAlbumArt(art);
+          if (currentTheme === 'dynamic') applyTheme('dynamic');
+          return true;
+        }
+      } catch (e) { /* offline / blocked */ }
+      return false;
+    }
+
+    // ============================================
     // TRACK METADATA
     // ============================================
     function applyTrackMeta(title, artist) {
@@ -2213,8 +2304,8 @@
 
       const rawName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
 
-      playerArt.style.backgroundImage = 'none';
-      playerArt.textContent = '🎵';
+      clearAlbumArt();
+      if (playerArtEmoji) playerArtEmoji.textContent = '🎵';
       currentDynamicImg = 'none';
       if (currentTheme === 'dynamic') applyTheme('dynamic');
 
@@ -2239,17 +2330,17 @@
           onSuccess: tag => {
             const t = tag.tags;
             if (t.picture) {
-              let base64String = '';
-              for (let i = 0; i < t.picture.data.length; i++) {
-                base64String += String.fromCharCode(t.picture.data[i]);
-              }
-              const base64 = `data:${t.picture.format};base64,${window.btoa(base64String)}`;
-              currentDynamicImg          = base64;
-              playerArt.style.backgroundImage = `url('${base64}')`;
-              playerArt.textContent = '';
-              if (currentTheme === 'dynamic') applyTheme('dynamic');
+              pictureToDataUrl(t.picture, (dataUrl) => {
+                if (dataUrl) {
+                  currentDynamicImg = dataUrl;
+                  setAlbumArt(dataUrl);
+                  if (currentTheme === 'dynamic') applyTheme('dynamic');
+                }
+                applyTrackMeta(t.title || rawName, t.artist || 'Local MP3');
+              });
+            } else {
+              applyTrackMeta(t.title || rawName, t.artist || 'Local MP3');
             }
-            applyTrackMeta(t.title || rawName, t.artist || 'Local MP3');
           },
           onError: () => applyTrackMeta(rawName, 'Local MP3')
         });
