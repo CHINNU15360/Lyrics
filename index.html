@@ -783,7 +783,8 @@
       <div class="settings-group">
         <label>Theme Background</label>
         <select class="input-control" id="themeSelect">
-          <option value="dynamic">🎨 Dynamic (Album Art)</option>
+          <option value="dynamic">🎨 Dynamic (Gradient Glow)</option>
+          <option value="albumcover">🖼️ Album Cover (Full BG)</option>
           <option value="blue">🌊 Midnight Blue</option>
           <option value="black">⚫ OLED Black</option>
           <option value="random">🌈 Random Colors</option>
@@ -826,8 +827,6 @@
         <label>Active Word Highlight Color</label>
         <div style="width: 100%;">
           <input type="color" id="wordColorPicker" value="#ffcc00" style="width: 100%; height: 50px; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);" />
-        </div>
-          </div>
         </div>
       </div>
 
@@ -2017,19 +2016,20 @@
     // ALBUM ART HELPERS
     // ============================================
     function setAlbumArt(src) {
-      if (playerArtImg && src) {
-        playerArtImg.src = src;
+      if (!src || !playerArtImg) return;
+
+      console.log('[Album Art] Setting cover:', src.substring(0, 50) + '...');
+
+      playerArtImg.src = src;
+      playerArtImg.onload = () => {
+        console.log('[Album Art] Loaded successfully');
         playerArtImg.classList.add('loaded');
-        playerArtImg.onload = () => {
-          playerArtImg.classList.add('loaded');
-          if (playerArtEmoji) playerArtEmoji.style.display = 'none';
-        };
-        playerArtImg.onerror = () => clearAlbumArt();
-        playerArt.style.backgroundImage = 'none';
-      } else {
-        playerArt.style.backgroundImage = src ? `url('${src}')` : 'none';
-        if (playerArtEmoji) playerArtEmoji.style.display = src ? 'none' : 'flex';
-      }
+        if (playerArtEmoji) playerArtEmoji.style.display = 'none';
+      };
+      playerArtImg.onerror = (e) => {
+        console.error('[Album Art] Failed to load:', e);
+        clearAlbumArt();
+      };
     }
 
     function clearAlbumArt() {
@@ -2123,8 +2123,22 @@
         custom:  () => { const col = rgbPicker.value; bgBlur.style.background = '#12091f'; glow1.style.background = col; glow2.style.background = '#4a044e'; glow3.style.background = col; },
         random:  () => { bgBlur.style.background = '#12091f'; glow1.style.background = getRandomColor(); glow2.style.background = getRandomColor(); glow3.style.background = getRandomColor(); },
         dynamic: () => { bgBlur.style.background = currentDynamicImg !== 'none' ? `url('${currentDynamicImg}')` : '#1a0b2e'; glow1.style.background = '#9333ea'; glow2.style.background = '#e11d48'; glow3.style.background = '#3b82f6'; },
-        blue:    () => { bgBlur.style.background = '#0b1d3a'; glow1.style.background = '#06b6d4'; glow2.style.background = '#1e3a8a'; glow3.style.background = '#3b82f6'; },
-        black:   () => { bgBlur.style.background = '#12091f'; glow1.style.background = '#4c1d95'; glow2.style.background = '#831843'; glow3.style.background = '#1e1b4b'; }
+        albumcover: () => {
+          if (currentDynamicImg !== 'none') {
+            bgBlur.style.background = `url('${currentDynamicImg}')`;
+            bgBlur.style.backgroundSize = 'cover';
+            bgBlur.style.backgroundPosition = 'center';
+            bgBlur.style.filter = 'blur(40px) brightness(0.6)';
+          } else {
+            bgBlur.style.background = '#1a0b2e';
+            bgBlur.style.filter = 'blur(60px)';
+          }
+          glow1.style.background = 'transparent';
+          glow2.style.background = 'transparent';
+          glow3.style.background = 'transparent';
+        },
+        blue:    () => { bgBlur.style.background = '#0b1d3a'; bgBlur.style.filter = 'blur(60px)'; glow1.style.background = '#06b6d4'; glow2.style.background = '#1e3a8a'; glow3.style.background = '#3b82f6'; },
+        black:   () => { bgBlur.style.background = '#12091f'; bgBlur.style.filter = 'blur(60px)'; glow1.style.background = '#4c1d95'; glow2.style.background = '#831843'; glow3.style.background = '#1e1b4b'; }
       };
 
       (themeMap[themeType] || themeMap.dynamic)();
