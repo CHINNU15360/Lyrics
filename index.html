@@ -24,6 +24,7 @@
       --btn-bg: rgba(255, 255, 255, 0.1);
       --btn-border: rgba(255, 255, 255, 0.15);
       --card-bg: #1c1c1e;
+      --lyrics-font: initial;
     }
 
     /* ============================================
@@ -791,6 +792,21 @@
         </div>
       </div>
 
+      <!-- Lyrics Font -->
+      <div class="settings-group">
+        <label>Lyrics Font</label>
+        <div class="style-row">
+          <button class="style-btn" data-font="anton">Anton</button>
+          <button class="style-btn" data-font="bebas">Bebas Neue</button>
+          <button class="style-btn" data-font="inter">Inter</button>
+          <button class="style-btn" data-font="montserrat">Montserrat</button>
+          <button class="style-btn" data-font="teko">Teko</button>
+          <button class="style-btn" data-font="permanent">Permanent Marker</button>
+          <button class="style-btn" data-font="space">Space Mono</button>
+          <button class="style-btn" data-font="system">System Default</button>
+        </div>
+      </div>
+
       <!-- Active word color -->
       <div class="settings-group">
         <label>Active Word Highlight Color</label>
@@ -1013,6 +1029,7 @@
     let customRgbVal    = localStorage.getItem('customRgb')   || '#ff0044';
     let customWordColor = localStorage.getItem('wordColor')   || '#ffcc00';
     let currentDynamicImg = 'none';
+    let lyricsFontFamily = localStorage.getItem('lyricsFontFamily') || '';
 
     // Chaotic style random values
     const chaoticColors = ['#ffcc00', '#ff003c', '#00e6ff', '#34c759', '#ff00ff', '#00ffff'];
@@ -2037,6 +2054,33 @@
     }
 
     // ============================================
+    // LYRICS FONT
+    // ============================================
+    const fontBtns = document.querySelectorAll('.style-btn[data-font]');
+
+    function applyLyricFont(fontKey) {
+      fontBtns.forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.style-btn[data-font="${fontKey}"]`)?.classList.add('active');
+
+      let fontFamily = '';
+      switch (fontKey) {
+        case 'anton': fontFamily = "'Anton', sans-serif"; break;
+        case 'bebas': fontFamily = "'Bebas Neue', sans-serif"; break;
+        case 'inter': fontFamily = "'Inter', sans-serif"; break;
+        case 'montserrat': fontFamily = "'Montserrat', sans-serif"; break;
+        case 'teko': fontFamily = "'Teko', sans-serif"; break;
+        case 'permanent': fontFamily = "'Permanent Marker', cursive"; break;
+        case 'space': fontFamily = "'Space Mono', monospace"; break;
+        case 'system': fontFamily = '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif'; break;
+        default: fontFamily = ''; // inherit
+      }
+
+      display.style.fontFamily = fontFamily || '';
+      lyricsFontFamily = fontKey;
+      localStorage.setItem('lyricsFontFamily', fontKey);
+    }
+
+    // ============================================
     // FULLSCREEN
     // ============================================
     function toggleFullscreenUI() {
@@ -2394,6 +2438,11 @@
       btn.addEventListener('click', () => applyTextAlign(btn.getAttribute('data-align')));
     });
 
+    // Font buttons
+    fontBtns.forEach(btn => {
+      btn.addEventListener('click', () => applyLyricFont(btn.getAttribute('data-font')));
+    });
+
     // ============================================
     // MUSIXMATCH API KEY (OPTIONAL)
     // ============================================
@@ -2444,7 +2493,8 @@
         romanize: isRomanizeEnabled,
         visualizer: visualizerEnabled,
         autoAdvance: autoAdvance,
-        version: 2
+        lyricsFontFamily: lyricsFontFamily,
+        version: 3
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -2475,6 +2525,7 @@
           if (data.romanize !== undefined) { isRomanizeEnabled = data.romanize; localStorage.setItem('romanize', String(isRomanizeEnabled)); updateRomanizeBtn(); }
           if (data.visualizer !== undefined) { document.getElementById('visualizerToggle').checked = data.visualizer; setVisualizer(data.visualizer); }
           if (data.autoAdvance !== undefined) { autoAdvance = data.autoAdvance; updateAutoAdvanceBtn(); }
+          if (data.lyricsFontFamily) { lyricsFontFamily = data.lyricsFontFamily; applyLyricFont(data.lyricsFontFamily); }
           statusText.textContent = '✅ Settings imported!';
         } catch (err) {
           statusText.textContent = '⚠️ Invalid settings file.';
@@ -2559,6 +2610,7 @@
     applyTheme(currentTheme);
     applyLyricStyle(currentStyle);
     applyTextAlign(currentTextAlign);
+    if (lyricsFontFamily) applyLyricFont(lyricsFontFamily);
     updateAutoAdvanceBtn();
 
   </script>
