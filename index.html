@@ -520,7 +520,7 @@
       padding: 0.75rem 1rem;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.08);
+      background: #2c2c2e;
       color: #ffffff; font-size: 0.95rem;
       outline: none;
       margin-bottom: 1rem;
@@ -528,6 +528,11 @@
     }
     .input-control:focus { border-color: rgba(255,255,255,0.4); }
     .input-control::placeholder { opacity: 0.5; }
+    /* Fix select dropdown options appearing white-on-white in browser native UI */
+    .input-control option {
+      background: #2c2c2e;
+      color: #ffffff;
+    }
 
     /* File buttons */
     .file-btn {
