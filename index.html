@@ -2094,6 +2094,11 @@
       lyricOffset       = 0;
       offsetVal.textContent = '0.0s';
 
+      // Try to fetch album art online if no embedded art is available
+      if (currentDynamicImg === 'none') {
+        fetchOnlineArt(title, artist === 'Local MP3' ? '' : artist);
+      }
+
       const startPlayback = () => {
         durTimeText.textContent = formatTime(audioPlayer.duration);
         if (!hasCustomLyricsLoaded) {
