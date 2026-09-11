@@ -2062,24 +2062,68 @@
       }
     }
 
-    // Online fallback: free iTunes Search API, no key needed
+    // Online fallback: tries iTunes → Deezer → MusicBrainz+CAA
     async function fetchOnlineArt(title, artist) {
+      const query = `${title || ''} ${artist || ''}`.trim();
+      if (!query) return false;
+
+      function applyArt(url) {
+        currentDynamicImg = url;
+        setAlbumArt(url);
+        if (currentTheme === 'dynamic') applyTheme('dynamic');
+      }
+
+      // 1. iTunes Search API (best quality, 600x600)
       try {
-        const term = `${title || ''} ${artist || ''}`.trim().replace(/\s+/g, '+');
-        if (!term) return;
-        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=1`;
-        const res = await fetch(url);
-        if (!res.ok) return;
-        const data = await res.json();
-        const item = data.results && data.results[0];
-        if (item && item.artworkUrl100) {
-          const art = item.artworkUrl100.replace('100x100', '300x300');
-          currentDynamicImg = art;
-          setAlbumArt(art);
-          if (currentTheme === 'dynamic') applyTheme('dynamic');
-          return true;
+        const res = await fetch(
+          `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=1`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const item = data.results && data.results[0];
+          if (item && item.artworkUrl100) {
+            applyArt(item.artworkUrl100.replace('100x100bb', '600x600bb').replace('100x100', '600x600'));
+            return true;
+          }
         }
-      } catch (e) { /* offline / blocked */ }
+      } catch (e) { /* blocked or offline, try next */ }
+
+      // 2. Deezer API (open CORS, no key needed)
+      try {
+        const res = await fetch(
+          `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=1&output=jsonp`,
+          { mode: 'cors' }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const track = data.data && data.data[0];
+          if (track && track.album && track.album.cover_big) {
+            applyArt(track.album.cover_big);
+            return true;
+          }
+        }
+      } catch (e) { /* blocked */ }
+
+      // 3. MusicBrainz + Cover Art Archive (fully open, no key)
+      try {
+        const mbRes = await fetch(
+          `https://musicbrainz.org/ws/2/recording/?query=${encodeURIComponent(query)}&limit=1&fmt=json`,
+          { headers: { 'User-Agent': 'LyricsPlayer/1.0' } }
+        );
+        if (mbRes.ok) {
+          const mbData = await mbRes.json();
+          const recording = mbData.recordings && mbData.recordings[0];
+          const releaseId = recording && recording.releases && recording.releases[0] && recording.releases[0].id;
+          if (releaseId) {
+            const caaRes = await fetch(`https://coverartarchive.org/release/${releaseId}/front-250`);
+            if (caaRes.ok) {
+              applyArt(caaRes.url);
+              return true;
+            }
+          }
+        }
+      } catch (e) { /* blocked */ }
+
       return false;
     }
 
@@ -2368,12 +2412,19 @@
                 applyTrackMeta(t.title || rawName, t.artist || 'Local MP3');
               });
             } else {
+              // No embedded art — fetch online art explicitly before applyTrackMeta
+              // so currentDynamicImg is 'none' and applyTrackMeta triggers fetchOnlineArt
+              currentDynamicImg = 'none';
               applyTrackMeta(t.title || rawName, t.artist || 'Local MP3');
             }
           },
-          onError: () => applyTrackMeta(rawName, 'Local MP3')
+          onError: () => {
+            currentDynamicImg = 'none';
+            applyTrackMeta(rawName, 'Local MP3');
+          }
         });
       } else {
+        currentDynamicImg = 'none';
         applyTrackMeta(rawName, 'Local MP3');
       }
     });
