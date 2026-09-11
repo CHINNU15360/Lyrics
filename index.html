@@ -2773,14 +2773,20 @@
         random:  () => { bgBlur.style.background = '#12091f'; glow1.style.background = getRandomColor(); glow2.style.background = getRandomColor(); glow3.style.background = getRandomColor(); },
         dynamic: () => { bgBlur.style.background = currentDynamicImg !== 'none' ? `url('${currentDynamicImg}')` : '#1a0b2e'; glow1.style.background = '#9333ea'; glow2.style.background = '#e11d48'; glow3.style.background = '#3b82f6'; },
         albumcover: () => {
-          if (currentDynamicImg !== 'none') {
+          // On mobile, skip loading large background image to save bandwidth
+          const isMobile = window.innerWidth <= 768;
+
+          if (currentDynamicImg !== 'none' && !isMobile) {
             bgBlur.style.background = `url('${currentDynamicImg}')`;
             bgBlur.style.backgroundSize = 'cover';
             bgBlur.style.backgroundPosition = 'center';
             bgBlur.style.filter = 'blur(3px) brightness(0.9)';
           } else {
+            // Mobile or no image: use solid color
             bgBlur.style.background = '#1a0b2e';
-            bgBlur.style.filter = 'blur(8px)';
+            bgBlur.style.backgroundSize = '';
+            bgBlur.style.backgroundPosition = '';
+            bgBlur.style.filter = 'blur(60px)';
           }
           glow1.style.background = 'transparent';
           glow2.style.background = 'transparent';
