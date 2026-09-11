@@ -53,7 +53,7 @@
       width: 100vw; height: 100vh;
       background: #12091f;
       z-index: 1;
-      transition: background 0.8s ease-in-out;
+      transition: background 0.8s ease-in-out, filter 0.8s ease-in-out;
       background-size: cover;
       background-position: center;
       filter: blur(60px);
@@ -1325,14 +1325,17 @@
 
       if (!lineChanged && !wordChanged) return;
 
-      // Auto-scroll to active line (only when line changes)
+      // Auto-scroll to active line — center it in the upper third for readability
       if (lineChanged && autoScrollEnabled) {
         activeIndex = newActiveIndex;
         const activeLineEl = document.getElementById(`line-${newActiveIndex}`);
         if (activeLineEl) {
-          display.scrollTo({
-            top: activeLineEl.offsetTop - (display.clientHeight / 2) + (activeLineEl.clientHeight / 2)
-          });
+          const panelHeight = display.clientHeight;
+          const lineTop = activeLineEl.offsetTop;
+          const lineHeight = activeLineEl.offsetHeight;
+          // Target: active line at 40% from top (slightly above center, above player bar)
+          const target = lineTop - (panelHeight * 0.40) + (lineHeight / 2);
+          display.scrollTo({ top: target });
         }
       }
 
@@ -2182,7 +2185,7 @@
             bgBlur.style.background = `url('${currentDynamicImg}')`;
             bgBlur.style.backgroundSize = 'cover';
             bgBlur.style.backgroundPosition = 'center';
-            bgBlur.style.filter = 'blur(8px) brightness(0.75)';
+            bgBlur.style.filter = 'blur(3px) brightness(0.9)';
           } else {
             bgBlur.style.background = '#1a0b2e';
             bgBlur.style.filter = 'blur(8px)';
