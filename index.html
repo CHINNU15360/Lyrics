@@ -11,6 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+  <script src="node_modules/gsap/dist/gsap.min.js"></script>
+  <script src="node_modules/lenis/dist/lenis.min.js"></script>
 
   <style>
     /* ============================================
@@ -280,6 +282,42 @@
     .lyrics-chaotic .line.active .word { color: rgba(255, 255, 255, 0.3); -webkit-text-stroke: 1px rgba(0,0,0,0.6); }
     .lyrics-chaotic .line.active .word.filled { color: var(--rand-color, #ffffff); -webkit-text-stroke: 1.5px #000; text-shadow: 2px 2px 0 #000, 0 0 12px var(--rand-color, #ffffff); }
     .lyrics-chaotic .line.active .word.active-word { transform: scale(1.15) rotate(var(--rand-deg, 4deg)); color: var(--active-color) !important; -webkit-text-stroke: 2px #000; text-shadow: 3px 3px 0 #000, 0 0 20px var(--active-color); z-index: 10; position: relative; }
+
+    /* Neon Pulse Style */
+    .lyrics-neon .line {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2.0rem, 5.5vw, 3.6rem);
+      color: rgba(255, 255, 255, 0.2);
+      letter-spacing: -1px;
+    }
+    .lyrics-neon .line.active .word { color: rgba(255, 255, 255, 0.35); }
+    .lyrics-neon .line.active .word.filled { color: var(--active-color); text-shadow: 0 0 8px var(--active-color), 0 0 20px var(--active-color); }
+    .lyrics-neon .line.active .word.active-word { color: #fff !important; transform: scale(1.18); text-shadow: 0 0 12px #fff, 0 0 40px var(--active-color), 0 0 80px var(--active-color); }
+
+    /* Neon Glow Style */
+    .lyrics-neonglow .line {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      color: rgba(0, 255, 150, 0.18);
+      letter-spacing: 2px;
+      text-shadow: 0 0 6px rgba(0, 255, 150, 0.15);
+    }
+    .lyrics-neonglow .line.active .word { color: rgba(0, 255, 150, 0.4); }
+    .lyrics-neonglow .line.active .word.filled { color: #00ff96; text-shadow: 0 0 10px #00ff96, 0 0 30px #00ff96; }
+    .lyrics-neonglow .line.active .word.active-word { color: #fff !important; transform: scale(1.12); text-shadow: 0 0 15px #fff, 0 0 40px #00ff96, 0 0 80px #00ff96; }
+
+    /* Cinematic Style */
+    .lyrics-cinematic .line {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.12);
+    }
+    .lyrics-cinematic .line.active .word { color: rgba(255, 255, 255, 0.3); }
+    .lyrics-cinematic .line.active .word.filled { color: #fff; text-shadow: 0 2px 30px rgba(255, 255, 255, 0.7); }
+    .lyrics-cinematic .line.active .word.active-word { color: var(--active-color) !important; transform: scale(1.1); text-shadow: 0 0 30px var(--active-color), 0 2px 40px rgba(0,0,0,0.9); }
 
     /* Apple Style */
     .lyrics-apple .line {
@@ -907,335 +945,13 @@
     .io-btn.active { background: var(--text-primary); color: #000; border-color: var(--text-primary); }
 
     /* ============================================
-       MODAL DRAG HANDLE
+       LENIS SMOOTH SCROLL
     ============================================ */
-    .modal-card::before {
-      content: '';
-      display: block;
-      width: 36px; height: 5px;
-      background: var(--border-normal);
-      border-radius: 3px;
-      margin: 0 auto var(--space-xl);
-    }
-
-    /* ============================================
-       LOADING SKELETON
-    ============================================ */
-    @keyframes shimmer {
-      0% { background-position: -200% center; }
-      100% { background-position: 200% center; }
-    }
-    .skeleton {
-      background: linear-gradient(90deg, var(--interactive-base) 25%, var(--interactive-hover) 50%, var(--interactive-base) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s ease-in-out infinite;
-      border-radius: 8px;
-    }
-
-    /* ============================================
-       TOAST NOTIFICATIONS
-    ============================================ */
-    .toast-container {
-      position: fixed;
-      top: var(--space-2xl);
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-sm);
-      pointer-events: none;
-    }
-    .toast {
-      background: var(--surface-elevated);
-      backdrop-filter: blur(24px);
-      border: 1px solid var(--border-normal);
-      border-radius: 16px;
-      padding: var(--space-md) var(--space-xl);
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      animation: toastIn 0.3s ease-out;
-      white-space: nowrap;
-    }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateY(-12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ============================================
-       SCROLLBAR (for settings modals)
-    ============================================ */
-    .modal-card::-webkit-scrollbar { width: 6px; }
-    .modal-card::-webkit-scrollbar-track { background: transparent; }
-    .modal-card::-webkit-scrollbar-thumb {
-      background: var(--border-normal);
-      border-radius: 3px;
-    }
-
-    /* ============================================
-       SELECTION STYLES
-    ============================================ */
-    ::selection {
-      background: rgba(255, 204, 0, 0.3);
-      color: #ffffff;
-    }
-
-    /* ============================================
-       MODAL DRAG HANDLE
-    ============================================ */
-    .modal-card::before {
-      content: '';
-      display: block;
-      width: 36px; height: 5px;
-      background: var(--border-normal);
-      border-radius: 3px;
-      margin: 0 auto var(--space-xl);
-    }
-
-    /* ============================================
-       LOADING SKELETON
-    ============================================ */
-    @keyframes shimmer {
-      0% { background-position: -200% center; }
-      100% { background-position: 200% center; }
-    }
-    .skeleton {
-      background: linear-gradient(90deg, var(--interactive-base) 25%, var(--interactive-hover) 50%, var(--interactive-base) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s ease-in-out infinite;
-      border-radius: 8px;
-    }
-
-    /* ============================================
-       TOAST NOTIFICATIONS
-    ============================================ */
-    .toast-container {
-      position: fixed;
-      top: var(--space-2xl);
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-sm);
-      pointer-events: none;
-    }
-    .toast {
-      background: var(--surface-elevated);
-      backdrop-filter: blur(24px);
-      border: 1px solid var(--border-normal);
-      border-radius: 16px;
-      padding: var(--space-md) var(--space-xl);
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s, transform 0.3s;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      max-width: 400px;
-      text-align: center;
-    }
-    .toast.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-      pointer-events: auto;
-    }
-
-    /* ============================================
-       AMBIENT GLOW IMPROVEMENTS
-    ============================================ */
-    .ambient-glow {
-      opacity: 0.5;
-      filter: blur(100px);
-      transition: background 0.8s ease-in-out;
-    }
-
-    /* ============================================
-       SCROLLBAR (for settings modals)
-    ============================================ */
-    .modal-card::-webkit-scrollbar { width: 6px; }
-    .modal-card::-webkit-scrollbar-track { background: transparent; }
-    .modal-card::-webkit-scrollbar-thumb {
-      background: var(--border-normal);
-      border-radius: 3px;
-    }
-
-    /* ============================================
-       RESPONSIVE FINE-TUNING
-    ============================================ */
-    @media (max-width: 480px) {
-      .player-bar {
-        border-radius: 24px;
-        padding: var(--space-lg) var(--space-lg) var(--space-md);
-        width: calc(100% - 1rem);
-        bottom: var(--space-lg);
-      }
-      .album-art { width: 52px; height: 52px; }
-      .track-title { font-size: 1rem; }
-      .track-artist { font-size: 0.85rem; }
-      .controls { gap: var(--space-xs); }
-      .btn-icon { width: 40px; height: 40px; }
-      .btn-play { width: 44px; height: 44px; }
-      .dev-badge { font-size: 0.7rem; padding: var(--space-sm) var(--space-lg); }
-      .mini-sync-btn { padding: var(--space-xs) var(--space-sm); font-size: 0.7rem; }
-      .lyrics-panel { padding: 40vh 2rem calc(50vh + 110px) 2rem; }
-    }
-
-    @media (min-width: 1200px) {
-      .player-bar { max-width: 680px; }
-      .lyrics-panel { max-width: 1000px; }
-    }
-
-    /* ============================================
-       MODAL DRAG HANDLE
-    ============================================ */
-    .modal-card::before {
-      content: '';
-      display: block;
-      width: 36px; height: 5px;
-      background: var(--border-normal);
-      border-radius: 3px;
-      margin: 0 auto var(--space-xl);
-    }
-
-    /* ============================================
-       LOADING SKELETON
-    ============================================ */
-    @keyframes shimmer {
-      0% { background-position: -200% center; }
-      100% { background-position: 200% center; }
-    }
-    .skeleton {
-      background: linear-gradient(90deg, var(--interactive-base) 25%, var(--interactive-hover) 50%, var(--interactive-base) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s ease-in-out infinite;
-      border-radius: 8px;
-    }
-
-    /* ============================================
-       TOAST NOTIFICATIONS
-    ============================================ */
-    .toast-container {
-      position: fixed;
-      top: var(--space-2xl);
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-sm);
-      pointer-events: none;
-    }
-    .toast {
-      background: var(--surface-elevated);
-      backdrop-filter: blur(24px);
-      border: 1px solid var(--border-normal);
-      border-radius: 16px;
-      padding: var(--space-md) var(--space-xl);
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      animation: toastIn 0.3s ease-out;
-      white-space: nowrap;
-    }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateY(-12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ============================================
-       RESPONSIVE
-    ============================================ */
-    @media (max-width: 480px) {
-      .player-bar { bottom: var(--space-lg); width: calc(100% - 1rem); padding: var(--space-lg) var(--space-lg) var(--space-md); }
-      .album-art { width: 52px; height: 52px; }
-      .track-title { font-size: 1rem; }
-      .track-artist { font-size: 0.85rem; }
-      .btn-icon { width: 40px; height: 40px; }
-      .btn-play { width: 44px; height: 44px; }
-      .dev-badge { font-size: 0.7rem; padding: var(--space-sm) var(--space-lg); }
-      .mini-sync-btn { padding: var(--space-xs) var(--space-sm); font-size: 0.7rem; }
-    }
-
-    /* ============================================
-       MODAL DRAG HANDLE
-    ============================================ */
-    .modal-card::before {
-      content: '';
-      display: block;
-      width: 36px; height: 5px;
-      background: var(--border-normal);
-      border-radius: 3px;
-      margin: 0 auto var(--space-xl);
-    }
-
-    /* ============================================
-       LOADING SKELETON
-    ============================================ */
-    @keyframes shimmer {
-      0% { background-position: -200% center; }
-      100% { background-position: 200% center; }
-    }
-    .skeleton {
-      background: linear-gradient(90deg, var(--interactive-base) 25%, var(--interactive-hover) 50%, var(--interactive-base) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s ease-in-out infinite;
-      border-radius: 8px;
-    }
-
-    /* ============================================
-       TOAST NOTIFICATION
-    ============================================ */
-    .toast {
-      position: fixed;
-      top: var(--space-2xl);
-      left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: var(--surface-elevated);
-      backdrop-filter: blur(24px);
-      border: 1px solid var(--border-normal);
-      border-radius: 16px;
-      padding: var(--space-md) var(--space-xl);
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s, transform 0.3s;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      max-width: 400px;
-      text-align: center;
-    }
-    .toast.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-      pointer-events: auto;
-    }
-
-    /* ============================================
-       AMBIENT GLOW IMPROVEMENTS
-    ============================================ */
-    .ambient-glow {
-      opacity: 0.5;
-      filter: blur(100px);
-      transition: background 0.8s ease-in-out;
-    }
-
-    /* ============================================
-       SCROLLBAR (for settings modals)
-    ============================================ */
-    .modal-card::-webkit-scrollbar { width: 6px; }
-    .modal-card::-webkit-scrollbar-track { background: transparent; }
-    .modal-card::-webkit-scrollbar-thumb {
-      background: var(--border-normal);
-      border-radius: 3px;
-    }
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+    .lenis.lenis-stopped { overflow: hidden; }
+    .lenis.lenis-smooth iframe { pointer-events: none; }
 
     /* ============================================
        RESPONSIVE FINE-TUNING
@@ -1279,6 +995,47 @@
     ::selection {
       background: rgba(255, 204, 0, 0.3);
       color: #ffffff;
+    }
+
+    /* ============================================
+       TOAST NOTIFICATIONS
+    ============================================ */
+    .toast-container {
+      position: fixed;
+      top: var(--space-2xl);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--surface-elevated);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border-normal);
+      border-radius: 16px;
+      padding: var(--space-md) var(--space-xl);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      text-align: center;
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .toast.hiding {
+      opacity: 0;
+      transform: translateY(-8px);
     }
   </style>
 </head>
@@ -1401,6 +1158,9 @@
           <option value="chaotic" selected>✨ Chaotic Edit</option>
           <option value="capcut">🎞️ CapCut Pop</option>
           <option value="apple">🍎 Apple Style</option>
+          <option value="neon">💡 Neon Pulse</option>
+          <option value="neonglow">💚 Matrix Glow</option>
+          <option value="cinematic">🎬 Cinematic</option>
         </select>
       </div>
 
@@ -1660,6 +1420,70 @@
 
     // Search debounce
     let searchDebounceTimer = null;
+
+    // Lenis smooth scroll instance
+    let lenis = null;
+
+    // ============================================
+    // GSAP + LENIS SETUP
+    // ============================================
+    function initLenis() {
+      if (lenis) { lenis.destroy(); lenis = null; }
+      try {
+        lenis = new Lenis({
+          wrapper: display,
+          content: display,
+          duration: 0.9,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          syncTouch: false,
+        });
+        lenis.on('scroll', () => {});
+        function rafLenis(time) {
+          lenis.raf(time);
+          requestAnimationFrame(rafLenis);
+        }
+        requestAnimationFrame(rafLenis);
+      } catch (e) { lenis = null; }
+    }
+
+    // GSAP-powered entrance animation for lyrics lines
+    function gsapAnimateEntrance() {
+      if (typeof gsap === 'undefined') return;
+      const lines = display.querySelectorAll('.line');
+      gsap.set(lines, { opacity: 0, y: 16, scale: 0.92 });
+      gsap.to(lines, {
+        opacity: 0.25, y: 0, scale: 0.92,
+        duration: 0.45,
+        stagger: 0.022,
+        ease: 'power3.out',
+        onStart: function() { lines.forEach(l => l.classList.add('entered')); }
+      });
+    }
+
+    // GSAP-powered player bar entrance
+    function gsapAnimatePlayerBar() {
+      if (typeof gsap === 'undefined') return;
+      gsap.from('.player-bar', { y: 60, opacity: 0, duration: 0.7, ease: 'power3.out', delay: 0.3 });
+      gsap.from('.dev-badge', { y: -20, opacity: 0, duration: 0.5, ease: 'power2.out', delay: 0.1 });
+      gsap.from('.fullscreen-btn', { x: 20, opacity: 0, duration: 0.5, ease: 'power2.out', delay: 0.4 });
+    }
+
+    // GSAP-powered word highlighting (fallback when GSAP is available)
+    function gsapAnimateActiveWord(el) {
+      if (typeof gsap === 'undefined') return;
+      gsap.to(el, { scale: 1.15, duration: 0.18, ease: 'back.out(2)' });
+    }
+    function gsapAnimateWordReset(el) {
+      if (typeof gsap === 'undefined') return;
+      gsap.to(el, { scale: 1, duration: 0.15, ease: 'power2.inOut' });
+    }
+
+    // GSAP-powered modal open
+    function gsapModalIn(card) {
+      if (typeof gsap === 'undefined') return;
+      gsap.fromTo(card, { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' });
+    }
 
     // ============================================
     // SERVICE WORKER
@@ -1925,9 +1749,12 @@
           const panelHeight = display.clientHeight;
           const lineTop = activeLineEl.offsetTop;
           const lineHeight = activeLineEl.offsetHeight;
-          // Target: active line at 40% from top (slightly above center, above player bar)
           const target = lineTop - (panelHeight * 0.40) + (lineHeight / 2);
-          display.scrollTo({ top: target });
+          if (lenis) {
+            lenis.scrollTo(target, { duration: 0.55, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+          } else {
+            display.scrollTo({ top: target });
+          }
         }
       }
 
@@ -2021,11 +1848,10 @@
         });
 
         display.appendChild(lineEl);
-
-        // Staggered entrance animation
-        lineEl.style.transitionDelay = `${index * 25}ms`;
-        requestAnimationFrame(() => lineEl.classList.add('entered'));
       });
+
+      // GSAP-powered staggered entrance
+      gsapAnimateEntrance();
     }
 
     // ============================================
@@ -2907,6 +2733,7 @@
       eqCard.style.display = 'none';
       playlistCard.style.display = 'none';
       modalOverlay.classList.add('open');
+      gsapModalIn(settingsCard);
     });
 
     eqBtn.addEventListener('click', () => {
@@ -2914,6 +2741,7 @@
       eqCard.style.display = 'block';
       playlistCard.style.display = 'none';
       modalOverlay.classList.add('open');
+      gsapModalIn(eqCard);
     });
 
     playlistBtn.addEventListener('click', () => {
@@ -2921,6 +2749,7 @@
       eqCard.style.display = 'none';
       playlistCard.style.display = 'block';
       modalOverlay.classList.add('open');
+      gsapModalIn(playlistCard);
     });
 
     // Close modals
@@ -3371,6 +3200,12 @@
     applyTextAlign(currentTextAlign);
     if (lyricsFontFamily) applyLyricFont(lyricsFontFamily);
     updateAutoAdvanceBtn();
+
+    // Initialize GSAP + Lenis on DOM ready
+    requestAnimationFrame(() => {
+      gsapAnimatePlayerBar();
+      initLenis();
+    });
 
   </script>
 </body>
