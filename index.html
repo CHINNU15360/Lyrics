@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;900&family=Montserrat:wght@800;900&family=Teko:wght@600&family=Permanent+Marker&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-  <script src="node_modules/gsap/dist/gsap.min.js"></script>
-  <script src="node_modules/lenis/dist/lenis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 
   <style>
     /* ============================================
@@ -445,30 +445,40 @@
     .controls { display: flex; align-items: center; gap: var(--space-sm); flex-shrink: 0; }
 
     .btn-icon {
-      background: var(--interactive-base);
-      border: 1px solid var(--border-subtle);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
       color: var(--text-primary);
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      width: 44px; height: 44px;
+      width: 46px; height: 46px;
       border-radius: 50%;
-      font-size: 1.1rem;
-      transition: background 0.2s, transform 0.15s, border-color 0.2s;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.18s ease, box-shadow 0.25s ease;
+      box-shadow: inset 0 0 0 0 rgba(255,255,255,0.08);
     }
-    .btn-icon:hover { background: var(--interactive-hover); border-color: var(--border-normal); transform: scale(1.05); }
-    .btn-icon:active { transform: scale(0.95); }
-    .btn-icon:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.5); outline-offset: 2px; }
-    .btn-icon svg { fill: var(--text-primary); pointer-events: none; width: 20px; height: 20px; }
+    .btn-icon:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.22);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 6px 18px rgba(0,0,0,0.35);
+      transform: translateY(-1px) scale(1.06);
+    }
+    .btn-icon:active { transform: scale(0.96); box-shadow: inset 0 0 6px rgba(255,255,255,0.06); }
+    .btn-icon:focus-visible { outline: 2px solid rgba(255,255,255,0.55); outline-offset: 3px; }
+    .btn-icon svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; width: 21px; height: 21px; }
+    .btn-icon .badge-dot { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; background: #ff4444; border-radius: 50%; box-shadow: 0 0 4px #ff4444; }
 
     .btn-play {
-      background: var(--text-primary);
-      color: #000000;
+      background: linear-gradient(145deg, #fff 0%, #ddd 100%);
+      color: #0a0a0a;
       border: none;
-      width: 48px;
-      height: 48px;
+      width: 52px; height: 52px;
+      box-shadow: 0 4px 14px rgba(255,255,255,0.15), 0 0 0 1px rgba(255,255,255,0.3) inset;
+      transition: transform 0.18s ease, box-shadow 0.25s ease;
     }
-    .btn-play:hover { background: #f0f0f0; }
-    .btn-play svg { fill: #000000; width: 22px; height: 22px; }
+    .btn-play:hover { transform: scale(1.08); box-shadow: 0 6px 22px rgba(255,255,255,0.25), 0 0 0 1px rgba(255,255,255,0.35) inset; }
+    .btn-play:active { transform: scale(0.96); }
+    .btn-play svg { fill: #0a0a0a; stroke: none; width: 24px; height: 24px; pointer-events: none; }
 
     /* Scrubber */
     .scrubber-box { width: 100%; display: flex; flex-direction: column; gap: var(--space-sm); }
@@ -558,7 +568,7 @@
       color: var(--text-primary);
     }
 
-    /* Settings groups */
+    /* Settings groups (legacy, kept for compatibility) */
     .settings-group { margin-bottom: var(--space-xl); }
     .settings-group label {
       display: block;
@@ -567,6 +577,42 @@
       color: var(--text-secondary);
       margin-bottom: var(--space-md);
       letter-spacing: 0.3px;
+    }
+
+    /* Professional settings redesign */
+    .settings-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      padding: 0 0 10px 0;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .settings-row:last-of-type { border-bottom: none; }
+    .settings-row-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      flex: 1;
+      min-width: 0;
+    }
+    .settings-select {
+      width: auto;
+      min-width: 140px;
+      max-width: 180px;
+      font-size: 0.88rem;
+      padding: 7px 10px;
+      flex-shrink: 0;
     }
 
     /* Theme row */
@@ -945,6 +991,131 @@
     .io-btn.active { background: var(--text-primary); color: #000; border-color: var(--text-primary); }
 
     /* ============================================
+       ONLINE STREAMING PANEL
+    ============================================ */
+    .stream-search-bar {
+      display: flex; gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+    .stream-search-bar input {
+      flex: 1;
+      padding: var(--space-md) var(--space-lg);
+      border-radius: 14px;
+      border: 1px solid var(--border-normal);
+      background: var(--interactive-base);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      min-height: 44px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .stream-search-bar input:focus { border-color: var(--active-color); }
+    .stream-search-bar button {
+      padding: var(--space-md) var(--space-lg);
+      border-radius: 14px;
+      border: none;
+      background: var(--active-color);
+      color: #000;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      min-height: 44px;
+    }
+    .stream-tabs {
+      display: flex; gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+    .stream-tab {
+      flex: 1;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: 10px;
+      border: 1px solid var(--border-normal);
+      background: var(--interactive-base);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .stream-tab.active { background: var(--active-color); color: #000; border-color: transparent; }
+    .stream-results {
+      max-height: 360px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .stream-result-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      border-radius: 14px;
+      background: var(--interactive-base);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .stream-result-item:hover { background: var(--interactive-hover); border-color: var(--border-normal); }
+    .stream-result-item.playing { border-color: var(--active-color); background: rgba(255,204,0,0.07); }
+    .stream-result-art {
+      width: 48px; height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--surface-overlay);
+      flex-shrink: 0;
+      font-size: 1.6rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stream-result-info { flex: 1; min-width: 0; }
+    .stream-result-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .stream-result-artist {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .stream-result-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .badge-preview { background: rgba(255,149,0,0.18); color: #ff9500; }
+    .badge-full    { background: rgba(52,199,89,0.18); color: #34c759; }
+    .stream-loading {
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.88rem;
+      padding: var(--space-xl) 0;
+    }
+    .stream-play-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+    #streamBtn {
+      position: relative;
+    }
+    #streamBtn .badge-dot {
+      position: absolute;
+      top: 4px; right: 4px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--active-color);
+      display: none;
+    }
+    #streamBtn.has-stream .badge-dot { display: block; }
+
+    /* ============================================
        LENIS SMOOTH SCROLL
     ============================================ */
     html.lenis, html.lenis body { height: auto; }
@@ -1095,10 +1266,22 @@
         </div>
       </div>
       <div class="controls">
-        <button class="btn-icon" id="eqBtn" title="Sound FX & Spatial Audio">🎛️</button>
-        <button class="btn-icon" id="playlistBtn" title="Playlist">📋</button>
-        <button class="btn-icon btn-play" id="playBtn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
-        <button class="btn-icon btn-gear" id="gearBtn"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
+        <button class="btn-icon" id="eqBtn" title="Sound FX & Spatial Audio">
+          <svg viewBox="0 0 24 24"><path d="M3 14h4v5H3zm6-9h4v14H9zm6 4h4v10h-4z"/></svg>
+        </button>
+        <button class="btn-icon" id="playlistBtn" title="Playlist">
+          <svg viewBox="0 0 24 24"><path d="M4 10h16v2H4zm0-5h16v2H4zm0 10h16v2H4z"/></svg>
+        </button>
+        <button class="btn-icon" id="streamBtn" title="Stream Online Music" style="position:relative;">
+          <svg viewBox="0 0 24 24"><path d="M12 3C7 3 2.7 5 0 8l12 13L24 8c-2.7-3-7-5-12-5zm0 9a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="badge-dot"></span>
+        </button>
+        <button class="btn-icon btn-play" id="playBtn">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="btn-icon btn-gear" id="gearBtn">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94a7.14 7.14 0 00-.07-.94c.02-.3.04-.61.04-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.06 7.06 0 00-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84a.48.48 0 00-.47.41l-.36 2.54a7.06 7.06 0 00-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87a.49.49 0 00.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
       </div>
     </div>
 
@@ -1123,115 +1306,95 @@
       <button class="modal-close" id="closeModalBtn">✕</button>
       <div class="modal-title">Settings</div>
 
-      <!-- Text alignment -->
-      <div class="settings-group">
-        <label>Text Alignment</label>
-        <select class="input-control" id="textAlignSelect">
-          <option value="left">⬅ Left</option>
-          <option value="center" selected>⏹ Center</option>
-          <option value="right">➡ Right</option>
+      <!-- SECTION: Appearance -->
+      <div class="settings-section-label">Appearance</div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">Theme Background</div>
+        <select class="input-control settings-select" id="themeSelect">
+          <option value="dynamic">Dynamic Glow</option>
+          <option value="albumcover">Album Cover</option>
+          <option value="blue">Midnight Blue</option>
+          <option value="black">OLED Black</option>
+          <option value="random">Random Colors</option>
+          <option value="custom">Custom RGB</option>
+        </select>
+      </div>
+      <div class="color-picker-wrapper" id="rgbWrapper" style="display: none; margin: -8px 0 16px 0;">
+        <input type="color" id="rgbPicker" value="#ff0044" style="width: 100%; height: 44px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border-subtle);" />
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">Text Alignment</div>
+        <select class="input-control settings-select" id="textAlignSelect">
+          <option value="left">Left</option>
+          <option value="center" selected>Center</option>
+          <option value="right">Right</option>
         </select>
       </div>
 
-      <!-- Theme background -->
-      <div class="settings-group">
-        <label>Theme Background</label>
-        <select class="input-control" id="themeSelect">
-          <option value="dynamic">🎨 Dynamic (Gradient Glow)</option>
-          <option value="albumcover">🖼️ Album Cover (Full BG)</option>
-          <option value="blue">🌊 Midnight Blue</option>
-          <option value="black">⚫ OLED Black</option>
-          <option value="random">🌈 Random Colors</option>
-          <option value="custom">🎨 Custom RGB</option>
+      <!-- SECTION: Lyrics -->
+      <div class="settings-section-label" style="margin-top: var(--space-xl);">Lyrics</div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">Animation Style</div>
+        <select class="input-control settings-select" id="lyricStyleSelect">
+          <option value="doom">Doom TV</option>
+          <option value="reel">Reel Style</option>
+          <option value="chaotic" selected>Chaotic Edit</option>
+          <option value="capcut">CapCut Pop</option>
+          <option value="apple">Apple Style</option>
+          <option value="neon">Neon Pulse</option>
+          <option value="neonglow">Matrix Glow</option>
+          <option value="cinematic">Cinematic</option>
         </select>
-        <div class="color-picker-wrapper" id="rgbWrapper" style="margin-top: 0.5rem; display: none;">
-          <input type="color" id="rgbPicker" value="#ff0044" style="width: 100%; height: 50px; border-radius: 8px; cursor: pointer;" />
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-row-label">Active Word Color</div>
+        <input type="color" id="wordColorPicker" value="#ffcc00" style="width: 44px; height: 36px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-subtle); background: transparent; padding: 2px;" />
+      </div>
+
+      <!-- SECTION: Script Conversion -->
+      <div class="settings-section-label" style="margin-top: var(--space-xl);">Script Conversion</div>
+      <div class="settings-row" style="align-items: flex-start; flex-direction: column; gap: 8px;">
+        <button class="style-btn" id="romanizeBtn" style="width: 100%; text-align: center;">
+          Romanize: <span id="romanizeStatus">Off</span>
+        </button>
+        <div style="font-size: 0.78rem; opacity: 0.55; line-height: 1.5;">
+          Converts Hindi, Tamil, Telugu, Arabic, Chinese & more to Latin script.
         </div>
       </div>
 
-      <!-- Lyrics animation style -->
-      <div class="settings-group">
-        <label>Lyrics Animation Style</label>
-        <select class="input-control" id="lyricStyleSelect">
-          <option value="doom">📺 Doom TV</option>
-          <option value="reel">🎬 Reel Style</option>
-          <option value="chaotic" selected>✨ Chaotic Edit</option>
-          <option value="capcut">🎞️ CapCut Pop</option>
-          <option value="apple">🍎 Apple Style</option>
-          <option value="neon">💡 Neon Pulse</option>
-          <option value="neonglow">💚 Matrix Glow</option>
-          <option value="cinematic">🎬 Cinematic</option>
-        </select>
-      </div>
+      <!-- SECTION: Files & Track -->
+      <div class="settings-section-label" style="margin-top: var(--space-xl);">Files & Track</div>
 
-      <!-- Lyrics Font -->
-      <div class="settings-group">
-        <label>Lyrics Font</label>
-        <select class="input-control" id="lyricFontSelect">
-          <option value="system" selected>System Default</option>
-          <option value="anton">Anton</option>
-          <option value="bebas">Bebas Neue</option>
-          <option value="inter">Inter</option>
-          <option value="montserrat">Montserrat</option>
-          <option value="teko">Teko</option>
-          <option value="permanent">Permanent Marker</option>
-          <option value="space">Space Mono</option>
-        </select>
-      </div>
-
-      <!-- Active word color -->
-      <div class="settings-group">
-        <label>Active Word Highlight Color</label>
-        <div style="width: 100%;">
-          <input type="color" id="wordColorPicker" value="#ffcc00" style="width: 100%; height: 50px; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);" />
-        </div>
-      </div>
-
-      <!-- Audio file -->
-      <label class="file-btn" for="audioFileInput" id="audioBtnLabel">📁 Choose Local Audio File (.mp3, .m4a)</label>
+      <label class="file-btn" for="audioFileInput" id="audioBtnLabel">Choose Audio File</label>
       <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
 
-      <!-- LRC / ELRC file -->
       <div class="file-group">
-        <label class="file-btn" for="lrcFileInput" id="lrcBtnLabel">📄 Upload Custom .ELRC</label>
+        <label class="file-btn" for="lrcFileInput" id="lrcBtnLabel">Upload .ELRC / .LRC</label>
         <button class="btn-remove" id="removeLrcBtn">✕ Clear</button>
       </div>
       <input type="file" id="lrcFileInput" accept=".lrc,.elrc,.txt" style="display:none;" />
 
-      <!-- Track metadata inputs -->
-      <input type="text" class="input-control" id="trackInput" placeholder="Song Title" />
+      <input type="text" class="input-control" id="trackInput" placeholder="Song Title" style="margin-bottom: var(--space-md);" />
       <input type="text" class="input-control" id="artistInput" placeholder="Artist Name" />
 
-      <!-- Romanize toggle -->
-      <div class="settings-group" style="margin-bottom: 0.8rem;">
-        <label>Script Conversion (Romanize)</label>
-        <div style="display:flex; gap:0.6rem; align-items:center;">
-          <button class="style-btn" id="romanizeBtn" style="flex:1; text-align:center;">
-            🔤 Romanize: <span id="romanizeStatus">Off</span>
-          </button>
-        </div>
-        <div style="font-size:0.72rem; opacity:0.6; margin-top:0.4rem;">
-          Converts Hindi, Tamil, Telugu, Arabic, Chinese & more to Latin letters.
-        </div>
-      </div>
+      <!-- SECTION: Lyrics Search -->
+      <div class="settings-section-label" style="margin-top: var(--space-xl);">Lyrics Search</div>
 
-      <!-- Musixmatch API key (optional - for additional source) -->
-      <input type="text" class="input-control" id="musixmatchKey" placeholder="Musixmatch API key (optional - for extra source)" />
-      <div style="font-size:0.72rem; opacity:0.6; margin-bottom:1rem;">
-        Lyrics are fetched automatically from LRCLIB, Vagalume & Musixmatch. Add your Musixmatch API key for better coverage.
-      </div>
+      <button class="btn-action" id="searchBtn">Search Online Lyrics</button>
+      <button class="btn-action btn-elrc" id="searchElrcBtn">Search Google for .ELRC</button>
 
-      <!-- Search lyrics online -->
-      <button class="btn-action" id="searchBtn">🔍 Search Online Lyrics</button>
-      <button class="btn-action btn-elrc" id="searchElrcBtn">🔍 Search Google for .ELRC</button>
-
-      <!-- Results -->
       <div class="search-results" id="searchResults"></div>
       <div class="status-text" id="statusText">Choose an audio file to start.</div>
 
+      <!-- SECTION: Data -->
+      <div class="settings-section-label" style="margin-top: var(--space-xl);">Data</div>
       <div class="io-row">
-        <button class="io-btn" id="exportSettingsBtn">⬇ Export Settings</button>
-        <button class="io-btn" id="importSettingsBtn">⬆ Import Settings</button>
+        <button class="io-btn" id="exportSettingsBtn">Export Settings</button>
+        <button class="io-btn" id="importSettingsBtn">Import Settings</button>
       </div>
       <input type="file" id="importSettingsInput" accept=".json,application/json" style="display:none;" />
     </div>
@@ -1304,6 +1467,26 @@
       </div>
     </div>
 
+    <!-- Online Streaming Card -->
+    <div class="modal-card" id="streamCard" style="display: none;">
+      <button class="modal-close" id="closeStreamBtn">✕</button>
+      <div class="modal-title">🌐 Stream Online Music</div>
+
+      <div class="stream-tabs">
+        <button class="stream-tab active" id="tabItunes">🍎 iTunes Previews</button>
+        <button class="stream-tab" id="tabJamendo">🎸 Jamendo (Full)</button>
+      </div>
+
+      <div class="stream-search-bar">
+        <input type="text" id="streamSearchInput" placeholder="Search songs, artists…" autocomplete="off" />
+        <button id="streamSearchBtn">Search</button>
+      </div>
+
+      <div class="stream-results" id="streamResults">
+        <div class="stream-loading">Search for a song to start streaming 🎵</div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -1364,11 +1547,20 @@
     const displayTitle  = document.getElementById('displayTitle');
     const displayArtist = document.getElementById('displayArtist');
 
+    // Streaming panel refs
+    const streamBtn         = document.getElementById('streamBtn');
+    const streamCard        = document.getElementById('streamCard');
+    const closeStreamBtn    = document.getElementById('closeStreamBtn');
+    const streamSearchInput = document.getElementById('streamSearchInput');
+    const streamSearchBtn   = document.getElementById('streamSearchBtn');
+    const streamResults     = document.getElementById('streamResults');
+    const tabItunes         = document.getElementById('tabItunes');
+    const tabJamendo        = document.getElementById('tabJamendo');
+
     // Dropdown selects for settings
     const textAlignSelect = document.getElementById('textAlignSelect');
     const themeSelect = document.getElementById('themeSelect');
     const lyricStyleSelect = document.getElementById('lyricStyleSelect');
-    const lyricFontSelect = document.getElementById('lyricFontSelect');
 
     // ============================================
     // SVG STRINGS (declared early so event listeners can use them)
@@ -1451,12 +1643,15 @@
     function gsapAnimateEntrance() {
       if (typeof gsap === 'undefined') return;
       const lines = display.querySelectorAll('.line');
-      gsap.set(lines, { opacity: 0, y: 16, scale: 0.92 });
+      // Start invisible + shifted, then let CSS classes drive the final opacity/scale
+      // (do NOT hardcode opacity: 0.25 — that overwrites the CSS and leaves lines stuck dim)
+      gsap.set(lines, { opacity: 0, y: 20 });
       gsap.to(lines, {
-        opacity: 0.25, y: 0, scale: 0.92,
-        duration: 0.45,
-        stagger: 0.022,
+        opacity: 1, y: 0,
+        duration: 0.5,
+        stagger: 0.028,
         ease: 'power3.out',
+        clearProps: 'opacity,transform', // hand opacity back to CSS after animation
         onStart: function() { lines.forEach(l => l.classList.add('entered')); }
       });
     }
@@ -1486,7 +1681,176 @@
     }
 
     // ============================================
-    // SERVICE WORKER
+    // ONLINE STREAMING — iTunes & Jamendo
+    // ============================================
+    let streamActiveTab = 'itunes';   // 'itunes' | 'jamendo'
+    let streamCurrentUrl = null;      // URL currently streamed from online source
+    let streamIsOnline = false;       // true while playing an online stream
+
+    // Show/hide streaming card
+    function openStreamCard() {
+      closeAllCards();
+      modalOverlay.classList.add('open');
+      streamCard.style.display = 'block';
+      gsapModalIn(streamCard);
+      streamSearchInput.focus();
+    }
+
+    function closeAllCards() {
+      [settingsCard, eqCard, playlistCard, streamCard].forEach(c => {
+        if (c) c.style.display = 'none';
+      });
+      modalOverlay.classList.remove('open');
+    }
+
+    // Switch active stream tab
+    function switchStreamTab(tab) {
+      streamActiveTab = tab;
+      tabItunes.classList.toggle('active', tab === 'itunes');
+      tabJamendo.classList.toggle('active', tab === 'jamendo');
+      // Re-run search if there's a query
+      const q = streamSearchInput.value.trim();
+      if (q) runStreamSearch(q);
+    }
+
+    // iTunes Search API — 30-second song previews
+    async function searchItunes(query) {
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=20`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('iTunes error');
+      const data = await res.json();
+      return (data.results || [])
+        .filter(item => item.previewUrl)
+        .map(item => ({
+          title:     item.trackName,
+          artist:    item.artistName,
+          album:     item.collectionName,
+          art:       item.artworkUrl100
+                       ? item.artworkUrl100.replace('100x100bb', '300x300bb')
+                       : null,
+          streamUrl: item.previewUrl,
+          duration:  30,
+          source:    'itunes',
+          badge:     'PREVIEW 30s',
+          badgeClass: 'badge-preview'
+        }));
+    }
+
+    // Jamendo API — full royalty-free tracks (requires free client_id; we use demo id)
+    // Free public API — no key needed for basic public tracks endpoint
+    async function searchJamendo(query) {
+      const url = `https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=20&search=${encodeURIComponent(query)}&audioformat=mp32&imagesize=200`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Jamendo error');
+      const data = await res.json();
+      return (data.results || [])
+        .filter(item => item.audio)
+        .map(item => ({
+          title:     item.name,
+          artist:    item.artist_name,
+          album:     item.album_name || '',
+          art:       item.image || null,
+          streamUrl: item.audio,
+          duration:  item.duration,
+          source:    'jamendo',
+          badge:     'FULL TRACK',
+          badgeClass: 'badge-full'
+        }));
+    }
+
+    // Render stream results list
+    function renderStreamResults(items) {
+      if (!items.length) {
+        streamResults.innerHTML = '<div class="stream-loading">No results found. Try another search.</div>';
+        return;
+      }
+      streamResults.innerHTML = '';
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'stream-result-item';
+        div.dataset.url = item.streamUrl;
+
+        const artEl = item.art
+          ? `<img class="stream-result-art" src="${item.art}" alt="" onerror="this.textContent='🎵';this.style.objectFit='initial';" />`
+          : `<div class="stream-result-art">🎵</div>`;
+
+        div.innerHTML = `
+          ${artEl}
+          <div class="stream-result-info">
+            <div class="stream-result-title">${escapeHtml(item.title)}</div>
+            <div class="stream-result-artist">${escapeHtml(item.artist)}${item.album ? ' · ' + escapeHtml(item.album) : ''}</div>
+          </div>
+          <span class="stream-result-badge ${item.badgeClass}">${item.badge}</span>
+          <span class="stream-play-icon">▶</span>`;
+
+        div.addEventListener('click', () => playStreamItem(item, div));
+        streamResults.appendChild(div);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Play a streaming result
+    function playStreamItem(item, el) {
+      // Mark playing
+      document.querySelectorAll('.stream-result-item').forEach(d => d.classList.remove('playing'));
+      el.classList.add('playing');
+
+      streamCurrentUrl = item.streamUrl;
+      streamIsOnline = true;
+
+      // Update player info
+      displayTitle.textContent  = item.title;
+      displayArtist.textContent = item.artist + (item.source === 'itunes' ? ' (Preview)' : ' · Jamendo');
+
+      // Set album art
+      if (item.art) {
+        setAlbumArt(item.art);
+        currentDynamicImg = item.art;
+        if (currentTheme === 'dynamic') applyTheme('dynamic');
+      } else {
+        clearAlbumArt();
+      }
+
+      // Load & play
+      audioPlayer.src = item.streamUrl;
+      audioPlayer.load();
+      audioPlayer.play().then(() => {
+        // play/pause events will update the button automatically
+        streamBtn.classList.add('has-stream');
+        // Auto-fetch lyrics for online tracks
+        parsedLyrics = [];
+        hasCustomLyricsLoaded = false;
+        fetchOnlyLyrics(item.title, item.artist);
+        statusText.textContent = `▶ Streaming: ${item.title}`;
+      }).catch(() => {
+        statusText.textContent = '⚠️ Could not play this track. Try another.';
+      });
+    }
+
+    // Run search on selected tab
+    async function runStreamSearch(query) {
+      streamResults.innerHTML = '<div class="stream-loading">Searching… 🔍</div>';
+      try {
+        const results = streamActiveTab === 'itunes'
+          ? await searchItunes(query)
+          : await searchJamendo(query);
+        renderStreamResults(results);
+      } catch (err) {
+        streamResults.innerHTML = `<div class="stream-loading">⚠️ Search failed. Check connection.</div>`;
+        console.warn('Stream search error:', err);
+      }
+    }
+
+    let streamDebounceTimer = null;
+    function debouncedStreamSearch(query) {
+      clearTimeout(streamDebounceTimer);
+      if (!query || query.length < 2) return;
+      streamDebounceTimer = setTimeout(() => runStreamSearch(query), 600);
+    }
+
     // ============================================
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -2651,8 +3015,6 @@
     // LYRICS FONT
     // ============================================
     function applyLyricFont(fontKey) {
-      lyricFontSelect.value = fontKey;
-
       let fontFamily = '';
       switch (fontKey) {
         case 'anton': fontFamily = "'Anton', sans-serif"; break;
@@ -2732,6 +3094,7 @@
       settingsCard.style.display = 'block';
       eqCard.style.display = 'none';
       playlistCard.style.display = 'none';
+      streamCard.style.display = 'none';
       modalOverlay.classList.add('open');
       gsapModalIn(settingsCard);
     });
@@ -2740,6 +3103,7 @@
       settingsCard.style.display = 'none';
       eqCard.style.display = 'block';
       playlistCard.style.display = 'none';
+      streamCard.style.display = 'none';
       modalOverlay.classList.add('open');
       gsapModalIn(eqCard);
     });
@@ -2748,6 +3112,7 @@
       settingsCard.style.display = 'none';
       eqCard.style.display = 'none';
       playlistCard.style.display = 'block';
+      streamCard.style.display = 'none';
       modalOverlay.classList.add('open');
       gsapModalIn(playlistCard);
     });
@@ -2756,8 +3121,29 @@
     closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     closeEqBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     closePlaylistBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
+    closeStreamBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
     modalOverlay.addEventListener('click', e => {
       if (e.target === modalOverlay) modalOverlay.classList.remove('open');
+    });
+
+    // Stream button — open streaming panel
+    streamBtn.addEventListener('click', () => openStreamCard());
+
+    // Stream tab switching
+    tabItunes.addEventListener('click', () => switchStreamTab('itunes'));
+    tabJamendo.addEventListener('click', () => switchStreamTab('jamendo'));
+
+    // Stream search
+    streamSearchBtn.addEventListener('click', () => {
+      const q = streamSearchInput.value.trim();
+      if (q) runStreamSearch(q);
+    });
+    streamSearchInput.addEventListener('input', () => debouncedStreamSearch(streamSearchInput.value.trim()));
+    streamSearchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const q = streamSearchInput.value.trim();
+        if (q) runStreamSearch(q);
+      }
     });
 
     // Lyrics panel: scroll + click
@@ -3029,16 +3415,6 @@
     textAlignSelect.addEventListener('change', () => applyTextAlign(textAlignSelect.value));
     themeSelect.addEventListener('change', () => applyTheme(themeSelect.value));
     lyricStyleSelect.addEventListener('change', () => applyLyricStyle(lyricStyleSelect.value));
-    lyricFontSelect.addEventListener('change', () => applyLyricFont(lyricFontSelect.value));
-
-    // ============================================
-    // MUSIXMATCH API KEY (OPTIONAL)
-    // ============================================
-    const musixmatchKeyInput = document.getElementById('musixmatchKey');
-    musixmatchKeyInput.value = localStorage.getItem('musixmatchKey') || '';
-    musixmatchKeyInput.addEventListener('input', e => {
-      localStorage.setItem('musixmatchKey', e.target.value.trim());
-    });
 
     // ============================================
     // PLAYLIST
@@ -3180,6 +3556,8 @@
     // AUTO-ADVANCE: play next track when current ends
     // ============================================
     audioPlayer.addEventListener('ended', () => {
+      // Clear online-stream badge when track finishes
+      streamIsOnline = false;
       if (autoAdvance && playlist.length > 1) {
         let next = playlistIndex + 1;
         if (next >= playlist.length) next = 0;
