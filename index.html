@@ -1294,7 +1294,7 @@
     </div>
   </div>
 
-  <audio id="audioPlayer"></audio>
+  <audio id="audioPlayer" preload="auto"></audio>
 
   <!-- ============================================
        MODAL OVERLAY
@@ -1741,9 +1741,14 @@
     async function searchJamendo(query) {
       const url = `https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=20&search=${encodeURIComponent(query)}&audioformat=mp32&imagesize=200`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Jamendo error');
-      const data = await res.json();
-      return (data.results || [])
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error('Jamendo returned invalid JSON');
+      }
+      if (!data.results || !Array.isArray(data.results)) return [];
+      return data.results
         .filter(item => item.audio)
         .map(item => ({
           title:     item.name,
@@ -1817,17 +1822,16 @@
       // Load & play
       audioPlayer.src = item.streamUrl;
       audioPlayer.load();
-      audioPlayer.play().then(() => {
-        // play/pause events will update the button automatically
-        streamBtn.classList.add('has-stream');
-        // Auto-fetch lyrics for online tracks
-        parsedLyrics = [];
-        hasCustomLyricsLoaded = false;
-        fetchOnlyLyrics(item.title, item.artist);
-        statusText.textContent = `▶ Streaming: ${item.title}`;
-      }).catch(() => {
-        statusText.textContent = '⚠️ Could not play this track. Try another.';
+      audioPlayer.play().catch(err => {
+        console.error('iTunes play error:', err);
+        statusText.textContent = '⚠️ Could not play (CORS or audio error). Try Jamendo.';
       });
+      // Update UI regardless of play promise resolution
+      streamBtn.classList.add('has-stream');
+      parsedLyrics = [];
+      hasCustomLyricsLoaded = false;
+      fetchOnlyLyrics(item.title, item.artist);
+      statusText.textContent = `▶ Streaming: ${item.title}`;
     }
 
     // Run search on selected tab
@@ -1839,7 +1843,8 @@
           : await searchJamendo(query);
         renderStreamResults(results);
       } catch (err) {
-        streamResults.innerHTML = `<div class="stream-loading">⚠️ Search failed. Check connection.</div>`;
+        // Show more detailed error for debugging
+        streamResults.innerHTML = `<div class="stream-loading">⚠️ Search error: ${err.message}</div>`;
         console.warn('Stream search error:', err);
       }
     }
