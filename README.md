@@ -1,4 +1,7 @@
 # Lyrics
 add your local song and see
-
-lyrics-apple.vercel.app
+<html>
+  <body>
+ <a href="lyrics-apple.vercel.app"> </a>
+  </body>
+</html>
