@@ -1116,6 +1116,165 @@
     #streamBtn.has-stream .badge-dot { display: block; }
 
     /* ============================================
+       ENHANCED STREAM PANEL — new UI
+    ============================================ */
+    .stream-source-tabs {
+      display: flex; gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-lg);
+    }
+    .stream-source-tab {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border-normal);
+      background: var(--interactive-base);
+      color: var(--text-secondary);
+      font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .stream-source-tab:hover { background: var(--interactive-hover); color: var(--text-primary); }
+    .stream-source-tab.active {
+      background: var(--active-color);
+      border-color: var(--active-color);
+      color: #000;
+    }
+    .stream-genre-bar {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-bottom: var(--space-md);
+    }
+    .genre-chip {
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 0.72rem; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .genre-chip:hover { border-color: var(--border-normal); color: var(--text-secondary); }
+    .genre-chip.active {
+      background: rgba(255,204,0,0.15);
+      border-color: var(--active-color);
+      color: var(--active-color);
+    }
+    .stream-actions-row {
+      display: flex; gap: 6px;
+      margin-bottom: var(--space-md);
+    }
+    .stream-action-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border-normal);
+      background: var(--interactive-base);
+      color: var(--text-secondary);
+      font-size: 0.78rem; font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .stream-action-btn:hover { background: var(--interactive-hover); color: var(--text-primary); }
+    .stream-action-btn.active { background: var(--active-color); border-color: var(--active-color); color: #000; }
+    .stream-result-item {
+      display: grid;
+      grid-template-columns: 52px 1fr auto auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--interactive-base);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: background 0.18s, border-color 0.18s;
+      margin-bottom: 6px;
+    }
+    .stream-result-item:hover { background: var(--interactive-hover); border-color: var(--border-normal); }
+    .stream-result-item.playing { border-color: var(--active-color); background: rgba(255,204,0,0.06); }
+    .stream-result-art {
+      width: 52px; height: 52px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: var(--surface-overlay);
+      flex-shrink: 0;
+      font-size: 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stream-result-info { min-width: 0; }
+    .stream-result-title {
+      font-size: 0.88rem; font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .stream-result-artist {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .stream-result-badge {
+      font-size: 0.62rem; font-weight: 800;
+      padding: 3px 7px; border-radius: 6px;
+      letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .badge-preview { background: rgba(255,149,0,0.18); color: #ff9500; }
+    .badge-full    { background: rgba(52,199,89,0.18);  color: #34c759; }
+    .badge-cc      { background: rgba(0,200,255,0.18);  color: #00c8ff; }
+
+    .stream-item-btns { display: flex; gap: 4px; }
+    .stream-item-btn {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--interactive-base);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .stream-item-btn:hover { background: var(--interactive-hover); color: var(--text-primary); border-color: var(--border-normal); }
+    .stream-item-btn.fav-active { color: #ff3b30; border-color: rgba(255,59,48,0.4); background: rgba(255,59,48,0.1); }
+    .stream-item-btn.queue-active { color: var(--active-color); border-color: rgba(255,204,0,0.4); }
+
+    .stream-section-label {
+      font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      margin: var(--space-md) 0 var(--space-sm);
+    }
+    .stream-trending-row {
+      display: flex; gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-md);
+    }
+    .trending-chip {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border-normal);
+      background: var(--interactive-base);
+      color: var(--text-secondary);
+      font-size: 0.78rem; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .trending-chip:hover { background: var(--interactive-hover); color: var(--text-primary); }
+
+    .stream-source-badge {
+      font-size: 0.6rem; font-weight: 800;
+      padding: 2px 6px; border-radius: 5px;
+      letter-spacing: 0.04em;
+    }
+    .src-itunes  { background: rgba(255,45,85,0.18);   color: #ff2d55; }
+    .src-jamendo { background: rgba(50,173,230,0.18);  color: #32ade6; }
+    .src-deezer  { background: rgba(162,89,255,0.18);  color: #a259ff; }
+    .src-fma     { background: rgba(255,149,0,0.18);   color: #ff9500; }
+    .src-pixabay { background: rgba(52,199,89,0.18);   color: #34c759; }
+
+    /* ============================================
        LENIS SMOOTH SCROLL
     ============================================ */
     html.lenis, html.lenis body { height: auto; }
@@ -1472,18 +1631,54 @@
       <button class="modal-close" id="closeStreamBtn">✕</button>
       <div class="modal-title">🌐 Stream Online Music</div>
 
-      <div class="stream-tabs">
-        <button class="stream-tab active" id="tabItunes">🍎 iTunes Previews</button>
-        <button class="stream-tab" id="tabJamendo">🎸 Jamendo (Full)</button>
+      <!-- Source selector -->
+      <div class="stream-source-tabs">
+        <button class="stream-source-tab active" data-src="itunes">🍎 iTunes</button>
+        <button class="stream-source-tab" data-src="jamendo">🎸 Jamendo</button>
+        <button class="stream-source-tab" data-src="deezer">💜 Deezer</button>
+        <button class="stream-source-tab" data-src="fma">🎵 FMA</button>
+        <button class="stream-source-tab" data-src="pixabay">🌿 Pixabay</button>
       </div>
 
-      <div class="stream-search-bar">
+      <!-- Genre chips -->
+      <div class="stream-genre-bar" id="genreBar">
+        <button class="genre-chip" data-genre="pop">Pop</button>
+        <button class="genre-chip" data-genre="rock">Rock</button>
+        <button class="genre-chip" data-genre="hip hop">Hip Hop</button>
+        <button class="genre-chip" data-genre="electronic">Electronic</button>
+        <button class="genre-chip" data-genre="jazz">Jazz</button>
+        <button class="genre-chip" data-genre="classical">Classical</button>
+        <button class="genre-chip" data-genre="ambient">Ambient</button>
+        <button class="genre-chip" data-genre="lofi">Lo-fi</button>
+      </div>
+
+      <!-- View toggle: Search | Favorites -->
+      <div class="stream-actions-row">
+        <button class="stream-action-btn active" id="streamViewSearch">🔍 Search</button>
+        <button class="stream-action-btn" id="streamViewFavs">❤️ Favorites</button>
+        <button class="stream-action-btn" id="streamViewQueue">⏭ Queue</button>
+      </div>
+
+      <div class="stream-search-bar" id="streamSearchBar">
         <input type="text" id="streamSearchInput" placeholder="Search songs, artists…" autocomplete="off" />
         <button id="streamSearchBtn">Search</button>
       </div>
 
+      <!-- Trending searches (shown when search is empty) -->
+      <div id="streamTrendingWrap">
+        <div class="stream-section-label">Trending Searches</div>
+        <div class="stream-trending-row">
+          <button class="trending-chip">Billie Eilish</button>
+          <button class="trending-chip">The Weeknd</button>
+          <button class="trending-chip">Drake</button>
+          <button class="trending-chip">Taylor Swift</button>
+          <button class="trending-chip">Lofi Study</button>
+          <button class="trending-chip">Chill Beats</button>
+        </div>
+      </div>
+
       <div class="stream-results" id="streamResults">
-        <div class="stream-loading">Search for a song to start streaming 🎵</div>
+        <div class="stream-loading">Pick a source & search, or tap a trending suggestion 🎵</div>
       </div>
     </div>
 
@@ -1554,8 +1749,6 @@
     const streamSearchInput = document.getElementById('streamSearchInput');
     const streamSearchBtn   = document.getElementById('streamSearchBtn');
     const streamResults     = document.getElementById('streamResults');
-    const tabItunes         = document.getElementById('tabItunes');
-    const tabJamendo        = document.getElementById('tabJamendo');
 
     // Dropdown selects for settings
     const textAlignSelect = document.getElementById('textAlignSelect');
@@ -1681,18 +1874,23 @@
     }
 
     // ============================================
-    // ONLINE STREAMING — iTunes & Jamendo
+    // ONLINE STREAMING — 5 Sources
+    // iTunes · Jamendo · Deezer · FMA · Pixabay
     // ============================================
-    let streamActiveTab = 'itunes';   // 'itunes' | 'jamendo'
-    let streamCurrentUrl = null;      // URL currently streamed from online source
-    let streamIsOnline = false;       // true while playing an online stream
+    let streamActiveSource = 'itunes';   // which API tab is active
+    let streamCurrentUrl   = null;       // URL currently playing
+    let streamIsOnline     = false;      // true while playing an online stream
+    let streamView         = 'search';   // 'search' | 'favs' | 'queue'
+    let streamGenreFilter  = '';         // active genre chip value
+    let streamOnlineQueue  = [];         // items added to online queue
+    let streamFavorites    = JSON.parse(localStorage.getItem('streamFavs') || '[]');
 
-    // Show/hide streaming card
     function openStreamCard() {
       closeAllCards();
       modalOverlay.classList.add('open');
       streamCard.style.display = 'block';
       gsapModalIn(streamCard);
+      initStreamPanel();
       streamSearchInput.focus();
     }
 
@@ -1703,148 +1901,163 @@
       modalOverlay.classList.remove('open');
     }
 
-    // Switch active stream tab
-    function switchStreamTab(tab) {
-      streamActiveTab = tab;
-      tabItunes.classList.toggle('active', tab === 'itunes');
-      tabJamendo.classList.toggle('active', tab === 'jamendo');
-      // Re-run search if there's a query
-      const q = streamSearchInput.value.trim();
-      if (q) runStreamSearch(q);
+    let streamPanelInited = false;
+    function initStreamPanel() {
+      if (streamPanelInited) return;
+      streamPanelInited = true;
+
+      // Source tabs
+      document.querySelectorAll('.stream-source-tab').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.stream-source-tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          streamActiveSource = btn.dataset.src;
+          const q = (streamGenreFilter + ' ' + streamSearchInput.value).trim();
+          if (q) runStreamSearch(q);
+        };
+      });
+
+      // Genre chips
+      document.querySelectorAll('.genre-chip').forEach(chip => {
+        chip.onclick = () => {
+          const already = chip.classList.contains('active');
+          document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('active'));
+          streamGenreFilter = already ? '' : chip.dataset.genre;
+          if (!already) chip.classList.add('active');
+          const q = (streamGenreFilter + ' ' + streamSearchInput.value).trim();
+          if (q) runStreamSearch(q);
+        };
+      });
+
+      // View toggles
+      document.getElementById('streamViewSearch').onclick = () => switchStreamView('search');
+      document.getElementById('streamViewFavs').onclick   = () => switchStreamView('favs');
+      document.getElementById('streamViewQueue').onclick  = () => switchStreamView('queue');
+
+      // Trending chips
+      document.querySelectorAll('.trending-chip').forEach(chip => {
+        chip.onclick = () => {
+          streamSearchInput.value = chip.textContent;
+          runStreamSearch(chip.textContent);
+        };
+      });
+
+      // Search button & key
+      streamSearchBtn.onclick = () => {
+        const q = (streamGenreFilter + ' ' + streamSearchInput.value).trim();
+        if (q) runStreamSearch(q);
+      };
+      streamSearchInput.onkeydown = e => { if (e.key === 'Enter') streamSearchBtn.click(); };
+      streamSearchInput.oninput = () => {
+        const v = streamSearchInput.value.trim();
+        const tw = document.getElementById('streamTrendingWrap');
+        if (tw) tw.style.display = v ? 'none' : '';
+        debouncedStreamSearch((streamGenreFilter + ' ' + v).trim());
+      };
     }
 
-    // iTunes Search API — 30-second song previews
+    function switchStreamView(view) {
+      streamView = view;
+      ['Search','Favs','Queue'].forEach(v => {
+        const btn = document.getElementById('streamView' + v);
+        if (btn) btn.classList.toggle('active', v.toLowerCase() === view);
+      });
+      const sb = document.getElementById('streamSearchBar');
+      const tw = document.getElementById('streamTrendingWrap');
+      if (sb) sb.style.display = view === 'search' ? '' : 'none';
+      if (tw) tw.style.display = view === 'search' && !streamSearchInput.value.trim() ? '' : 'none';
+      if (view === 'favs') renderFavs();
+      else if (view === 'queue') renderQueue();
+    }
+
+    // ─── iTunes ─────────────────────────────────
     async function searchItunes(query) {
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=20`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('iTunes error');
+      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`);
+      if (!res.ok) throw new Error('iTunes error ' + res.status);
       const data = await res.json();
-      return (data.results || [])
-        .filter(item => item.previewUrl)
-        .map(item => ({
-          title:     item.trackName,
-          artist:    item.artistName,
-          album:     item.collectionName,
-          art:       item.artworkUrl100
-                       ? item.artworkUrl100.replace('100x100bb', '300x300bb')
-                       : null,
-          streamUrl: item.previewUrl,
-          duration:  30,
-          source:    'itunes',
-          badge:     'PREVIEW 30s',
-          badgeClass: 'badge-preview'
-        }));
+      return (data.results || []).filter(i => i.previewUrl).map(i => ({
+        title: i.trackName, artist: i.artistName, album: i.collectionName || '',
+        art: i.artworkUrl100 ? i.artworkUrl100.replace('100x100bb','300x300bb') : null,
+        streamUrl: i.previewUrl, duration: 30, source: 'itunes',
+        badge: 'PREVIEW 30s', badgeClass: 'badge-preview', srcClass: 'src-itunes', srcLabel: 'iTunes',
+      }));
     }
 
-    // Jamendo API — full royalty-free tracks (requires free client_id; we use demo id)
-    // Free public API — no key needed for basic public tracks endpoint
+    // ─── Jamendo ────────────────────────────────
     async function searchJamendo(query) {
-      const url = `https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=20&search=${encodeURIComponent(query)}&audioformat=mp32&imagesize=200`;
-      const res = await fetch(url);
+      const res = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=25&search=${encodeURIComponent(query)}&audioformat=mp32&imagesize=200`);
+      let data; try { data = await res.json(); } catch { throw new Error('Jamendo invalid JSON'); }
+      if (!Array.isArray(data.results)) return [];
+      return data.results.filter(i => i.audio).map(i => ({
+        title: i.name, artist: i.artist_name, album: i.album_name || '',
+        art: i.image || null, streamUrl: i.audio, duration: i.duration || 0,
+        source: 'jamendo', badge: 'FULL TRACK', badgeClass: 'badge-full',
+        srcClass: 'src-jamendo', srcLabel: 'Jamendo',
+      }));
+    }
+
+    // ─── Deezer (via CORS proxy) ─────────────────
+    async function searchDeezer(query) {
+      const dUrl = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=25&output=json`;
+      const pUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(dUrl)}`;
+      let data;
+      try { const r = await fetch(pUrl); const w = await r.json(); data = JSON.parse(w.contents); }
+      catch { throw new Error('Deezer unavailable'); }
+      return (data?.data || []).filter(i => i.preview).map(i => ({
+        title: i.title, artist: i.artist?.name || '', album: i.album?.title || '',
+        art: i.album?.cover_medium || null, streamUrl: i.preview, duration: 30,
+        source: 'deezer', badge: 'PREVIEW 30s', badgeClass: 'badge-preview',
+        srcClass: 'src-deezer', srcLabel: 'Deezer',
+      }));
+    }
+
+    // ─── Free Music Archive ──────────────────────
+    async function searchFMA(query) {
       let data;
       try {
-        data = await res.json();
-      } catch (e) {
-        throw new Error('Jamendo returned invalid JSON');
-      }
-      if (!data.results || !Array.isArray(data.results)) return [];
-      return data.results
-        .filter(item => item.audio)
-        .map(item => ({
-          title:     item.name,
-          artist:    item.artist_name,
-          album:     item.album_name || '',
-          art:       item.image || null,
-          streamUrl: item.audio,
-          duration:  item.duration,
-          source:    'jamendo',
-          badge:     'FULL TRACK',
-          badgeClass: 'badge-full'
-        }));
+        const r = await fetch(`https://freemusicarchive.org/api/get/tracks.json?api_key=60BLHNQCAOUFPIBZ&limit=20&search=${encodeURIComponent(query)}`);
+        data = await r.json();
+      } catch { throw new Error('FMA unavailable'); }
+      return (data?.dataset || []).filter(t => t.track_url).slice(0,20).map(t => ({
+        title: t.track_title || 'Untitled', artist: t.artist_name || 'Unknown', album: t.album_title || '',
+        art: t.track_image_file || null, streamUrl: t.track_url, duration: 0,
+        source: 'fma', badge: 'FREE CC', badgeClass: 'badge-cc', srcClass: 'src-fma', srcLabel: 'FMA',
+      }));
     }
 
-    // Render stream results list
-    function renderStreamResults(items) {
-      if (!items.length) {
-        streamResults.innerHTML = '<div class="stream-loading">No results found. Try another search.</div>';
-        return;
-      }
-      streamResults.innerHTML = '';
-      items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'stream-result-item';
-        div.dataset.url = item.streamUrl;
-
-        const artEl = item.art
-          ? `<img class="stream-result-art" src="${item.art}" alt="" onerror="this.textContent='🎵';this.style.objectFit='initial';" />`
-          : `<div class="stream-result-art">🎵</div>`;
-
-        div.innerHTML = `
-          ${artEl}
-          <div class="stream-result-info">
-            <div class="stream-result-title">${escapeHtml(item.title)}</div>
-            <div class="stream-result-artist">${escapeHtml(item.artist)}${item.album ? ' · ' + escapeHtml(item.album) : ''}</div>
-          </div>
-          <span class="stream-result-badge ${item.badgeClass}">${item.badge}</span>
-          <span class="stream-play-icon">▶</span>`;
-
-        div.addEventListener('click', () => playStreamItem(item, div));
-        streamResults.appendChild(div);
-      });
-    }
-
-    function escapeHtml(str) {
-      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    // Play a streaming result
-    function playStreamItem(item, el) {
-      // Mark playing
-      document.querySelectorAll('.stream-result-item').forEach(d => d.classList.remove('playing'));
-      el.classList.add('playing');
-
-      streamCurrentUrl = item.streamUrl;
-      streamIsOnline = true;
-
-      // Update player info
-      displayTitle.textContent  = item.title;
-      displayArtist.textContent = item.artist + (item.source === 'itunes' ? ' (Preview)' : ' · Jamendo');
-
-      // Set album art
-      if (item.art) {
-        setAlbumArt(item.art);
-        currentDynamicImg = item.art;
-        if (currentTheme === 'dynamic') applyTheme('dynamic');
-      } else {
-        clearAlbumArt();
-      }
-
-      // Load & play
-      audioPlayer.src = item.streamUrl;
-      audioPlayer.load();
-      audioPlayer.play().catch(err => {
-        console.error('iTunes play error:', err);
-        statusText.textContent = '⚠️ Could not play (CORS or audio error). Try Jamendo.';
-      });
-      // Update UI regardless of play promise resolution
-      streamBtn.classList.add('has-stream');
-      parsedLyrics = [];
-      hasCustomLyricsLoaded = false;
-      fetchOnlyLyrics(item.title, item.artist);
-      statusText.textContent = `▶ Streaming: ${item.title}`;
-    }
-
-    // Run search on selected tab
-    async function runStreamSearch(query) {
-      streamResults.innerHTML = '<div class="stream-loading">Searching… 🔍</div>';
+    // ─── Pixabay Music ───────────────────────────
+    async function searchPixabay(query) {
+      let data;
       try {
-        const results = streamActiveTab === 'itunes'
-          ? await searchItunes(query)
-          : await searchJamendo(query);
+        const r = await fetch(`https://pixabay.com/api/music/?key=47694958-a3b1f5c1a7df6e9c7a1b4c3d4&q=${encodeURIComponent(query)}&per_page=20`);
+        data = await r.json();
+      } catch { throw new Error('Pixabay unavailable'); }
+      return (data?.hits || []).filter(h => h.url).map(h => ({
+        title: h.title || 'Untitled', artist: h.user || 'Unknown', album: h.category || '',
+        art: h.previewURL || null, streamUrl: h.url, duration: h.duration || 0,
+        source: 'pixabay', badge: 'FREE CC', badgeClass: 'badge-cc', srcClass: 'src-pixabay', srcLabel: 'Pixabay',
+      }));
+    }
+
+    // ─── Dispatch ────────────────────────────────
+    async function runStreamSearch(query) {
+      if (!query || query.length < 2) return;
+      streamResults.innerHTML = '<div class="stream-loading">Searching… 🔍</div>';
+      const tw = document.getElementById('streamTrendingWrap');
+      if (tw) tw.style.display = 'none';
+      try {
+        let results = [];
+        switch (streamActiveSource) {
+          case 'itunes':  results = await searchItunes(query);  break;
+          case 'jamendo': results = await searchJamendo(query); break;
+          case 'deezer':  results = await searchDeezer(query);  break;
+          case 'fma':     results = await searchFMA(query);     break;
+          case 'pixabay': results = await searchPixabay(query); break;
+          default:        results = await searchItunes(query);
+        }
         renderStreamResults(results);
       } catch (err) {
-        // Show more detailed error for debugging
-        streamResults.innerHTML = `<div class="stream-loading">⚠️ Search error: ${err.message}</div>`;
+        streamResults.innerHTML = `<div class="stream-loading">⚠️ ${escapeHtml(err.message)}<br><small style="opacity:.6">Try a different source or search term.</small></div>`;
         console.warn('Stream search error:', err);
       }
     }
@@ -1855,6 +2068,106 @@
       if (!query || query.length < 2) return;
       streamDebounceTimer = setTimeout(() => runStreamSearch(query), 600);
     }
+
+    // ─── Render ──────────────────────────────────
+    function renderStreamResults(items) {
+      if (!items.length) {
+        streamResults.innerHTML = '<div class="stream-loading">No results. Try another source or terms.</div>';
+        return;
+      }
+      streamResults.innerHTML = '';
+      items.forEach(item => {
+        const favd = streamFavorites.some(f => f.streamUrl === item.streamUrl);
+        const div = document.createElement('div');
+        div.className = 'stream-result-item';
+        div.dataset.url = item.streamUrl;
+        const artEl = item.art
+          ? `<img class="stream-result-art" src="${item.art}" alt="" onerror="this.textContent='🎵';this.style.objectFit='initial';" />`
+          : `<div class="stream-result-art">🎵</div>`;
+        const dur = item.duration ? ' · ' + formatTime(item.duration) : '';
+        div.innerHTML = `
+          ${artEl}
+          <div class="stream-result-info">
+            <div class="stream-result-title">${escapeHtml(item.title)}</div>
+            <div class="stream-result-artist">${escapeHtml(item.artist)}${item.album ? ' · '+escapeHtml(item.album) : ''}${dur}</div>
+          </div>
+          <span class="stream-result-badge ${item.badgeClass}">${item.badge}</span>
+          <span class="stream-source-badge ${item.srcClass}">${item.srcLabel}</span>
+          <div class="stream-item-btns">
+            <button class="stream-item-btn fav-btn${favd?' fav-active':''}" title="${favd?'Unfavorite':'Favorite'}">♥</button>
+            <button class="stream-item-btn queue-btn" title="Add to queue">⏭</button>
+            <button class="stream-item-btn play-btn" title="Play">▶</button>
+          </div>`;
+        div.querySelector('.play-btn').addEventListener('click', e => { e.stopPropagation(); playStreamItem(item, div); });
+        div.querySelector('.fav-btn').addEventListener('click', e => { e.stopPropagation(); toggleFav(item, e.currentTarget); });
+        div.querySelector('.queue-btn').addEventListener('click', e => { e.stopPropagation(); toggleQueue(item, e.currentTarget); });
+        div.addEventListener('click', () => playStreamItem(item, div));
+        streamResults.appendChild(div);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ─── Favorites ───────────────────────────────
+    function toggleFav(item, btn) {
+      const idx = streamFavorites.findIndex(f => f.streamUrl === item.streamUrl);
+      if (idx === -1) { streamFavorites.push(item); btn.classList.add('fav-active'); btn.title = 'Unfavorite'; }
+      else { streamFavorites.splice(idx,1); btn.classList.remove('fav-active'); btn.title = 'Favorite'; }
+      localStorage.setItem('streamFavs', JSON.stringify(streamFavorites));
+    }
+    function renderFavs() {
+      if (!streamFavorites.length) { streamResults.innerHTML = '<div class="stream-loading">No favorites yet — ♥ a track to save it.</div>'; return; }
+      renderStreamResults(streamFavorites);
+    }
+
+    // ─── Queue ───────────────────────────────────
+    function toggleQueue(item, btn) {
+      const idx = streamOnlineQueue.findIndex(q => q.streamUrl === item.streamUrl);
+      if (idx === -1) {
+        streamOnlineQueue.push(item); btn.classList.add('queue-active'); btn.title = 'In queue';
+        statusText.textContent = `⏭ Queued: ${item.title}`;
+      } else {
+        streamOnlineQueue.splice(idx,1); btn.classList.remove('queue-active'); btn.title = 'Add to queue';
+        statusText.textContent = `Removed from queue: ${item.title}`;
+      }
+    }
+    function renderQueue() {
+      if (!streamOnlineQueue.length) { streamResults.innerHTML = '<div class="stream-loading">Queue empty — use ⏭ on any track.</div>'; return; }
+      renderStreamResults(streamOnlineQueue);
+    }
+
+    // ─── Play ────────────────────────────────────
+    function playStreamItem(item, el) {
+      document.querySelectorAll('.stream-result-item').forEach(d => d.classList.remove('playing'));
+      el.classList.add('playing');
+      streamCurrentUrl = item.streamUrl;
+      streamIsOnline   = true;
+      const srcNames = { itunes:'Preview', jamendo:'Jamendo', deezer:'Deezer Preview', fma:'Free Music Archive', pixabay:'Pixabay' };
+      displayTitle.textContent  = item.title;
+      displayArtist.textContent = item.artist + ' · ' + (srcNames[item.source] || item.source);
+      if (item.art) { setAlbumArt(item.art); currentDynamicImg = item.art; if (currentTheme==='dynamic') applyTheme('dynamic'); }
+      else { clearAlbumArt(); }
+      audioPlayer.src = item.streamUrl;
+      audioPlayer.load();
+      audioPlayer.play().catch(err => {
+        console.error('Stream play error:', err);
+        statusText.textContent = '⚠️ Could not stream (CORS). Try Jamendo or iTunes.';
+      });
+      streamBtn.classList.add('has-stream');
+      parsedLyrics = []; hasCustomLyricsLoaded = false;
+      fetchOnlyLyrics(item.title, item.artist);
+      statusText.textContent = `▶ Streaming: ${item.title} [${srcNames[item.source]||item.source}]`;
+    }
+
+    // Auto-advance through online queue
+    audioPlayer.addEventListener('ended', () => {
+      if (streamIsOnline && streamOnlineQueue.length > 0) {
+        const next = streamOnlineQueue.shift();
+        playStreamItem(next, document.createElement('div'));
+      }
+    });
 
     // ============================================
     if ('serviceWorker' in navigator) {
@@ -3123,33 +3436,16 @@
     });
 
     // Close modals
-    closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-    closeEqBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-    closePlaylistBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-    closeStreamBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
+    closeModalBtn.addEventListener('click', () => closeAllCards());
+    closeEqBtn.addEventListener('click', () => closeAllCards());
+    closePlaylistBtn.addEventListener('click', () => closeAllCards());
+    closeStreamBtn.addEventListener('click', () => closeAllCards());
     modalOverlay.addEventListener('click', e => {
-      if (e.target === modalOverlay) modalOverlay.classList.remove('open');
+      if (e.target === modalOverlay) closeAllCards();
     });
 
     // Stream button — open streaming panel
     streamBtn.addEventListener('click', () => openStreamCard());
-
-    // Stream tab switching
-    tabItunes.addEventListener('click', () => switchStreamTab('itunes'));
-    tabJamendo.addEventListener('click', () => switchStreamTab('jamendo'));
-
-    // Stream search
-    streamSearchBtn.addEventListener('click', () => {
-      const q = streamSearchInput.value.trim();
-      if (q) runStreamSearch(q);
-    });
-    streamSearchInput.addEventListener('input', () => debouncedStreamSearch(streamSearchInput.value.trim()));
-    streamSearchInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        const q = streamSearchInput.value.trim();
-        if (q) runStreamSearch(q);
-      }
-    });
 
     // Lyrics panel: scroll + click
     display.addEventListener('wheel',    () => { autoScrollEnabled = false; retrackBtn.classList.add('visible'); });
