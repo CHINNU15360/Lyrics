@@ -1635,9 +1635,9 @@
       <div class="stream-source-tabs">
         <button class="stream-source-tab active" data-src="itunes">🍎 iTunes</button>
         <button class="stream-source-tab" data-src="jamendo">🎸 Jamendo</button>
-        <button class="stream-source-tab" data-src="deezer">💜 Deezer</button>
-        <button class="stream-source-tab" data-src="fma">🎵 FMA</button>
-        <button class="stream-source-tab" data-src="pixabay">🌿 Pixabay</button>
+        <button class="stream-source-tab" data-src="deezer">🏛 Archive</button>
+        <button class="stream-source-tab" data-src="fma">📻 Radio</button>
+        <button class="stream-source-tab" data-src="pixabay">🎛 Mixcloud</button>
       </div>
 
       <!-- Genre chips -->
@@ -1996,46 +1996,86 @@
       }));
     }
 
-    // ─── Deezer (via CORS proxy) ─────────────────
+    // ─── Internet Archive (replaces Deezer — full CC/public-domain music) ──
     async function searchDeezer(query) {
-      const dUrl = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=25&output=json`;
-      const pUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(dUrl)}`;
-      let data;
-      try { const r = await fetch(pUrl); const w = await r.json(); data = JSON.parse(w.contents); }
-      catch { throw new Error('Deezer unavailable'); }
-      return (data?.data || []).filter(i => i.preview).map(i => ({
-        title: i.title, artist: i.artist?.name || '', album: i.album?.title || '',
-        art: i.album?.cover_medium || null, streamUrl: i.preview, duration: 30,
-        source: 'deezer', badge: 'PREVIEW 30s', badgeClass: 'badge-preview',
-        srcClass: 'src-deezer', srcLabel: 'Deezer',
-      }));
+      const q = encodeURIComponent(query + ' subject:music');
+      const url = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(query)}+mediatype:audio+subject:music&fl[]=identifier,title,creator,year,format&sort[]=downloads+desc&rows=30&page=1&output=json`;
+      let docs;
+      try {
+        const r = await fetch(url);
+        const j = await r.json();
+        docs = j?.response?.docs || [];
+      } catch { throw new Error('Internet Archive unavailable'); }
+      // archive.org: resolve actual mp3 file via metadata for first batch
+      // Use the /details endpoint to build streamable URL
+      const results = [];
+      for (const d of docs.slice(0, 20)) {
+        const id = d.identifier;
+        try {
+          // Fetch file list for this item — look for first mp3
+          const mRes = await fetch(`https://archive.org/metadata/${id}/files`);
+          const mJson = await mRes.json();
+          const mp3 = (mJson.result || []).find(f => f.name && f.name.match(/\.(mp3|ogg|flac)$/i) && !f.name.includes('_64kb'));
+          if (mp3) {
+            results.push({
+              title: d.title || 'Untitled',
+              artist: (Array.isArray(d.creator) ? d.creator[0] : d.creator) || 'Unknown',
+              album: d.year ? String(d.year) : '',
+              art: `https://archive.org/services/img/${id}`,
+              streamUrl: `https://archive.org/download/${id}/${encodeURIComponent(mp3.name)}`,
+              duration: 0,
+              source: 'deezer', badge: 'FREE FULL', badgeClass: 'badge-full',
+              srcClass: 'src-deezer', srcLabel: 'Archive.org',
+            });
+          }
+        } catch { /* skip items that can't be resolved */ }
+        if (results.length >= 15) break;
+      }
+      if (!results.length) throw new Error('No streamable archive tracks found for that search.');
+      return results;
     }
 
-    // ─── Free Music Archive ──────────────────────
+    // ─── Radio-Browser (internet radio, replaces FMA) ──────────────────────
     async function searchFMA(query) {
-      let data;
+      const q = encodeURIComponent(query);
+      // Search by tag first, then fall back to name search
+      const tagUrl  = `https://de1.api.radio-browser.info/json/stations/bytag/${q}?limit=20&order=clickcount&reverse=true&hidebroken=true`;
+      const nameUrl = `https://de1.api.radio-browser.info/json/stations/search?name=${q}&limit=20&order=clickcount&reverse=true&hidebroken=true`;
+      let stations;
       try {
-        const r = await fetch(`https://freemusicarchive.org/api/get/tracks.json?api_key=60BLHNQCAOUFPIBZ&limit=20&search=${encodeURIComponent(query)}`);
-        data = await r.json();
-      } catch { throw new Error('FMA unavailable'); }
-      return (data?.dataset || []).filter(t => t.track_url).slice(0,20).map(t => ({
-        title: t.track_title || 'Untitled', artist: t.artist_name || 'Unknown', album: t.album_title || '',
-        art: t.track_image_file || null, streamUrl: t.track_url, duration: 0,
-        source: 'fma', badge: 'FREE CC', badgeClass: 'badge-cc', srcClass: 'src-fma', srcLabel: 'FMA',
+        const rt = await fetch(tagUrl); const tagData = await rt.json();
+        if (tagData.length) { stations = tagData; }
+        else { const rn = await fetch(nameUrl); stations = await rn.json(); }
+      } catch { throw new Error('RadioBrowser unavailable'); }
+      return (stations || []).filter(s => s.url_resolved).slice(0, 20).map(s => ({
+        title: s.name || 'Unknown Station',
+        artist: (s.country || s.language || 'Internet Radio'),
+        album: (s.tags || '').split(',')[0] || '',
+        art: s.favicon || null,
+        streamUrl: s.url_resolved,
+        duration: 0,
+        source: 'fma', badge: 'LIVE RADIO', badgeClass: 'badge-cc', srcClass: 'src-fma', srcLabel: 'Radio',
       }));
     }
 
-    // ─── Pixabay Music ───────────────────────────
+    // ─── Mixcloud (replaces Pixabay — DJ mixes, no key needed) ────────────
     async function searchPixabay(query) {
+      const q = encodeURIComponent(query);
+      const url = `https://api.mixcloud.com/search/?q=${q}&type=cloudcast&limit=20`;
       let data;
       try {
-        const r = await fetch(`https://pixabay.com/api/music/?key=47694958-a3b1f5c1a7df6e9c7a1b4c3d4&q=${encodeURIComponent(query)}&per_page=20`);
+        const r = await fetch(url);
         data = await r.json();
-      } catch { throw new Error('Pixabay unavailable'); }
-      return (data?.hits || []).filter(h => h.url).map(h => ({
-        title: h.title || 'Untitled', artist: h.user || 'Unknown', album: h.category || '',
-        art: h.previewURL || null, streamUrl: h.url, duration: h.duration || 0,
-        source: 'pixabay', badge: 'FREE CC', badgeClass: 'badge-cc', srcClass: 'src-pixabay', srcLabel: 'Pixabay',
+      } catch { throw new Error('Mixcloud unavailable'); }
+      return (data?.data || []).filter(c => c.key).map(c => ({
+        title: c.name || 'Untitled',
+        artist: c.user?.name || 'Unknown',
+        album: c.tags?.map(t => t.name).join(', ') || '',
+        art: c.pictures?.large || c.pictures?.medium || null,
+        // Mixcloud does not expose direct stream URLs; open their page instead
+        streamUrl: `https://player.mixcloud.com/widget/iframe/?hide_cover=1&feed=${encodeURIComponent(c.key)}`,
+        duration: c.audio_length || 0,
+        source: 'pixabay', badge: 'MIX', badgeClass: 'badge-cc', srcClass: 'src-pixabay', srcLabel: 'Mixcloud',
       }));
     }
 
@@ -2144,16 +2184,27 @@
       el.classList.add('playing');
       streamCurrentUrl = item.streamUrl;
       streamIsOnline   = true;
-      const srcNames = { itunes:'Preview', jamendo:'Jamendo', deezer:'Deezer Preview', fma:'Free Music Archive', pixabay:'Pixabay' };
+      const srcNames = { itunes:'iTunes Preview', jamendo:'Jamendo', deezer:'Archive.org', fma:'Internet Radio', pixabay:'Mixcloud' };
       displayTitle.textContent  = item.title;
       displayArtist.textContent = item.artist + ' · ' + (srcNames[item.source] || item.source);
       if (item.art) { setAlbumArt(item.art); currentDynamicImg = item.art; if (currentTheme==='dynamic') applyTheme('dynamic'); }
       else { clearAlbumArt(); }
+      // Mixcloud sources provide an embed iframe URL, not a direct audio URL
+      if (item.streamUrl && item.streamUrl.startsWith('https://player.mixcloud.com')) {
+        let mixWrap = document.getElementById('mixcloudEmbed');
+        if (!mixWrap) { mixWrap = document.createElement('div'); mixWrap.id = 'mixcloudEmbed'; mixWrap.style.cssText='margin:8px 0'; streamResults.parentNode.insertBefore(mixWrap, streamResults); }
+        mixWrap.innerHTML = `<iframe width="100%" height="120" src="${item.streamUrl}" frameborder="0" allow="autoplay" style="border-radius:8px"></iframe>`;
+        streamBtn.classList.add('has-stream');
+        statusText.textContent = `▶ Mixcloud: ${item.title}`;
+        return;
+      }
       audioPlayer.src = item.streamUrl;
       audioPlayer.load();
+      initAudioEngine();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       audioPlayer.play().catch(err => {
         console.error('Stream play error:', err);
-        statusText.textContent = '⚠️ Could not stream (CORS). Try Jamendo or iTunes.';
+        statusText.textContent = '⚠️ Could not stream. Try Jamendo or iTunes.';
       });
       streamBtn.classList.add('has-stream');
       parsedLyrics = []; hasCustomLyricsLoaded = false;
