@@ -1985,7 +1985,7 @@
 
     // ─── Jamendo ────────────────────────────────
     async function searchJamendo(query) {
-      const res = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=25&search=${encodeURIComponent(query)}&audioformat=mp32&imagesize=200`);
+      const res = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=b9c772ff&format=json&limit=25&search=${encodeURIComponent(query)}&audioformat=mp32&imagesize=200`);
       let data; try { data = await res.json(); } catch { throw new Error('Jamendo invalid JSON'); }
       if (!Array.isArray(data.results)) return [];
       return data.results.filter(i => i.audio).map(i => ({
@@ -2179,7 +2179,7 @@
     }
 
     // ─── Play ────────────────────────────────────
-    function playStreamItem(item, el) {
+    async function playStreamItem(item, el) {
       document.querySelectorAll('.stream-result-item').forEach(d => d.classList.remove('playing'));
       el.classList.add('playing');
       streamCurrentUrl = item.streamUrl;
@@ -2200,8 +2200,18 @@
       }
       audioPlayer.src = item.streamUrl;
       audioPlayer.load();
+
+      // Initialize audio engine and ensure AudioContext is running
       initAudioEngine();
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        try {
+          await audioCtx.resume();
+          console.log('AudioContext resumed, state:', audioCtx.state);
+        } catch (err) {
+          console.warn('AudioContext resume failed:', err);
+        }
+      }
+
       audioPlayer.play().catch(err => {
         console.error('Stream play error:', err);
         statusText.textContent = '⚠️ Could not stream. Try Jamendo or iTunes.';
