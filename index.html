@@ -2198,19 +2198,20 @@
         statusText.textContent = `▶ Mixcloud: ${item.title}`;
         return;
       }
-      audioPlayer.src = item.streamUrl;
-      audioPlayer.load();
 
-      // Initialize audio engine and ensure AudioContext is running
-      initAudioEngine();
-      if (audioCtx && audioCtx.state === 'suspended') {
+      // If Web Audio API was already initialized (for local files), ensure it's running
+      // If not initialized, streaming audio plays directly through the audio element
+      if (isAudioEngineInit && audioCtx && audioCtx.state === 'suspended') {
         try {
           await audioCtx.resume();
-          console.log('AudioContext resumed, state:', audioCtx.state);
+          console.log('✓ AudioContext resumed for streaming:', audioCtx.state);
         } catch (err) {
-          console.warn('AudioContext resume failed:', err);
+          console.error('✗ AudioContext resume failed:', err);
         }
       }
+
+      audioPlayer.src = item.streamUrl;
+      audioPlayer.load();
 
       audioPlayer.play().catch(err => {
         console.error('Stream play error:', err);
@@ -2391,8 +2392,24 @@
     function initAudioEngine() {
       if (isAudioEngineInit) return;
       try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        srcNode  = audioCtx.createMediaElementSource(audioPlayer);
+        // Create AudioContext if it doesn't exist
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // CRITICAL: Only create MediaElementSource once per audio element
+        // Check if srcNode already exists before creating
+        if (!srcNode) {
+          try {
+            srcNode = audioCtx.createMediaElementSource(audioPlayer);
+          } catch (err) {
+            console.error('MediaElementSource creation failed:', err);
+            // If already connected, we cannot use Web Audio API
+            // Fall back to direct audio playback (no EQ/effects)
+            isAudioEngineInit = true;
+            return;
+          }
+        }
 
         bassFilter = audioCtx.createBiquadFilter();
         bassFilter.type      = 'lowshelf';
